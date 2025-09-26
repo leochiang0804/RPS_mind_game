@@ -9,7 +9,7 @@ game_state = {
     'result_history': [],
     'round': 0,
     'stats': {'human_win': 0, 'robot_win': 0, 'tie': 0},
-    'difficulty': 'random',
+    'difficulty': 'markov',
     'multiplayer': False,
     'accuracy': {
         'random': None,
@@ -45,7 +45,8 @@ def index():
         human_history=game_state['human_history'],
         robot_history=game_state['robot_history'],
         result_history=game_state['result_history'],
-        round=game_state['round'])
+        round=game_state['round'],
+        default_difficulty=game_state['difficulty'])
 
 @app.route('/play', methods=['POST'])
 def play():
@@ -176,7 +177,7 @@ def reset():
     game_state['result_history'].clear()
     game_state['round'] = 0
     game_state['stats'] = {'human_win': 0, 'robot_win': 0, 'tie': 0}
-    game_state['difficulty'] = 'random'
+    game_state['difficulty'] = 'markov'
     game_state['multiplayer'] = False
     if request.method == 'POST':
         return jsonify({'success': True})

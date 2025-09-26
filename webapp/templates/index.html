@@ -63,6 +63,8 @@
         }
         .chart-container {
             max-width: 420px;
+            min-width: 320px;
+            height: 340px;
             margin: 1.2em auto;
             background: #fff8f0;
             border-radius: 12px;
@@ -98,15 +100,7 @@
             font-family: 'Quicksand', 'Segoe UI', Arial, sans-serif;
         }
         p, span {
-            font-size: 1.08em;
-        }
-        @media (max-width: 600px) {
-            .container {
-                padding: 12px 4px;
-            }
-            .chart-container {
-                max-width: 98vw;
-            }
+            /* max-width: 98vw; */
         }
     </style>
     <script>
@@ -121,16 +115,20 @@
 <body>
     <div class="container" style="max-width:1400px;">
         <h1>Paper Scissor Stone ML Game</h1>
-        <div id="visual-result-window" style="display:flex; justify-content:center; align-items:center; gap:3em; margin-bottom:2em;">
-            <div style="text-align:center;">
+        <div id="selection-window" style="display:flex; justify-content:center; align-items:center; gap:3em; margin-bottom:2em;">
+            <div id="human-selection" style="position:relative; text-align:center; min-width:180px; min-height:160px; background:#fff8f0; border-radius:16px; box-shadow:0 2px 8px #e0c9a6; padding:1em 0.5em 0.5em 0.5em;">
                 <div style="font-weight:600; color:#a86e3c;">Human Choice</div>
                 <img id="human-choice-img" src="/static/paper.png" alt="Human Choice" width="80" height="80" style="display:none; margin-top:0.5em; border-radius:12px; box-shadow:0 2px 8px #e0c9a6;">
                 <div id="human-choice-label" style="margin-top:0.5em; font-size:1.1em; color:#6d4c1c;"></div>
+                <div id="human-winner-overlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; border-radius:12px; background:rgba(76,175,80,0.18); border:2px solid #4caf50; pointer-events:none;"></div>
+                <div id="human-winner-badge" style="display:none; position:absolute; top:10px; right:10px; background:#4caf50; color:#fff; font-weight:700; padding:4px 12px; border-radius:10px; font-size:1em; box-shadow:0 2px 8px #4caf50; z-index:3;">Winner!</div>
             </div>
-            <div style="text-align:center;">
+            <div id="robot-selection" style="position:relative; text-align:center; min-width:180px; min-height:160px; background:#fff8f0; border-radius:16px; box-shadow:0 2px 8px #e0c9a6; padding:1em 0.5em 0.5em 0.5em;">
                 <div style="font-weight:600; color:#a86e3c;">Robot Choice</div>
                 <img id="robot-choice-img" src="/static/paper.png" alt="Robot Choice" width="80" height="80" style="display:none; margin-top:0.5em; border-radius:12px; box-shadow:0 2px 8px #e0c9a6;">
                 <div id="robot-choice-label" style="margin-top:0.5em; font-size:1.1em; color:#6d4c1c;"></div>
+                <div id="robot-winner-overlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; border-radius:12px; background:rgba(33,150,243,0.18); border:2px solid #2196f3; pointer-events:none;"></div>
+                <div id="robot-winner-badge" style="display:none; position:absolute; top:10px; right:10px; background:#2196f3; color:#fff; font-weight:700; padding:4px 12px; border-radius:10px; font-size:1em; box-shadow:0 2px 8px #2196f3; z-index:3;">Winner!</div>
             </div>
         </div>
         <div style="display: flex; gap: 2.5em; align-items: flex-start;">
@@ -138,11 +136,11 @@
                 <div class="controls">
                     <label for="difficulty">Difficulty:</label>
                     <select id="difficulty" onchange="setDifficulty()">
-                        <option value="random">Random</option>
-                        <option value="frequency">Frequency</option>
-                        <option value="markov">Markov Chain</option>
-                        <option value="hybrid">Hybrid</option>
-                        <option value="decision_tree">Decision Tree</option>
+                        <option value="random" {% if default_difficulty == 'random' %}selected{% endif %}>Random</option>
+                        <option value="frequency" {% if default_difficulty == 'frequency' %}selected{% endif %}>Frequency</option>
+                        <option value="markov" {% if default_difficulty == 'markov' %}selected{% endif %}>Markov Chain</option>
+                        <option value="hybrid" {% if default_difficulty == 'hybrid' %}selected{% endif %}>Hybrid</option>
+                        <option value="decision_tree" {% if default_difficulty == 'decision_tree' %}selected{% endif %}>Decision Tree</option>
                     </select>
                     <label for="multiplayer">Multiplayer:</label>
                     <input type="checkbox" id="multiplayer" onchange="setMultiplayer()">
@@ -160,8 +158,17 @@
                 <div id="result"></div>
             </div>
             <div style="flex: 1.2; min-width: 420px;">
-                <div class="chart-container"><canvas id="moveChart"></canvas></div>
-                <div class="chart-container"><canvas id="resultChart"></canvas></div>
+                <div class="chart-container">
+                    <canvas id="moveChart" height="260"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="resultChart" height="180"></canvas>
+                    <div id="result-legend" style="text-align:center; margin-top:0.5em; font-size:1.08em;">
+                        <span style="display:inline-block; width:16px; height:16px; background:#4caf50; border-radius:3px; margin-right:8px; vertical-align:middle;"></span> Human Win
+                        <span style="display:inline-block; width:16px; height:16px; background:#f44336; border-radius:3px; margin-left:18px; margin-right:8px; vertical-align:middle;"></span> Robot Win
+                        <span style="display:inline-block; width:16px; height:16px; background:#9e9e9e; border-radius:3px; margin-left:18px; margin-right:8px; vertical-align:middle;"></span> Tie
+                    </div>
+                </div>
             </div>
         </div>
         <div id="stats" style="margin-top:2.5em;">
@@ -293,7 +300,7 @@
                     document.getElementById('acc-' + key).textContent = (data.accuracy[key] !== null && data.accuracy[key] !== undefined) ? data.accuracy[key] : '-';
                 }
             }
-            // Visual result window
+            // Winner highlight logic
             let humanMove = data.human_history.length ? data.human_history[data.human_history.length-1] : null;
             let robotMove = data.robot_move;
             let humanImg = document.getElementById('human-choice-img');
@@ -316,6 +323,34 @@
                 robotImg.style.display = 'none';
                 robotLabel.textContent = '';
             }
+            // Winner overlays and badges
+            const humanOverlay = document.getElementById('human-winner-overlay');
+            const robotOverlay = document.getElementById('robot-winner-overlay');
+            const humanBadge = document.getElementById('human-winner-badge');
+            const robotBadge = document.getElementById('robot-winner-badge');
+            humanOverlay.style.display = 'none';
+            robotOverlay.style.display = 'none';
+            humanBadge.style.display = 'none';
+            robotBadge.style.display = 'none';
+            humanOverlay.style.background = 'rgba(76,175,80,0.18)';
+            humanOverlay.style.border = '2px solid #4caf50';
+            robotOverlay.style.background = 'rgba(33,150,243,0.18)';
+            robotOverlay.style.border = '2px solid #2196f3';
+            let lastResult = Array.isArray(data.result) ? data.result[data.result.length-1] : data.result;
+            if (lastResult === 'human') {
+                humanOverlay.style.display = '';
+                humanBadge.style.display = '';
+            } else if (lastResult === 'robot') {
+                robotOverlay.style.display = '';
+                robotBadge.style.display = '';
+            } else if (lastResult === 'tie') {
+                humanOverlay.style.display = '';
+                robotOverlay.style.display = '';
+                humanOverlay.style.background = 'rgba(158,158,158,0.18)';
+                humanOverlay.style.border = '2px solid #9e9e9e';
+                robotOverlay.style.background = 'rgba(158,158,158,0.18)';
+                robotOverlay.style.border = '2px solid #9e9e9e';
+            }
             // Human behavior
             let paper_count = data.human_history.filter(m => m === 'paper').length;
             let scissor_count = data.human_history.filter(m => m === 'scissor').length;
@@ -331,11 +366,8 @@
             else behavior = 'Your moves are balanced or unpredictable.';
             document.getElementById('behavior').innerHTML = behavior;
             updateCharts(data.human_history, data.stats);
-            if (Array.isArray(data.result)) {
-                document.getElementById('result').textContent = `Robot chose: ${data.robot_move}. Results: Player 1: ${data.result[0]}, Player 2: ${data.result[1]}`;
-            } else {
-                document.getElementById('result').textContent = `Robot chose: ${data.robot_move}. Result: ${data.result}`;
-            }
+            // Remove textual result info
+            document.getElementById('result').textContent = '';
         }
         function percent(val, total) {
             return total ? ((val / total * 100).toFixed(2)) : '0';
