@@ -197,5 +197,14 @@ def get_result(robot_move, human_move):
     else:
         return 'human'
 
+import threading
+import webbrowser
+import time
+
+def open_browser():
+    time.sleep(1)  # Wait a moment for the server to start
+    webbrowser.open('http://127.0.0.1:5000')
+
 if __name__ == '__main__':
+    threading.Thread(target=open_browser).start()
     app.run(debug=True)
