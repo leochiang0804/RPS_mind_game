@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Game Stats & Visualizations</title>
+    <style>
+        .bar { display: inline-block; height: 20px; background: #4caf50; margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Game Statistics</h1>
+    <p>Rounds played: {{ round }}</p>
+    <p>Human Wins: {{ stats.human_win }} | Robot Wins: {{ stats.robot_win }} | Ties: {{ stats.tie }}</p>
+    <p>Win %: {{ (stats.human_win / round * 100) if round else 0 | round(2) }} | Robot %: {{ (stats.robot_win / round * 100) if round else 0 | round(2) }} | Tie %: {{ (stats.tie / round * 100) if round else 0 | round(2) }}</p>
+    <h2>Move Distribution</h2>
+    <div class="chart-container">
+        <canvas id="moveChart"></canvas>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const moveData = {
+            labels: ['Paper', 'Scissor', 'Stone'],
+            datasets: [{
+                label: 'Human Move Distribution',
+                data: [{{ [human_history.count('paper'), human_history.count('scissor'), human_history.count('stone')] | join(', ') }}],
+                backgroundColor: ['#2196f3', '#e91e63', '#ff9800']
+            }]
+        };
+        new Chart(document.getElementById('moveChart'), {
+            type: 'bar',
+            data: moveData,
+            options: { scales: { y: { beginAtZero: true } } }
+        });
+    </script>
+    <h2>Recent Moves</h2>
+    <p>Human: {{ human_history[-10:] }}</p>
+    <p>Robot: {{ robot_history[-10:] }}</p>
+    <h2>Results</h2>
+    <p>{{ result_history[-10:] }}</p>
+
+    <h2>ML Performance Metrics</h2>
+    <div class="chart-container">
+        <canvas id="resultChart"></canvas>
+    </div>
+    <script>
+        const resultData = {
+            labels: ['Human Win', 'Robot Win', 'Tie'],
+            datasets: [{
+                label: 'Game Results',
+                data: [{{ [stats.human_win, stats.robot_win, stats.tie] | join(', ') }}],
+                backgroundColor: ['#4caf50', '#f44336', '#9e9e9e']
+            }]
+        };
+        new Chart(document.getElementById('resultChart'), {
+            type: 'pie',
+            data: resultData
+        });
+    </script>
+    {% set total = stats.human_win + stats.robot_win + stats.tie %}
+    {% set accuracy = (stats.human_win / total * 100) if total else 0 %}
+    <p>Human Win Rate: {{ accuracy | round(2) }}%</p>
+    <p>Robot Win Rate: {{ (stats.robot_win / total * 100) if total else 0 | round(2) }}%</p>
+    <p>Tie Rate: {{ (stats.tie / total * 100) if total else 0 | round(2) }}%</p>
+
+    <h2>Human Behavior Explanation</h2>
+    {% set paper_count = human_history.count('paper') %}
+    {% set scissor_count = human_history.count('scissor') %}
+    {% set stone_count = human_history.count('stone') %}
+    {% set most_common = 'paper' if paper_count >= scissor_count and paper_count >= stone_count else ('scissor' if scissor_count >= stone_count else 'stone') %}
+    <p>Most frequent move: <b>{{ most_common }}</b></p>
+    {% if paper_count > scissor_count and paper_count > stone_count %}
+        <p>You tend to favor <b>paper</b>. The robot may adapt to counter this.</p>
+    {% elif scissor_count > paper_count and scissor_count > stone_count %}
+        <p>You tend to favor <b>scissor</b>. The robot may adapt to counter this.</p>
+    {% elif stone_count > paper_count and stone_count > scissor_count %}
+        <p>You tend to favor <b>stone</b>. The robot may adapt to counter this.</p>
+    {% else %}
+        <p>Your moves are balanced or unpredictable.</p>
+    {% endif %}
+
+    <a href="/">Back to Game</a>
+</body>
+</html>
