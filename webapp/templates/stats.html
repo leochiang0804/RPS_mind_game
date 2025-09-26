@@ -4,7 +4,52 @@
     <meta charset="UTF-8">
     <title>Game Stats & Visualizations</title>
     <style>
-        .bar { display: inline-block; height: 20px; background: #4caf50; margin-right: 5px; }
+        body {
+            font-family: 'Quicksand', 'Segoe UI', Arial, sans-serif;
+            background: #f6ede6;
+            margin: 0;
+            padding: 0;
+            color: #4b3f2a;
+        }
+        h1 {
+            color: #a86e3c;
+            font-size: 2.1rem;
+            margin-bottom: 0.7em;
+            font-family: 'Quicksand', 'Segoe UI', Arial, sans-serif;
+        }
+        .bar { display: inline-block; height: 20px; background: #e6b07a; margin-right: 5px; border-radius: 8px; }
+        .chart-container {
+            max-width: 420px;
+            margin: 1.2em auto;
+            background: #fff8f0;
+            border-radius: 12px;
+            box-shadow: 0 1px 4px rgba(168, 110, 60, 0.04);
+            padding: 0.7em 0.5em;
+        }
+        p, span {
+            font-size: 1.08em;
+        }
+        a {
+            display: inline-block;
+            margin-top: 2em;
+            padding: 0.5em 1.2em;
+            background: linear-gradient(90deg, #ffe0b2 0%, #ffd7ba 100%);
+            color: #6d4c1c;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(168, 110, 60, 0.07);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+        a:hover {
+            background: linear-gradient(90deg, #ffd7ba 0%, #ffe0b2 100%);
+            box-shadow: 0 4px 16px rgba(168, 110, 60, 0.13);
+        }
+        @media (max-width: 600px) {
+            .chart-container {
+                max-width: 98vw;
+            }
+        }
     </style>
 </head>
 <body>
@@ -22,7 +67,7 @@
             labels: ['Paper', 'Scissor', 'Stone'],
             datasets: [{
                 label: 'Human Move Distribution',
-                data: [{{ [human_history.count('paper'), human_history.count('scissor'), human_history.count('stone')] | join(', ') }}],
+                data: [{{ human_history.count('paper') }}, {{ human_history.count('scissor') }}, {{ human_history.count('stone') }}],
                 backgroundColor: ['#2196f3', '#e91e63', '#ff9800']
             }]
         };
@@ -47,7 +92,7 @@
             labels: ['Human Win', 'Robot Win', 'Tie'],
             datasets: [{
                 label: 'Game Results',
-                data: [{{ [stats.human_win, stats.robot_win, stats.tie] | join(', ') }}],
+                data: [{{ stats.human_win }}, {{ stats.robot_win }}, {{ stats.tie }}],
                 backgroundColor: ['#4caf50', '#f44336', '#9e9e9e']
             }]
         };

@@ -5,68 +5,113 @@
     <title>Paper Scissor Stone ML Game</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background: #f7f7f7;
+            font-family: 'Quicksand', 'Segoe UI', Arial, sans-serif;
+            background: #f6ede6;
             margin: 0;
             padding: 0;
+            color: #4b3f2a;
         }
         .container {
             max-width: 900px;
-            margin: 30px auto;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            padding: 24px 32px;
+            margin: 40px auto;
+            background: #fff8f0;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(120, 72, 0, 0.08);
+            padding: 36px 40px;
         }
         h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5em;
+            font-size: 2.3rem;
+            margin-bottom: 0.7em;
+            color: #a86e3c;
+            font-family: 'Quicksand', 'Segoe UI', Arial, sans-serif;
         }
         .move-btn {
             font-size: 1.2em;
-            margin: 0.5em;
-            padding: 0.5em 1em;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            background: #f0f0f0;
-            transition: background 0.2s;
+            margin: 0.7em;
+            padding: 0.7em 1.3em;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(90deg, #ffe0b2 0%, #ffd7ba 100%);
+            box-shadow: 0 2px 8px rgba(168, 110, 60, 0.07);
+            color: #6d4c1c;
+            transition: background 0.3s, box-shadow 0.3s;
+            cursor: pointer;
         }
         .move-btn:hover {
-            background: #e0e0e0;
+            background: linear-gradient(90deg, #ffd7ba 0%, #ffe0b2 100%);
+            box-shadow: 0 4px 16px rgba(168, 110, 60, 0.13);
         }
         .hotkey {
-            font-size: 0.9em;
-            color: #888;
+            font-size: 0.95em;
+            color: #bfa27a;
         }
         #result {
-            font-size: 1.1em;
-            margin: 1em 0;
-            color: #1976d2;
+            font-size: 1.15em;
+            margin: 1.2em 0;
+            color: #a86e3c;
+            background: #fff3e0;
+            border-radius: 10px;
+            padding: 0.7em 1em;
+            box-shadow: 0 1px 4px rgba(168, 110, 60, 0.07);
         }
         #stats {
-            margin-top: 2em;
-            padding: 1em;
-            background: #fafafa;
-            border-radius: 8px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            margin-top: 2.5em;
+            padding: 1.5em;
+            background: #fbeee0;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(168, 110, 60, 0.06);
         }
         .chart-container {
-            max-width: 400px;
-            margin: 1em auto;
+            max-width: 420px;
+            margin: 1.2em auto;
+            background: #fff8f0;
+            border-radius: 12px;
+            box-shadow: 0 1px 4px rgba(168, 110, 60, 0.04);
+            padding: 0.7em 0.5em;
         }
         button, select {
-            font-size: 1em;
+            font-size: 1.05em;
+            font-family: inherit;
         }
         .controls {
-            margin-bottom: 1.5em;
+            margin-bottom: 2em;
             display: flex;
-            gap: 1em;
+            gap: 1.2em;
             align-items: center;
+        }
+        select, input[type="checkbox"] {
+            border-radius: 8px;
+            border: 1px solid #e0c9a6;
+            padding: 0.3em 0.7em;
+            background: #fff8f0;
+            color: #6d4c1c;
+        }
+        select:focus, input[type="checkbox"]:focus {
+            outline: 2px solid #ffd7ba;
+        }
+        label {
+            color: #a86e3c;
+            font-weight: 500;
+        }
+        h2, h3 {
+            color: #a86e3c;
+            font-family: 'Quicksand', 'Segoe UI', Arial, sans-serif;
+        }
+        p, span {
+            font-size: 1.08em;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 12px 4px;
+            }
+            .chart-container {
+                max-width: 98vw;
+            }
         }
     </style>
     <script>
         document.addEventListener('keydown', function(e) {
-            const hotkeys = {'a': 'paper', 'w': 'scissor', 'e': 'stone'};
+            const hotkeys = {'a': 'paper', 'w': 'scissor', 'd': 'stone'};
             if (hotkeys[e.key]) {
                 document.getElementById('move-' + hotkeys[e.key]).click();
             }
@@ -74,45 +119,72 @@
     </script>
 </head>
 <body>
-    <div class="container">
+    <div class="container" style="max-width:1400px;">
         <h1>Paper Scissor Stone ML Game</h1>
-        <div class="controls">
-            <label for="difficulty">Difficulty:</label>
-            <select id="difficulty" onchange="setDifficulty()">
-                <option value="random">Random</option>
-                <option value="frequency">Frequency</option>
-                <option value="markov">Markov Chain</option>
-                <option value="hybrid">Hybrid</option>
-                <option value="decision_tree">Decision Tree</option>
-            </select>
-            <label for="multiplayer">Multiplayer:</label>
-            <input type="checkbox" id="multiplayer" onchange="setMultiplayer()">
-            <form id="moveForm" style="display:inline;">
-                {% set hotkey_list = hotkeys.keys()|list %}
-                {% for move in moves %}
-                    <button type="button" name="move" value="{{ move }}" id="move-{{ move }}" class="move-btn" onclick="submitMove('{{ move }}')">
-                        <img src="/static/{{ move }}.png" alt="{{ move }}" width="40" height="40" onerror="this.style.display='none';this.insertAdjacentHTML('afterend', '<span style=\'font-size:1.2em;color:#aaa\'>{{ move|capitalize }}</span>')">
-                        <span class="hotkey">({{ hotkey_list[loop.index0] }})</span>
-                    </button>
-                {% endfor %}
-            </form>
-            <button onclick="resetGame()">Reset Game</button>
+        <div id="visual-result-window" style="display:flex; justify-content:center; align-items:center; gap:3em; margin-bottom:2em;">
+            <div style="text-align:center;">
+                <div style="font-weight:600; color:#a86e3c;">Human Choice</div>
+                <img id="human-choice-img" src="/static/paper.png" alt="Human Choice" width="80" height="80" style="display:none; margin-top:0.5em; border-radius:12px; box-shadow:0 2px 8px #e0c9a6;">
+                <div id="human-choice-label" style="margin-top:0.5em; font-size:1.1em; color:#6d4c1c;"></div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-weight:600; color:#a86e3c;">Robot Choice</div>
+                <img id="robot-choice-img" src="/static/paper.png" alt="Robot Choice" width="80" height="80" style="display:none; margin-top:0.5em; border-radius:12px; box-shadow:0 2px 8px #e0c9a6;">
+                <div id="robot-choice-label" style="margin-top:0.5em; font-size:1.1em; color:#6d4c1c;"></div>
+            </div>
         </div>
-        <div id="result"></div>
-        <div id="stats">
+        <div style="display: flex; gap: 2.5em; align-items: flex-start;">
+            <div style="flex: 1; min-width: 320px;">
+                <div class="controls">
+                    <label for="difficulty">Difficulty:</label>
+                    <select id="difficulty" onchange="setDifficulty()">
+                        <option value="random">Random</option>
+                        <option value="frequency">Frequency</option>
+                        <option value="markov">Markov Chain</option>
+                        <option value="hybrid">Hybrid</option>
+                        <option value="decision_tree">Decision Tree</option>
+                    </select>
+                    <label for="multiplayer">Multiplayer:</label>
+                    <input type="checkbox" id="multiplayer" onchange="setMultiplayer()">
+                    <form id="moveForm" style="display:inline;">
+                        {% set hotkey_list = ['a', 'w', 'd'] %}
+                        {% for move in moves %}
+                            <button type="button" name="move" value="{{ move }}" id="move-{{ move }}" class="move-btn" onclick="submitMove('{{ move }}')">
+                                <img src="/static/{{ move }}.png" alt="{{ move }}" width="40" height="40" onerror="this.style.display='none';this.insertAdjacentHTML('afterend', '<span style=\'font-size:1.2em;color:#aaa\'>{{ move|capitalize }}</span>')">
+                                <span class="hotkey">({{ hotkey_list[loop.index0] }})</span>
+                            </button>
+                        {% endfor %}
+                    </form>
+                    <button onclick="resetGame()">Reset Game</button>
+                </div>
+                <div id="result"></div>
+            </div>
+            <div style="flex: 1.2; min-width: 420px;">
+                <div class="chart-container"><canvas id="moveChart"></canvas></div>
+                <div class="chart-container"><canvas id="resultChart"></canvas></div>
+            </div>
+        </div>
+        <div id="stats" style="margin-top:2.5em;">
             <h2>Game Statistics</h2>
             <p id="rounds">Rounds played: {{ round }}</p>
             <p id="winStats">Human Wins: {{ stats.human_win }} | Robot Wins: {{ stats.robot_win }} | Ties: {{ stats.tie }}</p>
             <p id="percentStats">Win %: {{ (stats.human_win / round * 100) if round else 0 | round(2) }} | Robot %: {{ (stats.robot_win / round * 100) if round else 0 | round(2) }} | Tie %: {{ (stats.tie / round * 100) if round else 0 | round(2) }}</p>
-            <h3>Move Distribution</h3>
-            <div class="chart-container"><canvas id="moveChart"></canvas></div>
             <h3>Recent Moves</h3>
             <p id="recentHuman">Human: {{ human_history[-10:] }}</p>
             <p id="recentRobot">Robot: {{ robot_history[-10:] }}</p>
             <h3>Results</h3>
             <p id="recentResult">{{ result_history[-10:] }}</p>
             <h3>ML Performance Metrics</h3>
-            <div class="chart-container"><canvas id="resultChart"></canvas></div>
+            <div id="mlAccuracyMetrics" style="margin-bottom:1em;">
+                <b>Prediction Accuracy by Method:</b>
+                <ul style="list-style:none; padding-left:0;">
+                    <li>Random: <span id="acc-random">-</span>%</li>
+                    <li>Frequency: <span id="acc-frequency">-</span>%</li>
+                    <li>Markov Chain: <span id="acc-markov">-</span>%</li>
+                    <li>Hybrid: <span id="acc-hybrid">-</span>%</li>
+                    <li>Decision Tree: <span id="acc-decision_tree">-</span>%</li>
+                </ul>
+            </div>
             {% set total = stats.human_win + stats.robot_win + stats.tie %}
             {% set accuracy = (stats.human_win / total * 100) if total else 0 %}
             <p id="humanWinRate">Human Win Rate: {{ accuracy | round(2) }}%</p>
@@ -215,6 +287,35 @@
             document.getElementById('humanWinRate').textContent = `Human Win Rate: ${accuracy}%`;
             document.getElementById('robotWinRate').textContent = `Robot Win Rate: ${total ? (data.stats.robot_win / total * 100).toFixed(2) : 0}%`;
             document.getElementById('tieRate').textContent = `Tie Rate: ${total ? (data.stats.tie / total * 100).toFixed(2) : 0}%`;
+            // ML accuracy metrics
+            if (data.accuracy) {
+                for (const key of ['random','frequency','markov','hybrid','decision_tree']) {
+                    document.getElementById('acc-' + key).textContent = (data.accuracy[key] !== null && data.accuracy[key] !== undefined) ? data.accuracy[key] : '-';
+                }
+            }
+            // Visual result window
+            let humanMove = data.human_history.length ? data.human_history[data.human_history.length-1] : null;
+            let robotMove = data.robot_move;
+            let humanImg = document.getElementById('human-choice-img');
+            let robotImg = document.getElementById('robot-choice-img');
+            let humanLabel = document.getElementById('human-choice-label');
+            let robotLabel = document.getElementById('robot-choice-label');
+            if (humanMove) {
+                humanImg.src = `/static/${humanMove}.png`;
+                humanImg.style.display = '';
+                humanLabel.textContent = humanMove.charAt(0).toUpperCase() + humanMove.slice(1);
+            } else {
+                humanImg.style.display = 'none';
+                humanLabel.textContent = '';
+            }
+            if (robotMove) {
+                robotImg.src = `/static/${robotMove}.png`;
+                robotImg.style.display = '';
+                robotLabel.textContent = robotMove.charAt(0).toUpperCase() + robotMove.slice(1);
+            } else {
+                robotImg.style.display = 'none';
+                robotLabel.textContent = '';
+            }
             // Human behavior
             let paper_count = data.human_history.filter(m => m === 'paper').length;
             let scissor_count = data.human_history.filter(m => m === 'scissor').length;

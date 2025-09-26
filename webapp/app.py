@@ -10,11 +10,32 @@ game_state = {
     'round': 0,
     'stats': {'human_win': 0, 'robot_win': 0, 'tie': 0},
     'difficulty': 'random',
-    'multiplayer': False
+    'multiplayer': False,
+    'accuracy': {
+        'random': None,
+        'frequency': None,
+        'markov': None,
+        'hybrid': None,
+        'decision_tree': None
+    },
+    'correct_predictions': {
+        'random': 0,
+        'frequency': 0,
+        'markov': 0,
+        'hybrid': 0,
+        'decision_tree': 0
+    },
+    'total_predictions': {
+        'random': 0,
+        'frequency': 0,
+        'markov': 0,
+        'hybrid': 0,
+        'decision_tree': 0
+    }
 }
 
 MOVES = ['paper', 'scissor', 'stone']
-HOTKEYS = {'a': 'paper', 'w': 'scissor', 'e': 'stone'}
+HOTKEYS = {'a': 'paper', 'w': 'scissor', 'd': 'stone'}
 
 @app.route('/')
 def index():
@@ -40,35 +61,47 @@ def play():
     import random
     # Difficulty strategies
     def robot_strategy(history, difficulty):
+        # Predict next human move, then counter it
+        predicted = None
         if difficulty == 'random':
-            return random.choice(MOVES)
+            predicted = random.choice(MOVES)
         elif difficulty == 'frequency':
             if not history:
-                return random.choice(MOVES)
-            freq = {m: history.count(m) for m in MOVES}
-            most_common = max(freq, key=freq.get)
-            counter = {'paper': 'scissor', 'scissor': 'stone', 'stone': 'paper'}
-            return counter[most_common]
+                predicted = random.choice(MOVES)
+            else:
+                freq = {m: history.count(m) for m in MOVES}
+                most_common = max(freq, key=lambda k: freq[k])
+                predicted = most_common
         elif difficulty == 'markov':
-            # Simple Markov: predict next move based on last
             if len(history) < 2:
-                return random.choice(MOVES)
-            last = history[-1]
-            next_moves = [history[i+1] for i in range(len(history)-1) if history[i] == last]
-            if not next_moves:
-                return random.choice(MOVES)
-            predicted = max(set(next_moves), key=next_moves.count)
-            counter = {'paper': 'scissor', 'scissor': 'stone', 'stone': 'paper'}
-            return counter[predicted]
+                predicted = random.choice(MOVES)
+            else:
+                last = history[-1]
+                next_moves = [history[i+1] for i in range(len(history)-1) if history[i] == last]
+                if not next_moves:
+                    predicted = random.choice(MOVES)
+                else:
+                    predicted = max(set(next_moves), key=next_moves.count)
         elif difficulty == 'hybrid':
             if len(history) < 5:
                 return robot_strategy(history, 'frequency')
             return robot_strategy(history, 'markov')
         elif difficulty == 'decision_tree':
-            # Placeholder: treat as random
-            return random.choice(MOVES)
+            predicted = random.choice(MOVES)
         else:
-            return random.choice(MOVES)
+            predicted = random.choice(MOVES)
+        counter = {'paper': 'scissor', 'scissor': 'stone', 'stone': 'paper'}
+        robot_move = counter[predicted]
+        # Track prediction accuracy
+        if len(history) > 0:
+            actual_next = history[-1]
+            game_state['total_predictions'][difficulty] += 1
+            if predicted == actual_next:
+                game_state['correct_predictions'][difficulty] += 1
+            correct = game_state['correct_predictions'][difficulty]
+            total = game_state['total_predictions'][difficulty]
+            game_state['accuracy'][difficulty] = round((correct / total) * 100, 2) if total else None
+        return robot_move
 
     results = []
     robot_move = robot_strategy(game_state['human_history'], difficulty)
@@ -120,7 +153,8 @@ def play():
         'robot_move': robot_move,
         'result': results,
         'difficulty': game_state['difficulty'],
-        'multiplayer': game_state['multiplayer']
+        'multiplayer': game_state['multiplayer'],
+        'accuracy': game_state['accuracy']
     })
 
 @app.route('/stats', methods=['GET'])
@@ -131,7 +165,8 @@ def stats():
         'human_history': game_state['human_history'],
         'robot_history': game_state['robot_history'],
         'result_history': game_state['result_history'],
-        'round': game_state['round']
+        'round': game_state['round'],
+        'accuracy': game_state['accuracy']
     })
 
 @app.route('/reset', methods=['POST', 'GET'])
