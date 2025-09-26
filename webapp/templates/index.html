@@ -215,80 +215,112 @@
                 <p id="behavior">Your moves are balanced or unpredictable.</p>
             {% endif %}
         </div>
+        <!-- Debug outputs moved to bottom -->
+        <div id="debug" style="margin-top:2em;">
+            <h3>Debug: Moves by Round (raw data)</h3>
+            <table id="roundHistoryTable" style="width:100%;margin-bottom:1em;background:#fff8f0;border-radius:8px;box-shadow:0 1px 4px #e0c9a6;">
+                <thead><tr><th>Round</th><th>Human</th><th>Robot</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
     let moveChart, resultChart, roundChart;
     function updateCharts(human_history, stats, round_history) {
-            const moveCounts = [
-                human_history.filter(m => m === 'paper').length,
-                human_history.filter(m => m === 'scissor').length,
-                human_history.filter(m => m === 'stone').length
-            ];
-            const moveData = {
-                labels: ['Paper', 'Scissor', 'Stone'],
-                datasets: [{
-                    label: 'Human Move Distribution',
-                    data: moveCounts,
-                    backgroundColor: ['#2196f3', '#e91e63', '#ff9800']
-                }]
-            };
-            if (moveChart) moveChart.destroy();
-            moveChart = new Chart(document.getElementById('moveChart'), {
-                type: 'bar',
-                data: moveData,
-                options: { scales: { y: { beginAtZero: true } } }
-            });
-
-            // Round history chart (scatter/line)
-            if (roundChart) roundChart.destroy();
-            const moveMap = {'paper': 0, 'scissor': 1, 'stone': 2};
-            const roundLabels = ['Paper', 'Scissor', 'Stone'];
-            const humanPoints = round_history.map(r => ({x: r.round, y: moveMap[r.human]}));
-            const robotPoints = round_history.map(r => ({x: r.round, y: moveMap[r.robot]}));
-            roundChart = new Chart(document.getElementById('roundChart'), {
-                type: 'line',
-                data: {
-                    datasets: [
-                        {label: 'Human', data: humanPoints, borderColor: '#2196f3', backgroundColor: '#2196f3', fill: false, pointRadius: 5, pointStyle: 'circle', showLine: true, tension: 0},
-                        {label: 'Robot', data: robotPoints, borderColor: '#e91e63', backgroundColor: '#e91e63', fill: false, pointRadius: 5, pointStyle: 'triangle', showLine: true, tension: 0}
-                    ]
-                },
-                options: {
-                    scales: {
-                        x: {title: {display: true, text: 'Round'}, type: 'linear', min: 1},
-                        y: {
-                            title: {display: true, text: 'Move'},
-                            type: 'category',
-                            labels: roundLabels,
-                            ticks: {
-                                callback: function(value, index) { return roundLabels[value]; },
-                                stepSize: 1
-                            },
-                            min: 0,
-                            max: 2
-                        }
-                    },
-                    plugins: {
-                        legend: {display: true, position: 'bottom'},
-                        title: {display: true, text: 'Moves by Round'}
-                    }
-                }
-            });
-            const resultData = {
-                labels: ['Human Win', 'Robot Win', 'Tie'],
-                datasets: [{
-                    label: 'Game Results',
-                    data: [stats.human_win, stats.robot_win, stats.tie],
-                    backgroundColor: ['#4caf50', '#f44336', '#9e9e9e']
-                }]
-            };
-            if (resultChart) resultChart.destroy();
-            resultChart = new Chart(document.getElementById('resultChart'), {
-                type: 'pie',
-                data: resultData
-            });
+        // Defensive: ensure round_history is valid
+        if (!Array.isArray(round_history) || round_history.length === 0) {
+            round_history = [];
         }
+        // Move distribution using round_history (bar)
+        const moveMap = {'paper': 0, 'scissor': 1, 'stone': 2};
+        const roundLabels = ['Paper', 'Scissor', 'Stone'];
+        const humanMoves = round_history.map(r => r.human);
+        const moveCounts = [
+            humanMoves.filter(m => m === 'paper').length,
+            humanMoves.filter(m => m === 'scissor').length,
+            humanMoves.filter(m => m === 'stone').length
+        ];
+        const moveData = {
+            labels: roundLabels,
+            datasets: [{
+                label: 'Human Move Distribution',
+                data: moveCounts,
+                backgroundColor: ['#2196f3', '#e91e63', '#ff9800']
+            }]
+        };
+        if (moveChart) moveChart.destroy();
+        moveChart = new Chart(document.getElementById('moveChart'), {
+            type: 'bar',
+            data: moveData,
+            options: { scales: { y: { beginAtZero: true } } }
+        });
+
+        // Moves by round chart (scatter) for clearer visualization
+        if (roundChart) roundChart.destroy();
+        const humanPoints = round_history.map(r => ({x: r.round, y: moveMap[r.human]}));
+        const robotPoints = round_history.map(r => ({x: r.round, y: moveMap[r.robot]}));
+        roundChart = new Chart(document.getElementById('roundChart'), {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    {
+                        label: 'Human',
+                        data: humanPoints,
+                        borderColor: '#2196f3',
+                        backgroundColor: '#2196f3',
+                        pointRadius: 6,
+                        pointStyle: 'circle',
+                        showLine: false
+                    },
+                    {
+                        label: 'Robot',
+                        data: robotPoints,
+                        borderColor: '#e91e63',
+                        backgroundColor: '#e91e63',
+                        pointRadius: 6,
+                        pointStyle: 'triangle',
+                        showLine: false
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    x: {title: {display: true, text: 'Round'}, type: 'linear', min: 1},
+                    y: {
+                        title: {display: true, text: 'Move'},
+                        type: 'category',
+                        labels: roundLabels,
+                        ticks: {
+                            callback: function(value, index) { return roundLabels[value]; },
+                            stepSize: 1
+                        },
+                        min: 0,
+                        max: 2
+                    }
+                },
+                plugins: {
+                    legend: {display: true, position: 'bottom'},
+                    title: {display: true, text: 'Moves by Round (Scatter)'}
+                }
+            }
+        });
+
+        // Pie chart for results
+        const resultData = {
+            labels: ['Human Win', 'Robot Win', 'Tie'],
+            datasets: [{
+                label: 'Game Results',
+                data: [stats.human_win, stats.robot_win, stats.tie],
+                backgroundColor: ['#4caf50', '#f44336', '#9e9e9e']
+            }]
+        };
+        if (resultChart) resultChart.destroy();
+        resultChart = new Chart(document.getElementById('resultChart'), {
+            type: 'pie',
+            data: resultData
+        });
+    }
         let currentDifficulty = document.getElementById('difficulty').value;
         let currentMultiplayer = document.getElementById('multiplayer').checked;
         function submitMove(move) {
@@ -321,6 +353,16 @@
             .then(() => location.reload());
         }
         function updateUI(data) {
+            // Debug: show round_history table
+            const tableBody = document.querySelector('#roundHistoryTable tbody');
+            tableBody.innerHTML = '';
+            if (Array.isArray(data.round_history)) {
+                data.round_history.forEach(r => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${r.round}</td><td>${r.human}</td><td>${r.robot}</td>`;
+                    tableBody.appendChild(tr);
+                });
+            }
             document.getElementById('rounds').textContent = `Rounds played: ${data.round}`;
             document.getElementById('winStats').textContent = `Human Wins: ${data.stats.human_win} | Robot Wins: ${data.stats.robot_win} | Ties: ${data.stats.tie}`;
             document.getElementById('percentStats').textContent = `Win %: ${percent(data.stats.human_win, data.round)} | Robot %: ${percent(data.stats.robot_win, data.round)} | Tie %: ${percent(data.stats.tie, data.round)}`;
@@ -403,18 +445,27 @@
             else if (stone_count > paper_count && stone_count > scissor_count) behavior = 'You tend to favor <b>stone</b>. The robot may adapt to counter this.';
             else behavior = 'Your moves are balanced or unpredictable.';
             document.getElementById('behavior').innerHTML = behavior;
-            updateCharts(data.human_history, data.stats);
+            updateCharts(data.human_history, data.stats, data.round_history);
             // Remove textual result info
             document.getElementById('result').textContent = '';
         }
         function percent(val, total) {
             return total ? ((val / total * 100).toFixed(2)) : '0';
         }
-        // Initial chart render
+        // Initial chart render using /history endpoint
         document.addEventListener('DOMContentLoaded', function() {
             var initialHumanHistory = JSON.parse('{{ human_history|tojson|safe }}');
             var initialStats = JSON.parse('{{ stats|tojson|safe }}');
-            updateCharts(initialHumanHistory, initialStats);
+            fetch('/history')
+                .then(res => res.json())
+                .then(histData => {
+                    let roundHistory = Array.isArray(histData.round_history) ? histData.round_history : [];
+                    updateCharts(initialHumanHistory, initialStats, roundHistory);
+                })
+                .catch(() => {
+                    // fallback to empty roundHistory if fetch fails
+                    updateCharts(initialHumanHistory, initialStats, []);
+                });
         });
     </script>
 </body>
