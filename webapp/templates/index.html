@@ -131,43 +131,45 @@
                 <div id="robot-winner-badge" style="display:none; position:absolute; top:10px; right:10px; background:#2196f3; color:#fff; font-weight:700; padding:4px 12px; border-radius:10px; font-size:1em; box-shadow:0 2px 8px #2196f3; z-index:3;">Winner!</div>
             </div>
         </div>
-        <div style="display: flex; gap: 2.5em; align-items: flex-start;">
-            <div style="flex: 1; min-width: 320px;">
-                <div class="controls">
-                    <label for="difficulty">Difficulty:</label>
-                    <select id="difficulty" onchange="setDifficulty()">
-                        <option value="random" {% if default_difficulty == 'random' %}selected{% endif %}>Random</option>
-                        <option value="frequency" {% if default_difficulty == 'frequency' %}selected{% endif %}>Frequency</option>
-                        <option value="markov" {% if default_difficulty == 'markov' %}selected{% endif %}>Markov Chain</option>
-                        <option value="hybrid" {% if default_difficulty == 'hybrid' %}selected{% endif %}>Hybrid</option>
-                        <option value="decision_tree" {% if default_difficulty == 'decision_tree' %}selected{% endif %}>Decision Tree</option>
-                    </select>
-                    <label for="multiplayer">Multiplayer:</label>
-                    <input type="checkbox" id="multiplayer" onchange="setMultiplayer()">
-                    <form id="moveForm" style="display:inline;">
-                        {% set hotkey_list = ['a', 'w', 'd'] %}
-                        {% for move in moves %}
-                            <button type="button" name="move" value="{{ move }}" id="move-{{ move }}" class="move-btn" onclick="submitMove('{{ move }}')">
-                                <img src="/static/{{ move }}.png" alt="{{ move }}" width="40" height="40" onerror="this.style.display='none';this.insertAdjacentHTML('afterend', '<span style=\'font-size:1.2em;color:#aaa\'>{{ move|capitalize }}</span>')">
-                                <span class="hotkey">({{ hotkey_list[loop.index0] }})</span>
-                            </button>
-                        {% endfor %}
-                    </form>
-                    <button onclick="resetGame()">Reset Game</button>
-                </div>
-                <div id="result"></div>
+        <div class="controls" style="position:absolute; top:32px; right:32px; z-index:10; background:#fff8f0; border-radius:16px; box-shadow:0 2px 8px #e0c9a6; padding:1.2em 1.5em; display:flex; flex-direction:column; align-items:flex-end; gap:1em; min-width:320px;">
+            <label for="difficulty">Difficulty:</label>
+            <select id="difficulty" onchange="setDifficulty()">
+                <option value="random" {% if default_difficulty == 'random' %}selected{% endif %}>Random</option>
+                <option value="frequency" {% if default_difficulty == 'frequency' %}selected{% endif %}>Frequency</option>
+                <option value="markov" {% if default_difficulty == 'markov' %}selected{% endif %}>Markov Chain</option>
+                <option value="hybrid" {% if default_difficulty == 'hybrid' %}selected{% endif %}>Hybrid</option>
+                <option value="decision_tree" {% if default_difficulty == 'decision_tree' %}selected{% endif %}>Decision Tree</option>
+            </select>
+            <label for="multiplayer">Multiplayer:</label>
+            <input type="checkbox" id="multiplayer" onchange="setMultiplayer()">
+            <form id="moveForm" style="display:inline;">
+                {% set hotkey_list = ['a', 'w', 'd'] %}
+                {% for move in moves %}
+                    <button type="button" name="move" value="{{ move }}" id="move-{{ move }}" class="move-btn" onclick="submitMove('{{ move }}')">
+                        <img src="/static/{{ move }}.png" alt="{{ move }}" width="40" height="40" onerror="this.style.display='none';this.insertAdjacentHTML('afterend', '<span style=\'font-size:1.2em;color:#aaa\'>{{ move|capitalize }}</span>')">
+                        <span class="hotkey">({{ hotkey_list[loop.index0] }})</span>
+                    </button>
+                {% endfor %}
+            </form>
+            <button onclick="resetGame()">Reset Game</button>
+        </div>
+        <div style="display: flex; gap: 2em; align-items: flex-start; justify-content:center; margin-bottom:2em;">
+            <div class="chart-container" style="flex:1; min-width:320px;">
+                <canvas id="moveChart" height="260"></canvas>
             </div>
-            <div style="flex: 1.2; min-width: 420px;">
-                <div class="chart-container">
-                    <canvas id="moveChart" height="260"></canvas>
+            <div class="chart-container" style="flex:1; min-width:320px;">
+                <canvas id="resultChart" height="180"></canvas>
+                <div id="result-legend" style="text-align:center; margin-top:0.5em; font-size:1.08em;">
+                    <span style="display:inline-block; width:16px; height:16px; background:#4caf50; border-radius:3px; margin-right:8px; vertical-align:middle;"></span> Human Win
+                    <span style="display:inline-block; width:16px; height:16px; background:#f44336; border-radius:3px; margin-left:18px; margin-right:8px; vertical-align:middle;"></span> Robot Win
+                    <span style="display:inline-block; width:16px; height:16px; background:#9e9e9e; border-radius:3px; margin-left:18px; margin-right:8px; vertical-align:middle;"></span> Tie
                 </div>
-                <div class="chart-container">
-                    <canvas id="resultChart" height="180"></canvas>
-                    <div id="result-legend" style="text-align:center; margin-top:0.5em; font-size:1.08em;">
-                        <span style="display:inline-block; width:16px; height:16px; background:#4caf50; border-radius:3px; margin-right:8px; vertical-align:middle;"></span> Human Win
-                        <span style="display:inline-block; width:16px; height:16px; background:#f44336; border-radius:3px; margin-left:18px; margin-right:8px; vertical-align:middle;"></span> Robot Win
-                        <span style="display:inline-block; width:16px; height:16px; background:#9e9e9e; border-radius:3px; margin-left:18px; margin-right:8px; vertical-align:middle;"></span> Tie
-                    </div>
+            </div>
+            <div class="chart-container" style="flex:1; min-width:320px;">
+                <canvas id="roundChart" height="260"></canvas>
+                <div style="text-align:center; margin-top:0.5em; font-size:1em;">
+                    <span style="color:#2196f3; font-weight:600;">Human</span> |
+                    <span style="color:#e91e63; font-weight:600;">Robot</span>
                 </div>
             </div>
         </div>
@@ -216,8 +218,8 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        let moveChart, resultChart;
-        function updateCharts(human_history, stats) {
+    let moveChart, resultChart, roundChart;
+    function updateCharts(human_history, stats, round_history) {
             const moveCounts = [
                 human_history.filter(m => m === 'paper').length,
                 human_history.filter(m => m === 'scissor').length,
@@ -236,6 +238,42 @@
                 type: 'bar',
                 data: moveData,
                 options: { scales: { y: { beginAtZero: true } } }
+            });
+
+            // Round history chart (scatter/line)
+            if (roundChart) roundChart.destroy();
+            const moveMap = {'paper': 0, 'scissor': 1, 'stone': 2};
+            const roundLabels = ['Paper', 'Scissor', 'Stone'];
+            const humanPoints = round_history.map(r => ({x: r.round, y: moveMap[r.human]}));
+            const robotPoints = round_history.map(r => ({x: r.round, y: moveMap[r.robot]}));
+            roundChart = new Chart(document.getElementById('roundChart'), {
+                type: 'line',
+                data: {
+                    datasets: [
+                        {label: 'Human', data: humanPoints, borderColor: '#2196f3', backgroundColor: '#2196f3', fill: false, pointRadius: 5, pointStyle: 'circle', showLine: true, tension: 0},
+                        {label: 'Robot', data: robotPoints, borderColor: '#e91e63', backgroundColor: '#e91e63', fill: false, pointRadius: 5, pointStyle: 'triangle', showLine: true, tension: 0}
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: {title: {display: true, text: 'Round'}, type: 'linear', min: 1},
+                        y: {
+                            title: {display: true, text: 'Move'},
+                            type: 'category',
+                            labels: roundLabels,
+                            ticks: {
+                                callback: function(value, index) { return roundLabels[value]; },
+                                stepSize: 1
+                            },
+                            min: 0,
+                            max: 2
+                        }
+                    },
+                    plugins: {
+                        legend: {display: true, position: 'bottom'},
+                        title: {display: true, text: 'Moves by Round'}
+                    }
+                }
             });
             const resultData = {
                 labels: ['Human Win', 'Robot Win', 'Tie'],

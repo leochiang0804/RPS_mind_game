@@ -7,6 +7,7 @@ game_state = {
     'human_history': [],
     'robot_history': [],
     'result_history': [],
+    'round_history': [],  # Each entry: {'round': n, 'human': move, 'robot': move}
     'round': 0,
     'stats': {'human_win': 0, 'robot_win': 0, 'tie': 0},
     'difficulty': 'markov',
@@ -107,7 +108,6 @@ def play():
     results = []
     robot_move = robot_strategy(game_state['human_history'], difficulty)
     if multiplayer:
-        # Expect two moves from frontend (for now, use same move twice for demo)
         move2 = data.get('move2', move)
         result1 = get_result(robot_move, move)
         result2 = get_result(robot_move, move2)
@@ -117,6 +117,8 @@ def play():
         game_state['robot_history'].append(robot_move)
         game_state['result_history'].append(result1)
         game_state['result_history'].append(result2)
+        game_state['round_history'].append({'round': game_state['round']+1, 'human': move, 'robot': robot_move})
+        game_state['round_history'].append({'round': game_state['round']+2, 'human': move2, 'robot': robot_move})
         game_state['round'] += 2
         if result1 == 'human':
             game_state['stats']['human_win'] += 1
@@ -136,6 +138,7 @@ def play():
         game_state['human_history'].append(move)
         game_state['robot_history'].append(robot_move)
         game_state['result_history'].append(result)
+        game_state['round_history'].append({'round': game_state['round']+1, 'human': move, 'robot': robot_move})
         game_state['round'] += 1
         if result == 'human':
             game_state['stats']['human_win'] += 1
@@ -150,6 +153,7 @@ def play():
         'human_history': game_state['human_history'],
         'robot_history': game_state['robot_history'],
         'result_history': game_state['result_history'],
+        'round_history': game_state['round_history'],
         'round': game_state['round'],
         'robot_move': robot_move,
         'result': results,
