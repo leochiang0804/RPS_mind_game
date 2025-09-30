@@ -4,6 +4,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from strategy import EnhancedStrategy, FrequencyStrategy, MarkovStrategy
 from change_point_detector import ChangePointDetector
+from coach_tips import CoachTipsGenerator
 
 app = Flask(__name__)
 
@@ -14,6 +15,9 @@ markov_strategy = MarkovStrategy()
 
 # Initialize strategies and change detector with balanced settings for web gameplay
 change_detector = ChangePointDetector(window_size=6, chi2_threshold=3.5, min_segment_length=4)
+
+# Initialize coach tips generator
+coach = CoachTipsGenerator()
 
 game_state = {
     'human_history': [],
@@ -57,14 +61,24 @@ HOTKEYS = {'a': 'paper', 'w': 'scissor', 'd': 'stone'}
 
 @app.route('/')
 def index():
-    # Serve all game state for single-page UI
-    return render_template('index.html', moves=MOVES, hotkeys=HOTKEYS,
+    # Serve all game state for single-page UI - using working template temporarily
+    return render_template('index_working.html', moves=MOVES, hotkeys=HOTKEYS,
         stats=game_state['stats'],
         human_history=game_state['human_history'],
         robot_history=game_state['robot_history'],
         result_history=game_state['result_history'],
         round=game_state['round'],
         default_difficulty=game_state['difficulty'])
+
+@app.route('/test')
+def test():
+    # Simple test page
+    return render_template('test_simple.html')
+
+@app.route('/debug')
+def debug():
+    # Minimal debug page
+    return render_template('minimal_debug.html')
 
 @app.route('/play', methods=['POST'])
 def play():
@@ -203,6 +217,95 @@ def play():
         'change_points': game_state.get('change_points', []),
         'current_strategy': game_state.get('current_strategy', 'unknown')
     })
+
+@app.route('/coaching', methods=['GET'])
+def get_coaching_tips():
+    """Get intelligent coaching tips based on current game state"""
+    # Generate coaching tips
+    tips_data = coach.generate_tips(
+        human_history=game_state['human_history'],
+        robot_history=game_state['robot_history'],
+        result_history=game_state['result_history'],
+        change_points=game_state.get('change_points', []),
+        current_strategy=game_state.get('current_strategy', 'unknown')
+    )
+    
+    return jsonify({
+        'coaching_tips': tips_data['tips'],
+        'experiments': tips_data['experiments'],
+        'insights': tips_data['insights'],
+        'round': game_state['round'],
+        'current_strategy': game_state.get('current_strategy', 'unknown')
+    })
+
+@app.route('/analytics/export', methods=['GET'])
+def export_analytics():
+    """Export analytics data in JSON format"""
+    import math
+    from datetime import datetime
+    
+    try:
+        format_type = request.args.get('format', 'json')
+        
+        # Calculate analytics data
+        history = game_state['human_history']
+        total_moves = len(history)
+        
+        if total_moves == 0:
+            analytics_data = {
+                'message': 'No data available for export',
+                'total_games': 0
+            }
+        else:
+            paper_count = history.count('paper')
+            stone_count = history.count('stone')
+            scissor_count = history.count('scissor')
+            
+            # Calculate predictability (highest percentage)
+            max_count = max(paper_count, stone_count, scissor_count)
+            predictability = (max_count / total_moves) * 100
+            
+            # Calculate win rate
+            win_rate = (game_state['stats']['human_win'] / game_state['round'] * 100) if game_state['round'] > 0 else 0
+            
+            # Calculate entropy (randomness)
+            p1, p2, p3 = paper_count/total_moves, stone_count/total_moves, scissor_count/total_moves
+            entropy = 0
+            for p in [p1, p2, p3]:
+                if p > 0:
+                    entropy -= p * math.log2(p)
+            randomness = (entropy / math.log2(3)) * 100 if entropy > 0 else 0
+            
+            analytics_data = {
+                'timestamp': datetime.now().isoformat(),
+                'total_games': game_state['round'],
+                'total_moves': total_moves,
+                'win_rate': round(win_rate, 2),
+                'predictability_score': round(predictability, 2),
+                'randomness_level': round(randomness, 2),
+                'move_distribution': {
+                    'paper': {'count': paper_count, 'percentage': round((paper_count/total_moves)*100, 2)},
+                    'stone': {'count': stone_count, 'percentage': round((stone_count/total_moves)*100, 2)},
+                    'scissor': {'count': scissor_count, 'percentage': round((scissor_count/total_moves)*100, 2)}
+                },
+                'stats': game_state['stats'],
+                'strategy_changes': len(game_state.get('change_points', [])),
+                'recent_history': history[-20:],  # Last 20 moves
+                'game_metadata': {
+                    'difficulty': game_state['difficulty'],
+                    'multiplayer': game_state['multiplayer']
+                }
+            }
+        
+        if format_type == 'json':
+            response = jsonify(analytics_data)
+            response.headers['Content-Disposition'] = f'attachment; filename=rps_analytics_{datetime.now().strftime("%Y%m%d")}.json'
+            return response
+        else:
+            return jsonify({'error': 'Unsupported format'}), 400
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/stats', methods=['GET'])
 def stats():

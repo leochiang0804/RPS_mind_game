@@ -105,9 +105,18 @@
     </style>
     <script>
         document.addEventListener('keydown', function(e) {
-            const hotkeys = {'a': 'paper', 'w': 'scissor', 'd': 'stone'};
-            if (hotkeys[e.key]) {
-                document.getElementById('move-' + hotkeys[e.key]).click();
+            console.log('Key pressed:', e.key);
+            if (e.key === 'a') {
+                console.log('A pressed - calling submitMove with paper');
+                submitMove('paper');
+            }
+            if (e.key === 'w') {
+                console.log('W pressed - calling submitMove with scissor');
+                submitMove('scissor');
+            }
+            if (e.key === 'd') {
+                console.log('D pressed - calling submitMove with stone');
+                submitMove('stone');
             }
         });
     </script>
@@ -207,6 +216,34 @@
             <div id="change-points-summary" style="margin-top:1em; padding:0.8em; background:#e8f5e8; border-radius:8px; border-left:4px solid #4caf50;">
                 <strong>Strategy Changes Detected: </strong><span id="change-count">0</span>
                 <div id="recent-changes" style="margin-top:0.5em; font-size:0.9em; color:#2e7d32;"></div>
+            </div>
+        </div>
+        
+        <!-- New Coaching Tips Section -->
+        <div class="chart-container" style="width:100%; max-width:1200px; margin:2em auto;">
+            <h3 style="text-align:center; color:#a86e3c; margin-bottom:1em;">🎓 AI Coach - Personalized Tips</h3>
+            <div style="display:flex; gap:1.5em; align-items:flex-start;">
+                <div style="flex:2; background:#fff3e0; border-radius:12px; padding:1.5em; border-left:4px solid #ff9800;">
+                    <h4 style="color:#e65100; margin-top:0; display:flex; align-items:center;">
+                        💡 Your Strategy Tips
+                        <button id="refresh-tips-btn" onclick="refreshCoachingTips()" style="margin-left:auto; padding:0.3em 0.8em; background:#ff9800; color:white; border:none; border-radius:6px; cursor:pointer; font-size:0.8em;">
+                            🔄 Get New Tips
+                        </button>
+                    </h4>
+                    <div id="coaching-tips-list" style="line-height:1.6;">
+                        <p style="color:#666; font-style:italic;">Play a few rounds to get personalized coaching tips!</p>
+                    </div>
+                </div>
+                <div style="flex:1; background:#e8f5e8; border-radius:12px; padding:1.5em; border-left:4px solid #4caf50;">
+                    <h4 style="color:#2e7d32; margin-top:0;">🧪 Experiments to Try</h4>
+                    <div id="experiments-list" style="line-height:1.5;">
+                        <p style="color:#666; font-style:italic;">Suggested strategies will appear here!</p>
+                    </div>
+                </div>
+            </div>
+            <div id="insights-summary" style="margin-top:1em; padding:1em; background:#f3e5f5; border-radius:8px; border-left:4px solid #9c27b0; display:none;">
+                <h4 style="color:#6a1b9a; margin-top:0;">📊 Pattern Analysis</h4>
+                <div id="insights-content" style="font-size:0.9em; color:#4a148c;"></div>
             </div>
         </div>
         <div id="stats" style="margin-top:2.5em;">
@@ -473,11 +510,27 @@
             }
         });
     }
-        let currentDifficulty = document.getElementById('difficulty').value;
-        let currentMultiplayer = document.getElementById('multiplayer').checked;
+        let currentDifficulty = 'enhanced'; // Default value
+        let currentMultiplayer = false; // Default value
+        
+        // Initialize values when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const difficultySelect = document.getElementById('difficulty');
+            const multiplayerCheck = document.getElementById('multiplayer');
+            if (difficultySelect) currentDifficulty = difficultySelect.value;
+            if (multiplayerCheck) currentMultiplayer = multiplayerCheck.checked;
+        });
+        
         function submitMove(move) {
-            let payload = {move, difficulty: currentDifficulty, multiplayer: currentMultiplayer};
-            if (currentMultiplayer) {
+            console.log('submitMove called with:', move);
+            
+            // Use safe default values
+            const difficulty = currentDifficulty || 'enhanced';
+            const multiplayer = currentMultiplayer || false;
+            
+            let payload = {move, difficulty, multiplayer};
+            
+            if (multiplayer) {
                 let move2 = prompt('Player 2, choose paper, scissor, or stone:');
                 if (!['paper','scissor','stone'].includes(move2)) {
                     alert('Invalid move for Player 2.');
@@ -485,13 +538,26 @@
                 }
                 payload.move2 = move2;
             }
+            
+            console.log('Sending payload:', payload);
+            
             fetch('/play', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(payload)
             })
-            .then(res => res.json())
-            .then(data => updateUI(data));
+            .then(res => {
+                console.log('Received response status:', res.status);
+                return res.json();
+            })
+            .then(data => {
+                console.log('Received data:', data);
+                updateUI(data);
+            })
+            .catch(error => {
+                console.error('Error in submitMove:', error);
+                alert('Error making move: ' + error.message);
+            });
         }
         function setDifficulty() {
             currentDifficulty = document.getElementById('difficulty').value;
@@ -598,6 +664,83 @@
             
             // Update strategy timeline
             updateStrategyTimeline(strategyHistory, data.change_points || []);
+            
+            // Auto-refresh coaching tips every 5 rounds
+            if (data.round > 0 && data.round % 5 === 0) {
+                refreshCoachingTips();
+            }
+        }
+        
+        function refreshCoachingTips() {
+            fetch('/coaching')
+            .then(res => res.json())
+            .then(data => updateCoachingTips(data))
+            .catch(err => console.log('Coaching tips unavailable:', err));
+        }
+        
+        function updateCoachingTips(coachingData) {
+            const tipsContainer = document.getElementById('coaching-tips-list');
+            const experimentsContainer = document.getElementById('experiments-list');
+            const insightsContainer = document.getElementById('insights-content');
+            const insightsSummary = document.getElementById('insights-summary');
+            
+            // Update tips
+            if (coachingData.coaching_tips && coachingData.coaching_tips.length > 0) {
+                const tipsHtml = coachingData.coaching_tips.map((tip, index) => 
+                    `<div style="margin-bottom:0.8em; padding:0.6em; background:rgba(255,152,0,0.1); border-radius:6px;">
+                        <strong>${index + 1}.</strong> ${tip}
+                    </div>`
+                ).join('');
+                tipsContainer.innerHTML = tipsHtml;
+            } else {
+                tipsContainer.innerHTML = '<p style="color:#666; font-style:italic;">Keep playing to get personalized tips!</p>';
+            }
+            
+            // Update experiments
+            if (coachingData.experiments && coachingData.experiments.length > 0) {
+                const experimentsHtml = coachingData.experiments.map(exp => 
+                    `<div style="margin-bottom:1em; padding:0.8em; background:rgba(76,175,80,0.1); border-radius:6px;">
+                        <strong style="color:#2e7d32;">${exp.name}</strong><br>
+                        <small style="color:#388e3c;">${exp.description}</small><br>
+                        <em style="font-size:0.85em; color:#4caf50;">${exp.strategy}</em>
+                    </div>`
+                ).join('');
+                experimentsContainer.innerHTML = experimentsHtml;
+            } else {
+                experimentsContainer.innerHTML = '<p style="color:#666; font-style:italic;">Experiment suggestions coming soon!</p>';
+            }
+            
+            // Update insights (optional)
+            if (coachingData.insights && Object.keys(coachingData.insights).length > 0) {
+                const insights = coachingData.insights;
+                let insightsHtml = '';
+                
+                if (insights.predictability !== undefined) {
+                    const predPercent = (insights.predictability * 100).toFixed(1);
+                    insightsHtml += `<p><strong>Predictability:</strong> ${predPercent}% - `;
+                    insightsHtml += insights.predictability > 0.6 ? 'Too predictable!' : 'Good unpredictability';
+                    insightsHtml += '</p>';
+                }
+                
+                if (insights.pattern_type) {
+                    insightsHtml += `<p><strong>Pattern Type:</strong> ${insights.pattern_type.replace('_', ' ')}</p>`;
+                }
+                
+                if (insights.recent_performance) {
+                    const winRate = (insights.recent_performance.win_rate * 100).toFixed(1);
+                    insightsHtml += `<p><strong>Recent Win Rate:</strong> ${winRate}%</p>`;
+                }
+                
+                if (insightsHtml) {
+                    insightsContainer.innerHTML = insightsHtml;
+                    insightsSummary.style.display = 'block';
+                } else {
+                    insightsSummary.style.display = 'none';
+                }
+            } else {
+                insightsSummary.style.display = 'none';
+            }
+        }
             // Winner highlight logic
             let humanMove = data.human_history.length ? data.human_history[data.human_history.length-1] : null;
             let robotMove = data.robot_move;
@@ -670,20 +813,14 @@
         function percent(val, total) {
             return total ? ((val / total * 100).toFixed(2)) : '0';
         }
-        // Initial chart render using /history endpoint
+        // Initial chart render using /history endpoint - COMPLETELY DISABLED FOR DEBUGGING
         document.addEventListener('DOMContentLoaded', function() {
-            var initialHumanHistory = JSON.parse('{{ human_history|tojson|safe }}');
-            var initialStats = JSON.parse('{{ stats|tojson|safe }}');
-            fetch('/history')
-                .then(res => res.json())
-                .then(histData => {
-                    let roundHistory = Array.isArray(histData.round_history) ? histData.round_history : [];
-                    updateCharts(initialHumanHistory, initialStats, roundHistory);
-                })
-                .catch(() => {
-                    // fallback to empty roundHistory if fetch fails
-                    updateCharts(initialHumanHistory, initialStats, []);
-                });
+            console.log('DOM loaded - starting minimal initialization');
+            
+            // SKIP ALL CHART AND DATA PROCESSING FOR NOW
+            console.log('Skipping all chart initialization to test basic functionality');
+            console.log('Page should be ready for input now');
+        });
         });
     </script>
 </body>

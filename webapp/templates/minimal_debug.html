@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Minimal Debug Page</title>
+</head>
+<body>
+    <h1>Minimal Debug Test</h1>
+    <p>This page has minimal code to test if the issue is in the complex template.</p>
+    
+    <div>
+        <button onclick="testMove('paper')" id="move-paper">Paper (A)</button>
+        <button onclick="testMove('scissor')" id="move-scissor">Scissor (W)</button>
+        <button onclick="testMove('stone')" id="move-stone">Stone (D)</button>
+    </div>
+    
+    <div id="result">Press buttons or A/W/D keys</div>
+    
+    <script>
+        console.log('Minimal page script loaded');
+        
+        document.addEventListener('keydown', function(e) {
+            console.log('Key pressed:', e.key);
+            if (e.key === 'a') testMove('paper');
+            if (e.key === 'w') testMove('scissor');
+            if (e.key === 'd') testMove('stone');
+        });
+        
+        function testMove(move) {
+            console.log('testMove called:', move);
+            document.getElementById('result').textContent = 'Testing move: ' + move;
+            
+            fetch('/play', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({move: move, difficulty: 'enhanced', multiplayer: false})
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Success:', data);
+                document.getElementById('result').innerHTML = 
+                    'Round ' + data.round + ': You=' + move + ', Computer=' + data.robot_move + 
+                    ', Result=' + data.result;
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                document.getElementById('result').textContent = 'Error: ' + err.message;
+            });
+        }
+        
+        console.log('Minimal page ready');
+    </script>
+</body>
+</html>
