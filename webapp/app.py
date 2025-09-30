@@ -143,8 +143,8 @@ HOTKEYS = {'a': 'paper', 'w': 'scissor', 'd': 'stone'}
 
 @app.route('/')
 def index():
-    # Serve all game state for single-page UI - using working template that user likes
-    return render_template('index_working.html', moves=MOVES, hotkeys=HOTKEYS,
+    # Serve all game state for single-page UI - using main index.html template
+    return render_template('index.html', moves=MOVES, hotkeys=HOTKEYS,
         stats=game_state['stats'],
         human_history=game_state['human_history'],
         robot_history=game_state['robot_history'],

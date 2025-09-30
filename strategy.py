@@ -1,6 +1,6 @@
 # Strategy interface and implementations for difficulty levels
 import random
-from ml_model import MLModel
+from collections import defaultdict, deque
 from ml_model_enhanced import EnhancedMLModel
 
 class Strategy:
@@ -54,7 +54,7 @@ class FrequencyStrategy(Strategy):
 
 class MarkovStrategy(Strategy):
     def __init__(self):
-        self.model = MLModel()
+        self.model = EnhancedMLModel()
     def train(self, history):
         self.model.train(history)
     def predict(self, history):
