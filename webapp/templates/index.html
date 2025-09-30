@@ -80,6 +80,90 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="overview-insights">
+                                <div class="overview-section">
+                                    <h3 class="overview-title">Full Game Snapshot</h3>
+                                    <div class="overview-grid">
+                                        <div class="overview-card">
+                                            <span class="label">Rounds</span>
+                                            <span class="value" id="overview-total-rounds">0</span>
+                                        </div>
+                                        <div class="overview-card">
+                                            <span class="label">Human Win Rate</span>
+                                            <span class="value" id="overview-human-winrate">--%</span>
+                                        </div>
+                                        <div class="overview-card">
+                                            <span class="label">Robot Win Rate</span>
+                                            <span class="value" id="overview-robot-winrate">--%</span>
+                                        </div>
+                                        <div class="overview-card">
+                                            <span class="label">Tie Rate</span>
+                                            <span class="value" id="overview-tie-rate">--%</span>
+                                        </div>
+                                        <div class="overview-card">
+                                            <span class="label">Longest Your Streak</span>
+                                            <span class="value" id="overview-longest-human">--</span>
+                                        </div>
+                                        <div class="overview-card">
+                                            <span class="label">Longest Robot Streak</span>
+                                            <span class="value" id="overview-longest-robot">--</span>
+                                        </div>
+                                        <div class="overview-card">
+                                            <span class="label">Most Common Move</span>
+                                            <span class="value" id="overview-common-move">--</span>
+                                        </div>
+                                        <div class="overview-card">
+                                            <span class="label">AI Prediction Accuracy</span>
+                                            <span class="value" id="overview-ai-accuracy">--%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="overview-section">
+                                    <h3 class="overview-title">Recent Momentum (Last 10)</h3>
+                                    <div class="overview-grid">
+                                        <div class="overview-card">
+                                            <span class="label">Recent Win Rate</span>
+                                            <span class="value" id="overview-recent-winrate">--%</span>
+                                        </div>
+                                        <div class="overview-card">
+                                            <span class="label">Current Streak</span>
+                                            <span class="value" id="overview-current-streak">--</span>
+                                        </div>
+                                        <div class="overview-card">
+                                            <span class="label">Recent Bias</span>
+                                            <span class="value" id="overview-recent-move">--</span>
+                                        </div>
+                                        <div class="overview-card">
+                                            <span class="label">Score Differential</span>
+                                            <span class="value" id="overview-score-diff">0</span>
+                                        </div>
+                                        <div class="overview-card">
+                                            <span class="label">Pattern Changes</span>
+                                            <span class="value" id="overview-pattern-changes">0</span>
+                                        </div>
+                                        <div class="overview-card">
+                                            <span class="label">AI Confidence</span>
+                                            <span class="value" id="overview-ai-confidence">--%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="overview-section">
+                                    <h3 class="overview-title">Strategic Intelligence</h3>
+                                    <div class="overview-grid">
+                                        <div class="overview-card wide">
+                                            <span class="label">Predictability Score</span>
+                                            <span class="value" id="overview-predictability">--</span>
+                                            <span class="hint">Lower is better for humans</span>
+                                        </div>
+                                        <div class="overview-card wide">
+                                            <span class="label">Adaptation Rate</span>
+                                            <span class="value" id="overview-adaptation">--</span>
+                                            <span class="hint">How quickly you adjust</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="overview-summary" id="overview-recommendation">Awaiting gameplay data...</div>
+                            </div>
                         </div>
                         <div class="mode-panel active" data-mode="top-controls">
                             <div class="control-grid">
@@ -112,6 +196,17 @@
                                             <option value="professor">🔬 The Professor (Analytical)</option>
                                             <option value="wildcard">🃏 The Wildcard (Unpredictable)</option>
                                             <option value="mirror">🪞 The Mirror (Mimicking)</option>
+                                        </select>
+                                    </div>
+                                    <div class="select-card">
+                                        <label for="game-length">⏱️ Game Length</label>
+                                        <select id="game-length" onchange="setGameLength()">
+                                            <option value="infinite" selected>Infinite</option>
+                                            <option value="50">50 Moves</option>
+                                            <option value="100">100 Moves</option>
+                                            <option value="250">250 Moves</option>
+                                            <option value="500">500 Moves</option>
+                                            <option value="1000">1000 Moves</option>
                                         </select>
                                     </div>
                                 </div>
@@ -280,17 +375,21 @@
                                             <canvas id="moveDistributionChart"></canvas>
                                         </div>
                                         <div class="chart-card">
-                                            <h4>Model Accuracy Comparison</h4>
+                                            <h4>Win Rate Trend</h4>
+                                            <canvas id="winRateTrendChart"></canvas>
+                                        </div>
+                                        <div class="chart-card">
+                                            <h4>Score Differential</h4>
+                                            <canvas id="scoreDifferentialChart"></canvas>
+                                        </div>
+                                        <div class="chart-card">
+                                            <h4>Model Performance Metrics</h4>
                                             <canvas id="modelAccuracyChart"></canvas>
                                         </div>
-                                        <div class="chart-card">
-                                            <h4>Strategy Timeline</h4>
-                                            <canvas id="strategyTimelineChart"></canvas>
-                                        </div>
-                                        <div class="chart-card">
-                                            <h4>Prediction Confidence Trends</h4>
-                                            <canvas id="confidenceTrendChart"></canvas>
-                                        </div>
+                                    </div>
+                                    <div class="chart-card">
+                                        <h4>Model Confidence Trends</h4>
+                                        <canvas id="confidenceTrendChart"></canvas>
                                     </div>
                                     <div class="chart-card wide">
                                         <h4>🤖 Model Prediction Tracking</h4>
@@ -303,19 +402,19 @@
                                             </label>
                                             <label class="prediction-option">
                                                 <input type="checkbox" data-dataset-index="2">
-                                                Random Prediction
-                                            </label>
-                                            <label class="prediction-option">
-                                                <input type="checkbox" data-dataset-index="3">
                                                 Frequency Prediction
                                             </label>
                                             <label class="prediction-option">
-                                                <input type="checkbox" data-dataset-index="4">
+                                                <input type="checkbox" data-dataset-index="3">
                                                 Markov Prediction
                                             </label>
                                             <label class="prediction-option">
-                                                <input type="checkbox" data-dataset-index="5">
+                                                <input type="checkbox" data-dataset-index="4">
                                                 Enhanced Prediction
+                                            </label>
+                                            <label class="prediction-option">
+                                                <input type="checkbox" data-dataset-index="5">
+                                                LSTM Prediction
                                             </label>
                                             <label class="prediction-option">
                                                 <input type="checkbox" id="prediction-range-toggle">
@@ -446,10 +545,14 @@
         // Chart variables
         let moveDistributionChart = null;
         let winRateTrendChart = null;
-        let strategyTimelineChart = null;
+        let scoreDifferentialChart = null;
         let modelPredictionChart = null;
         let modelAccuracyChart = null;
         let confidenceTrendChart = null;
+
+        let currentGameLimit = null; // Will be set from dropdown on page load
+        let isGameFrozen = false;
+        let defaultResultMessage = '';
         
         // Initialize charts when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
@@ -472,6 +575,12 @@
             updateRobotCharacter(currentDifficulty, currentStrategy, currentPersonality);
             setTimeout(() => updateRobotConversation(currentPersonality, 'start'), 200);
             setupModeTabs();
+
+            const resultElement = document.getElementById('result');
+            if (resultElement) {
+                defaultResultMessage = resultElement.textContent;
+            }
+            setGameLength();
         });
         
         // Keyboard controls
@@ -539,7 +648,9 @@
                 showAllToggle.checked = false;
                 showAllToggle.addEventListener('change', () => {
                     if (lastChartData) {
-                        updateCharts(lastChartData);
+                        const insights = deriveGameInsights(lastChartData);
+                        updateOverviewPanel(insights);
+                        updateCharts(lastChartData, insights);
                     }
                 });
             }
@@ -548,6 +659,429 @@
                 highlightMatches();
             }
         }
+
+        function parseGameLimit(value) {
+            return value === 'infinite' ? Infinity : parseInt(value, 10);
+        }
+
+        function setMoveButtonsDisabled(disabled) {
+            document.querySelectorAll('.move-btn').forEach(btn => {
+                btn.disabled = disabled;
+                btn.classList.toggle('is-disabled', disabled);
+            });
+        }
+
+        function setGameLength() {
+            const select = document.getElementById('game-length');
+            if (!select) return;
+            currentGameLimit = parseGameLimit(select.value);
+            if (!Number.isFinite(currentGameLimit)) {
+                currentGameLimit = Infinity;
+            }
+
+            if (isGameFrozen && lastChartData && (lastChartData.round || 0) < currentGameLimit) {
+                isGameFrozen = false;
+                setMoveButtonsDisabled(false);
+                const resultElement = document.getElementById('result');
+                if (resultElement && defaultResultMessage) {
+                    resultElement.textContent = defaultResultMessage;
+                }
+            }
+
+            if (lastChartData) {
+                const insights = deriveGameInsights(lastChartData);
+                updateOverviewPanel(insights);
+                updateCharts(lastChartData, insights);
+            }
+        }
+
+        function freezeGame(data, insights) {
+            if (isGameFrozen) return;
+            isGameFrozen = true;
+            setMoveButtonsDisabled(true);
+            renderPostGameSummary(insights);
+        }
+
+        function renderPostGameSummary(insights) {
+            const resultElement = document.getElementById('result');
+            if (!resultElement) return;
+            const summaryLines = [
+                'Final score: You ' + insights.humanWins + ' - Robot ' + insights.robotWins + ' (ties ' + insights.ties + ').',
+                'Overall win rate: ' + insights.humanWinRate.toFixed(1) + '% (last 10 rounds: ' + insights.recentHumanWinRate.toFixed(1) + '%).',
+                'Longest streaks — You: ' + insights.longestHumanStreak + ' | Robot: ' + insights.longestRobotStreak + '.',
+                'Most common move: ' + insights.mostCommonMove + ' (' + insights.mostCommonMovePercent.toFixed(1) + '%).',
+                insights.recommendation
+            ];
+            resultElement.innerHTML = '<h3>Match Complete</h3><p>' + summaryLines.join('<br>') + '</p>';
+        }
+
+        function showGameSummaryModal(insights) {
+            // Create modal overlay
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px);
+                display: flex; justify-content: center; align-items: center;
+                z-index: 10000; animation: fadeIn 0.3s ease;
+            `;
+            
+            // Create modal content
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                border: 2px solid rgba(99, 102, 241, 0.4);
+                border-radius: 16px; padding: 30px; max-width: 600px; width: 90%;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+                animation: slideIn 0.4s ease;
+            `;
+            
+            // Game completion message
+            const gameLengthText = Number.isFinite(currentGameLimit) ? `${currentGameLimit}-move` : 'unlimited';
+            
+            modal.innerHTML = `
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <h2 style="color: #6366f1; margin: 0 0 10px 0; font-size: 1.8em;">🎯 Game Complete!</h2>
+                    <p style="color: #a5b4ff; margin: 0; opacity: 0.8;">Your ${gameLengthText} match has ended</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                    <div style="background: rgba(20, 32, 70, 0.6); padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="color: #34d399; font-size: 1.4em; font-weight: bold;">${insights.humanWins}</div>
+                        <div style="color: #ccd6ff; font-size: 0.9em;">Your Wins</div>
+                    </div>
+                    <div style="background: rgba(20, 32, 70, 0.6); padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="color: #f87171; font-size: 1.4em; font-weight: bold;">${insights.robotWins}</div>
+                        <div style="color: #ccd6ff; font-size: 0.9em;">Robot Wins</div>
+                    </div>
+                    <div style="background: rgba(20, 32, 70, 0.6); padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="color: #a5b4ff; font-size: 1.4em; font-weight: bold;">${insights.ties || 0}</div>
+                        <div style="color: #ccd6ff; font-size: 0.9em;">Ties</div>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(15, 23, 42, 0.8); padding: 20px; border-radius: 10px; margin-bottom: 25px;">
+                    <h3 style="color: #e2e8f0; margin: 0 0 15px 0; font-size: 1.2em;">📊 Performance Summary</h3>
+                    <div style="color: #ccd6ff; line-height: 1.6;">
+                        <div>🎯 <strong>Win Rate:</strong> ${insights.humanWinRate.toFixed(1)}% overall, ${insights.recentHumanWinRate.toFixed(1)}% recent</div>
+                        <div>🔥 <strong>Best Streak:</strong> ${insights.longestHumanStreak} wins in a row</div>
+                        <div>📈 <strong>Favorite Move:</strong> ${insights.mostCommonMove} (${insights.mostCommonMovePercent.toFixed(1)}%)</div>
+                        <div style="margin-top: 10px; padding: 10px; background: rgba(99, 102, 241, 0.1); border-left: 3px solid #6366f1;">
+                            💡 <strong>Insight:</strong> ${insights.recommendation}
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 12px; justify-content: center;">
+                    <button onclick="this.closest('[style*=\"position: fixed\"]').remove(); resetGame();" 
+                            style="padding: 12px 24px; background: linear-gradient(135deg, #6366f1, #8b5cf6); 
+                                   color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        🔄 Play Again
+                    </button>
+                    <button onclick="this.closest('[style*=\"position: fixed\"]').remove();" 
+                            style="padding: 12px 24px; background: rgba(255, 255, 255, 0.1); 
+                                   color: #ccd6ff; border: 1px solid rgba(255, 255, 255, 0.2); 
+                                   border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        📊 View Analytics
+                    </button>
+                </div>
+            `;
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            
+            // Add animations
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes slideIn { from { transform: translateY(-20px) scale(0.95); opacity: 0; } 
+                                     to { transform: translateY(0) scale(1); opacity: 1; } }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function determineWinner(humanMove, robotMove) {
+            if (!humanMove || !robotMove) return 'unknown';
+            if (humanMove === robotMove) return 'tie';
+            const normalizedHuman = humanMove.toLowerCase();
+            const normalizedRobot = robotMove.toLowerCase();
+            const winMap = { 'rock': 'scissor', 'stone': 'scissor', 'scissor': 'paper', 'paper': 'rock' };
+            return winMap[normalizedHuman] === normalizedRobot ? 'human' : 'robot';
+        }
+
+        function computeRollingAccuracy(predictions, actual) {
+            const series = [];
+            let considered = 0;
+            let correct = 0;
+            for (let i = 0; i < actual.length; i++) {
+                const target = actual[i];
+                const guess = predictions[i];
+                if (target !== null && target !== undefined) {
+                    if (guess !== null && guess !== undefined) {
+                        considered += 1;
+                        if (guess === target) correct += 1;
+                    }
+                }
+                const value = considered > 0 ? (correct / considered) * 100 : 0;
+                series.push(value);
+            }
+            return series;
+        }
+
+        function formatMoveName(move) {
+            if (!move || move === 'unknown') return '—';
+            const normalized = move.toLowerCase();
+            if (normalized === 'stone') return 'Rock';
+            return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+        }
+
+        function deriveGameInsights(data) {
+            const stats = data.stats || {};
+            const humanHistory = data.human_history ? data.human_history.slice() : [];
+            const robotHistory = data.robot_history ? data.robot_history.slice() : [];
+            const toNumber = (move) => {
+                if (!move) return null;
+                const normalized = move.toLowerCase();
+                if (normalized === 'paper') return 2;
+                if (normalized === 'rock' || normalized === 'stone') return 1;
+                if (normalized === 'scissor') return 0;
+                return null;
+            };
+
+            const humanNumeric = humanHistory.map(toNumber);
+            const winners = [];
+            let scoreDiff = 0;
+            const scoreDifferentialSeries = [];
+            let bestHumanStreak = 0;
+            let bestRobotStreak = 0;
+            let streakOwner = 'tie';
+            let streakLength = 0;
+
+            humanHistory.forEach((humanMove, index) => {
+                const robotMove = robotHistory[index];
+                const winner = determineWinner(humanMove, robotMove);
+                winners.push(winner);
+                if (winner === 'human') scoreDiff += 1;
+                if (winner === 'robot') scoreDiff -= 1;
+                scoreDifferentialSeries.push(scoreDiff);
+
+                if (winner === streakOwner) {
+                    streakLength += 1;
+                } else {
+                    streakOwner = winner;
+                    streakLength = 1;
+                }
+
+                if (winner === 'human') {
+                    if (streakLength > bestHumanStreak) bestHumanStreak = streakLength;
+                } else if (winner === 'robot') {
+                    if (streakLength > bestRobotStreak) bestRobotStreak = streakLength;
+                }
+            });
+
+            const moveCounts = humanHistory.reduce((acc, move) => {
+                if (!move) return acc;
+                const normalized = move.toLowerCase();
+                acc[normalized] = (acc[normalized] || 0) + 1;
+                return acc;
+            }, {});
+            const totalRounds = data.round || humanHistory.length || 0;
+            let mostCommonMove = '—';
+            let mostCommonMovePercent = 0;
+            Object.entries(moveCounts).forEach(([move, count]) => {
+                const percent = totalRounds > 0 ? (count / totalRounds) * 100 : 0;
+                if (percent > mostCommonMovePercent) {
+                    mostCommonMovePercent = percent;
+                    mostCommonMove = formatMoveName(move);
+                }
+            });
+
+            const padPredictions = (predictions) => {
+                const copy = Array.isArray(predictions) ? predictions.map(toNumber) : [];
+                while (copy.length < humanNumeric.length) copy.push(null);
+                return copy;
+            };
+
+            const frequencyPreds = padPredictions(data.model_predictions_history?.frequency || []);
+            const markovPreds = padPredictions(data.model_predictions_history?.markov || []);
+            const enhancedPreds = padPredictions(data.model_predictions_history?.enhanced || []);
+            const lstmPreds = padPredictions(data.model_predictions_history?.lstm || []);
+
+            const accuracySeries = {
+                frequency: computeRollingAccuracy(frequencyPreds, humanNumeric),
+                markov: computeRollingAccuracy(markovPreds, humanNumeric),
+                enhanced: computeRollingAccuracy(enhancedPreds, humanNumeric),
+                lstm: computeRollingAccuracy(lstmPreds, humanNumeric)
+            };
+
+            const recentSample = winners.slice(-10);
+            const humanWins = stats.human_win || 0;
+            const robotWins = stats.robot_win || 0;
+            const ties = stats.tie || 0;
+            const total = humanWins + robotWins + ties;
+            const humanWinRate = total > 0 ? (humanWins / total) * 100 : 0;
+            const robotWinRate = total > 0 ? (robotWins / total) * 100 : 0;
+            const tieRate = total > 0 ? (ties / total) * 100 : 0;
+
+            const recentHumanWins = recentSample.filter(w => w === 'human').length;
+            const recentRobotWins = recentSample.filter(w => w === 'robot').length;
+            const recentTotal = recentSample.length || 1;
+            const recentHumanWinRate = (recentHumanWins / recentTotal) * 100;
+            const recentRobotWinRate = (recentRobotWins / recentTotal) * 100;
+
+            let currentStreakOwner = 'tie';
+            let currentStreakLength = 0;
+            for (let i = winners.length - 1; i >= 0; i--) {
+                const w = winners[i];
+                if (w === 'unknown' || w === 'tie') break;
+                if (currentStreakOwner === 'tie') {
+                    currentStreakOwner = w;
+                    currentStreakLength = 1;
+                } else if (w === currentStreakOwner) {
+                    currentStreakLength += 1;
+                } else {
+                    break;
+                }
+            }
+            if (currentStreakOwner === 'tie') {
+                currentStreakLength = 0;
+            }
+
+            const recentMoves = humanHistory.slice(-10);
+            const recentCounts = recentMoves.reduce((acc, move) => {
+                if (!move) return acc;
+                const normalized = move.toLowerCase();
+                acc[normalized] = (acc[normalized] || 0) + 1;
+                return acc;
+            }, {});
+            let recentBiasMove = '—';
+            let recentBiasPercent = 0;
+            Object.entries(recentCounts).forEach(([move, count]) => {
+                const percent = (count / (recentMoves.length || 1)) * 100;
+                if (percent > recentBiasPercent) {
+                    recentBiasPercent = percent;
+                    recentBiasMove = formatMoveName(move);
+                }
+            });
+
+            let recommendation = 'Keep monitoring the robot’s shifts and respond with quick pattern changes.';
+            if (recentBiasPercent > 55) {
+                recommendation = 'Your play leans heavily on ' + recentBiasMove + '. Mix in other moves to stay unpredictable.';
+            } else if (recentHumanWinRate < 40) {
+                recommendation = 'Robot momentum is building. Consider switching to the move that counters its recent streak.';
+            } else if (humanWinRate > 60) {
+                recommendation = 'Great control! Maintain variation to protect your edge.';
+            }
+
+            return {
+                totalRounds,
+                humanWins,
+                robotWins,
+                ties,
+                humanWinRate,
+                robotWinRate,
+                tieRate,
+                mostCommonMove,
+                mostCommonMovePercent,
+                scoreDifferentialSeries,
+                accuracySeries,
+                recentHumanWinRate,
+                recentRobotWinRate,
+                recentBiasMove,
+                recentBiasPercent,
+                currentStreakOwner,
+                currentStreakLength,
+                longestHumanStreak: bestHumanStreak,
+                longestRobotStreak: bestRobotStreak,
+                winners,
+                humanNumeric,
+                frequencyPreds,
+                markovPreds,
+                enhancedPreds,
+                lstmPreds,
+                recommendation,
+                moveVariance: calculateMoveVariance(humanHistory),
+                patternChanges: calculatePatternChanges(humanHistory),
+                aiAccuracy: total > 0 ? (robotWins / total * 100) : 0,
+                aiConfidence: data.difficulty === 'lstm' ? 85 : 
+                             data.difficulty === 'enhanced' ? 70 : 
+                             data.difficulty === 'markov' ? 60 : 
+                             data.difficulty === 'frequency' ? 45 : 33
+            };
+        }
+
+        // Helper functions for Strategic Intelligence metrics
+        function calculateMoveVariance(moveHistory) {
+            if (!moveHistory || moveHistory.length < 3) return 0;
+            
+            const moveCounts = { paper: 0, stone: 0, scissor: 0 };
+            moveHistory.forEach(move => {
+                const normalized = move ? move.toLowerCase() : '';
+                if (moveCounts.hasOwnProperty(normalized)) {
+                    moveCounts[normalized]++;
+                }
+            });
+            
+            const total = moveHistory.length;
+            const expectedFreq = total / 3; // Perfectly random would be 33.33% each
+            const variance = Object.values(moveCounts).reduce((sum, count) => {
+                return sum + Math.pow(count - expectedFreq, 2);
+            }, 0) / 3;
+            
+            // Convert to 0-100 scale (higher = more predictable)
+            return Math.min(100, (variance / expectedFreq) * 50);
+        }
+
+        function calculatePatternChanges(moveHistory) {
+            if (!moveHistory || moveHistory.length < 5) return 0;
+            
+            let changes = 0;
+            let consecutiveCount = 1;
+            
+            for (let i = 1; i < moveHistory.length; i++) {
+                if (moveHistory[i] === moveHistory[i-1]) {
+                    consecutiveCount++;
+                } else {
+                    if (consecutiveCount >= 2) changes++; // Pattern break detected
+                    consecutiveCount = 1;
+                }
+            }
+            
+            // Calculate adaptation rate (higher = more adaptive)
+            const totalPossibleChanges = Math.max(1, moveHistory.length - 1);
+            return Math.min(100, (changes / totalPossibleChanges) * 200);
+        }
+
+        function updateOverviewPanel(insights) {
+            document.getElementById('overview-total-rounds').textContent = insights.totalRounds;
+            document.getElementById('overview-human-winrate').textContent = insights.humanWinRate.toFixed(1) + '%';
+            document.getElementById('overview-robot-winrate').textContent = insights.robotWinRate.toFixed(1) + '%';
+            document.getElementById('overview-tie-rate').textContent = insights.tieRate.toFixed(1) + '%';
+            document.getElementById('overview-longest-human').textContent = insights.longestHumanStreak || 0;
+            document.getElementById('overview-longest-robot').textContent = insights.longestRobotStreak || 0;
+            document.getElementById('overview-common-move').textContent = insights.mostCommonMove;
+            document.getElementById('overview-recent-winrate').textContent = insights.recentHumanWinRate.toFixed(1) + '%';
+            const streakLabel = insights.currentStreakLength > 0 ? ((insights.currentStreakOwner === 'human' ? 'Your ' : 'Robot ') + insights.currentStreakLength + ' streak') : 'No streak';
+            document.getElementById('overview-current-streak').textContent = streakLabel;
+            document.getElementById('overview-recent-move').textContent = insights.recentBiasMove !== '—' ? insights.recentBiasMove + ' (' + insights.recentBiasPercent.toFixed(1) + '%)' : '—';
+            const scoreDiff = insights.humanWins - insights.robotWins;
+            document.getElementById('overview-score-diff').textContent = scoreDiff;
+            
+            // New metrics for Strategic Intelligence
+            document.getElementById('overview-ai-accuracy').textContent = insights.aiAccuracy.toFixed(1) + '%';
+            document.getElementById('overview-pattern-changes').textContent = Math.round(insights.patternChanges);
+            document.getElementById('overview-ai-confidence').textContent = insights.aiConfidence + '%';
+            
+            // Calculate predictability (higher moveVariance = more predictable)
+            const predictabilityScore = insights.moveVariance || 33.3;
+            document.getElementById('overview-predictability').textContent = predictabilityScore.toFixed(1) + '%';
+            
+            // Calculate adaptation rate (pattern changes)
+            const adaptationRate = insights.patternChanges || 0;
+            document.getElementById('overview-adaptation').textContent = adaptationRate.toFixed(1) + '%';
+            
+            document.getElementById('overview-recommendation').textContent = insights.recommendation;
+        }
+
 
 
         function setupModeTabs() {
@@ -585,6 +1119,7 @@
 
         // Game functions
         function submitMove(move) {
+            if (isGameFrozen) return;
             console.log('submitMove called with:', move);
             
             // Reset the battle arena for new round
@@ -594,7 +1129,8 @@
                 move: move,
                 difficulty: currentDifficulty,
                 strategy: currentStrategy,
-                personality: currentPersonality
+                personality: currentPersonality,
+                game_limit: Number.isFinite(currentGameLimit) ? currentGameLimit : null
             };
             
             console.log('Sending payload:', payload);
@@ -667,6 +1203,15 @@
             
             // Update analytics dashboard
             updateAnalyticsDashboard(data);
+            
+            // Check if game should end based on game length limit
+            if (Number.isFinite(currentGameLimit) && data.round >= currentGameLimit) {
+                const insights = deriveGameInsights(data);
+                setTimeout(() => {
+                    freezeGame(data, insights);
+                    showGameSummaryModal(insights);
+                }, 1000); // Delay to allow move animation to complete
+            }
             
             // Update charts
             updateCharts(data);
@@ -1216,64 +1761,77 @@
                 .join('');
         }
 
-        function updateAnalyticsDashboard(data) {
+        function updateAnalyticsDashboard(data, insights) {
             if (!data.human_history || data.human_history.length === 0) return;
-            
+
+            // Check if game has ended based on round limit
+            if (currentGameLimit && data.round >= currentGameLimit) {
+                if (!isGameFrozen) {
+                    isGameFrozen = true;
+                    console.log(`Game ended at round ${data.round}, limit was ${currentGameLimit}`);
+                    showGameSummaryModal(data);
+                }
+                return; // Don't update analytics if game has ended
+            }
+
+            insights = insights || deriveGameInsights(data);
+
+            // Update the overview panel with the latest insights
+            updateOverviewPanel(insights);
+
             const history = data.human_history;
             const totalMoves = history.length;
-            
-            // Calculate move distribution
+
             const paperCount = history.filter(m => m === 'paper').length;
             const stoneCount = history.filter(m => m === 'stone').length;
             const scissorCount = history.filter(m => m === 'scissor').length;
-            
-            const paperPercent = ((paperCount / totalMoves) * 100).toFixed(1);
-            const stonePercent = ((stoneCount / totalMoves) * 100).toFixed(1);
-            const scissorPercent = ((scissorCount / totalMoves) * 100).toFixed(1);
-            
-            // Update move distribution bars
+
+            const paperPercent = totalMoves ? ((paperCount / totalMoves) * 100).toFixed(1) : '0.0';
+            const stonePercent = totalMoves ? ((stoneCount / totalMoves) * 100).toFixed(1) : '0.0';
+            const scissorPercent = totalMoves ? ((scissorCount / totalMoves) * 100).toFixed(1) : '0.0';
+
             document.getElementById('paper-fill').style.width = paperPercent + '%';
             document.getElementById('rock-fill').style.width = stonePercent + '%';
             document.getElementById('scissor-fill').style.width = scissorPercent + '%';
-            
+
             document.getElementById('paper-percent').textContent = paperPercent + '%';
             document.getElementById('rock-percent').textContent = stonePercent + '%';
             document.getElementById('scissor-percent').textContent = scissorPercent + '%';
-            
-            // Calculate predictability score
-            const maxPercent = Math.max(paperPercent, stonePercent, scissorPercent);
-            const predictabilityScore = maxPercent;
-            document.getElementById('predictability-score').textContent = predictabilityScore + '%';
-            
+
+            const predictabilityScore = Math.max(parseFloat(paperPercent), parseFloat(stonePercent), parseFloat(scissorPercent)) || 0;
+            document.getElementById('predictability-score').textContent = predictabilityScore.toFixed(1) + '%';
+
             let predictabilityStatus = 'Highly Unpredictable';
             if (predictabilityScore > 50) predictabilityStatus = 'Somewhat Predictable';
             if (predictabilityScore > 70) predictabilityStatus = 'Very Predictable';
             document.getElementById('predictability-status').textContent = predictabilityStatus;
-            
-            // Calculate recent win rate trend
-            const recentGames = Math.min(10, data.round);
-            const recentWins = data.stats ? data.stats.human_win : 0;
-            const winRate = data.round > 0 ? ((recentWins / data.round) * 100).toFixed(1) : 0;
+
+            const winRate = insights.humanWinRate.toFixed(1);
             document.getElementById('win-rate-trend').textContent = winRate + '%';
-            
-            // Calculate randomness level (entropy)
-            const p1 = paperCount / totalMoves;
-            const p2 = stoneCount / totalMoves;
-            const p3 = scissorCount / totalMoves;
+
+            const p1 = totalMoves ? paperCount / totalMoves : 0;
+            const p2 = totalMoves ? stoneCount / totalMoves : 0;
+            const p3 = totalMoves ? scissorCount / totalMoves : 0;
             let entropy = 0;
             if (p1 > 0) entropy -= p1 * Math.log2(p1);
             if (p2 > 0) entropy -= p2 * Math.log2(p2);
             if (p3 > 0) entropy -= p3 * Math.log2(p3);
-            const randomnessPercent = ((entropy / Math.log2(3)) * 100).toFixed(1);
+            const randomnessPercent = totalMoves ? ((entropy / Math.log2(3)) * 100).toFixed(1) : '0.0';
             document.getElementById('randomness-level').textContent = randomnessPercent + '%';
-            
+
             let randomnessStatus = 'Low Randomness';
             if (randomnessPercent > 60) randomnessStatus = 'Medium Randomness';
             if (randomnessPercent > 80) randomnessStatus = 'High Randomness';
             document.getElementById('randomness-status').textContent = randomnessStatus;
-            
-            // Strategy changes (placeholder)
-            document.getElementById('strategy-changes-count').textContent = Math.floor(data.round / 7) || 0;
+
+            const swingCount = insights.winners.reduce((count, winner, idx, arr) => {
+                if (idx === 0) return count;
+                const prev = arr[idx - 1];
+                if (winner === 'tie' || winner === 'unknown' || prev === 'tie' || prev === 'unknown') return count;
+                return winner !== prev ? count + 1 : count;
+            }, 0);
+            document.getElementById('strategy-changes-count').textContent = swingCount;
+            document.getElementById('changes-status').textContent = swingCount > 0 ? 'Momentum swings' : 'Stable';
         }
         
         function refreshAnalytics() {
@@ -1282,9 +1840,138 @@
             .then(res => res.json())
             .then(data => {
                 console.log('Analytics data received:', data);
-                updateAnalyticsDashboard(data);
+                const insights = deriveGameInsights(data);
+                updateOverviewPanel(insights);
+                updateAnalyticsDashboard(data, insights);
+                updateCharts(data, insights);
             })
             .catch(err => console.log('Analytics refresh failed:', err));
+        }
+        
+        function showGameSummaryModal(data) {
+            const insights = deriveGameInsights(data);
+            
+            // Create modal HTML
+            const modalHTML = `
+                <div id="game-summary-modal" class="modal-overlay" style="display: flex;">
+                    <div class="modal-content game-summary-modal">
+                        <div class="modal-header">
+                            <h2>🏁 Game Complete!</h2>
+                            <span class="modal-subtitle">Your ${currentGameLimit}-round battle is finished</span>
+                        </div>
+                        <div class="modal-body">
+                            <div class="summary-section">
+                                <h3>📊 Final Performance</h3>
+                                <div class="performance-grid">
+                                    <div class="perf-card">
+                                        <div class="perf-value">${insights.humanWinRate.toFixed(1)}%</div>
+                                        <div class="perf-label">Your Win Rate</div>
+                                    </div>
+                                    <div class="perf-card">
+                                        <div class="perf-value">${insights.robotWinRate.toFixed(1)}%</div>
+                                        <div class="perf-label">AI Win Rate</div>
+                                    </div>
+                                    <div class="perf-card">
+                                        <div class="perf-value">${insights.longestHumanStreak || 0}</div>
+                                        <div class="perf-label">Best Streak</div>
+                                    </div>
+                                    <div class="perf-card">
+                                        <div class="perf-value">${insights.mostCommonMove}</div>
+                                        <div class="perf-label">Favorite Move</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="summary-section">
+                                <h3>🎯 Strategy Analysis</h3>
+                                <div class="strategy-insights">
+                                    <div class="insight-item">
+                                        <strong>Predictability:</strong> ${insights.moveVariance ? insights.moveVariance.toFixed(1) : '50.0'}% 
+                                        ${insights.moveVariance && insights.moveVariance > 60 ? '(High - Easy to predict)' : 
+                                          insights.moveVariance && insights.moveVariance > 40 ? '(Medium)' : '(Low - Unpredictable)'}
+                                    </div>
+                                    <div class="insight-item">
+                                        <strong>Adaptation Rate:</strong> ${insights.patternChanges ? insights.patternChanges.toFixed(1) : '33.0'}%
+                                        ${insights.patternChanges && insights.patternChanges > 60 ? '(Highly Adaptive)' : 
+                                          insights.patternChanges && insights.patternChanges > 40 ? '(Moderately Adaptive)' : '(Predictable Patterns)'}
+                                    </div>
+                                    <div class="insight-item">
+                                        <strong>AI Difficulty:</strong> ${currentDifficulty.toUpperCase()} 
+                                        (${insights.aiAccuracy ? insights.aiAccuracy.toFixed(1) : '50.0'}% accuracy)
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="summary-section">
+                                <h3>💡 Key Insights</h3>
+                                <div class="recommendation-box">
+                                    ${insights.recommendation}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn outline" onclick="closeGameSummaryModal()">📊 Review Analytics</button>
+                            <button class="btn primary" onclick="startNewGame()">🔄 New Game</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Add styles for the modal if not already present
+            if (!document.getElementById('game-modal-styles')) {
+                const styles = document.createElement('style');
+                styles.id = 'game-modal-styles';
+                styles.textContent = `
+                    .modal-overlay {
+                        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                        background: rgba(0,0,0,0.8); z-index: 10000;
+                        display: flex; align-items: center; justify-content: center;
+                        animation: fadeIn 0.3s ease;
+                    }
+                    .game-summary-modal {
+                        background: var(--card-bg, #1a1a1a); border-radius: 16px;
+                        max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;
+                        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+                    }
+                    .modal-header { text-align: center; padding: 30px 30px 20px; }
+                    .modal-header h2 { font-size: 2em; margin: 0; color: var(--accent-color, #00ff88); }
+                    .modal-subtitle { color: #888; font-size: 1.1em; }
+                    .modal-body { padding: 0 30px; }
+                    .modal-footer { padding: 20px 30px 30px; display: flex; gap: 15px; justify-content: center; }
+                    .summary-section { margin-bottom: 25px; }
+                    .summary-section h3 { color: var(--accent-color, #00ff88); margin-bottom: 15px; }
+                    .performance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; }
+                    .perf-card { text-align: center; background: var(--surface-color, #2a2a2a); padding: 15px; border-radius: 8px; }
+                    .perf-value { font-size: 1.8em; font-weight: bold; color: var(--accent-color, #00ff88); }
+                    .perf-label { color: #aaa; font-size: 0.9em; margin-top: 5px; }
+                    .strategy-insights { background: var(--surface-color, #2a2a2a); padding: 20px; border-radius: 8px; }
+                    .insight-item { margin-bottom: 10px; line-height: 1.5; color: #ddd; }
+                    .recommendation-box { background: var(--accent-color, #00ff88); color: black; padding: 20px; border-radius: 8px; font-weight: 500; }
+                    @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+                    @keyframes fadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.9); } }
+                    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+                    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+                `;
+                document.head.appendChild(styles);
+            }
+        }
+        
+        function closeGameSummaryModal() {
+            const modal = document.getElementById('game-summary-modal');
+            if (modal) {
+                modal.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => modal.remove(), 300);
+            }
+        }
+        
+        function startNewGame() {
+            // Reset game state
+            isGameFrozen = false;
+            closeGameSummaryModal();
+            resetGame();
         }
         
         function updateStatusDisplay() {
@@ -1462,38 +2149,6 @@
                     });
                 }
                 
-                // Strategy Timeline Bar Chart
-                const strategyCtx = document.getElementById('strategyTimelineChart');
-                if (strategyCtx) {
-                    strategyTimelineChart = new Chart(strategyCtx, {
-                        type: 'bar',
-                        data: {
-                            labels: [],
-                            datasets: [{
-                                label: 'Strategy Usage',
-                                data: [],
-                                backgroundColor: '#9C27B0',
-                                borderColor: '#7B1FA2',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    display: false
-                                }
-                            }
-                        }
-                    });
-                }
-                
                 // Model Prediction Chart
                 const modelCtx = document.getElementById('modelPredictionChart');
                 if (modelCtx) {
@@ -1519,17 +2174,6 @@
                                     fill: false,
                                     tension: 0.1,
                                     pointRadius: 4,
-                                    hidden: true
-                                },
-                                {
-                                    label: 'Random Prediction',
-                                    data: [],
-                                    borderColor: '#FFCE56',
-                                    backgroundColor: 'rgba(255, 206, 86, 0.1)',
-                                    fill: false,
-                                    tension: 0.1,
-                                    borderDash: [5, 5],
-                                    pointRadius: 2,
                                     hidden: true
                                 },
                                 {
@@ -1559,6 +2203,17 @@
                                     data: [],
                                     borderColor: '#FF9F40',
                                     backgroundColor: 'rgba(255, 159, 64, 0.1)',
+                                    fill: false,
+                                    tension: 0.1,
+                                    borderDash: [5, 5],
+                                    pointRadius: 2,
+                                    hidden: true
+                                },
+                                {
+                                    label: 'LSTM Prediction',
+                                    data: [],
+                                    borderColor: '#6A5ACD',
+                                    backgroundColor: 'rgba(106, 90, 205, 0.1)',
                                     fill: false,
                                     tension: 0.1,
                                     borderDash: [5, 5],
@@ -1617,47 +2272,119 @@
                     });
                 }
                 
-                // Model Accuracy Comparison Chart
+                // Model Performance Metrics Chart
                 const accuracyCtx = document.getElementById('modelAccuracyChart');
                 if (accuracyCtx) {
                     modelAccuracyChart = new Chart(accuracyCtx, {
-                        type: 'bar',
+                        type: 'radar',
                         data: {
-                            labels: ['Random', 'Frequency', 'Markov', 'Enhanced', 'LSTM'],
-                            datasets: [{
-                                label: 'Accuracy (%)',
-                                data: [0, 0, 0, 0, 0],
-                                backgroundColor: [
-                                    'rgba(255, 206, 86, 0.8)',
-                                    'rgba(75, 192, 192, 0.8)',
-                                    'rgba(153, 102, 255, 0.8)',
-                                    'rgba(255, 159, 64, 0.8)',
-                                    'rgba(54, 162, 235, 0.8)'
-                                ],
-                                borderColor: [
-                                    'rgba(255, 206, 86, 1)',
-                                    'rgba(75, 192, 192, 1)',
-                                    'rgba(153, 102, 255, 1)',
-                                    'rgba(255, 159, 64, 1)',
-                                    'rgba(54, 162, 235, 1)'
-                                ],
-                                borderWidth: 2
-                            }]
+                            labels: ['Prediction Accuracy', 'Confidence Level', 'Consistency', 'Adaptability', 'Success Rate'],
+                            datasets: [
+                                {
+                                    label: 'Random',
+                                    data: [33, 33, 50, 25, 33],
+                                    borderColor: 'rgba(255, 206, 86, 1)',
+                                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                                    borderWidth: 2
+                                },
+                                {
+                                    label: 'Frequency',
+                                    data: [45, 60, 70, 40, 45],
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                    borderWidth: 2
+                                },
+                                {
+                                    label: 'Markov',
+                                    data: [55, 70, 65, 60, 55],
+                                    borderColor: 'rgba(153, 102, 255, 1)',
+                                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                                    borderWidth: 2
+                                },
+                                {
+                                    label: 'Enhanced',
+                                    data: [65, 80, 75, 80, 65],
+                                    borderColor: 'rgba(255, 159, 64, 1)',
+                                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                                    borderWidth: 2
+                                },
+                                {
+                                    label: 'LSTM',
+                                    data: [75, 85, 80, 90, 75],
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                    borderWidth: 2
+                                }
+                            ]
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: {
-                                legend: { display: false }
+                                legend: { 
+                                    display: true,
+                                    position: 'bottom'
+                                }
                             },
                             scales: {
-                                y: {
+                                r: {
                                     beginAtZero: true,
                                     max: 100,
+                                    ticks: {
+                                        stepSize: 20
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // Score Differential Chart
+                const scoreDiffCtx = document.getElementById('scoreDifferentialChart');
+                if (scoreDiffCtx) {
+                    scoreDifferentialChart = new Chart(scoreDiffCtx, {
+                        type: 'line',
+                        data: {
+                            labels: [],
+                            datasets: [{
+                                label: 'Score Differential',
+                                data: [],
+                                borderColor: '#4CAF50',
+                                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 3,
+                                pointHoverRadius: 5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
                                     title: {
                                         display: true,
-                                        text: 'Accuracy (%)'
+                                        text: 'Score Difference (You - AI)'
+                                    },
+                                    grid: {
+                                        color: function(context) {
+                                            if (context.tick.value === 0) {
+                                                return '#666'; // Highlight zero line
+                                            }
+                                            return '#333';
+                                        }
                                     }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Round Number'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
                                 }
                             }
                         }
@@ -1786,14 +2513,25 @@
                     winRateTrendChart.update('none');
                 }
                 
-                // Update Strategy Timeline Chart (simplified)
-                if (strategyTimelineChart) {
-                    const strategies = ['Analyzing', 'Random', 'Frequency', 'Markov', 'Enhanced'];
-                    const counts = strategies.map(() => Math.floor(Math.random() * data.round / 5 + 1));
+                // Update Score Differential Chart
+                if (scoreDifferentialChart && data.stats) {
+                    const scoreDiff = (data.stats.human_win || 0) - (data.stats.robot_win || 0);
                     
-                    strategyTimelineChart.data.labels = strategies;
-                    strategyTimelineChart.data.datasets[0].data = counts;
-                    strategyTimelineChart.update('none');
+                    // Keep last 20 data points for performance
+                    if (scoreDifferentialChart.data.labels.length >= 20) {
+                        scoreDifferentialChart.data.labels.shift();
+                        scoreDifferentialChart.data.datasets[0].data.shift();
+                    }
+                    
+                    scoreDifferentialChart.data.labels.push(`R${data.round}`);
+                    scoreDifferentialChart.data.datasets[0].data.push(scoreDiff);
+                    
+                    // Update line color based on if you're winning or losing
+                    const isWinning = scoreDiff > 0;
+                    scoreDifferentialChart.data.datasets[0].borderColor = isWinning ? '#4CAF50' : '#F44336';
+                    scoreDifferentialChart.data.datasets[0].backgroundColor = isWinning ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)';
+                    
+                    scoreDifferentialChart.update('none');
                 }
                 
                 // Update Model Prediction Chart
@@ -1833,7 +2571,8 @@
                     const sliceData = (arr) => (displayStart > 0 ? arr.slice(displayStart) : arr);
                     
                     modelPredictionChart.data.labels = displayLabels;
-                    const datasets = [humanData, robotData, randomPreds, frequencyPreds, markovPreds, enhancedPreds];
+                    const lstmPreds = pad((modelPreds.lstm || []).map(moveToNumber));
+                    const datasets = [humanData, robotData, frequencyPreds, markovPreds, enhancedPreds, lstmPreds];
                     datasets.forEach((dataset, idx) => {
                         modelPredictionChart.data.datasets[idx].data = sliceData(dataset);
                     });
@@ -1842,17 +2581,85 @@
                     modelPredictionChart.update('none');
                 }
                 
-                // Update Model Accuracy Chart
+                // Update Model Performance Metrics Chart
                 if (modelAccuracyChart && data.accuracy) {
-                    const accuracyData = [
-                        data.accuracy.random || 0,
-                        data.accuracy.frequency || 0, 
-                        data.accuracy.markov || 0,
-                        data.accuracy.enhanced || 0,
-                        data.accuracy.lstm || 0
-                    ];
-                    modelAccuracyChart.data.datasets[0].data = accuracyData;
+                    // Calculate real performance metrics for each model based on actual data
+                    const models = ['random', 'frequency', 'markov', 'enhanced', 'lstm'];
+                    const humanHistory = data.human_history || [];
+                    const modelPreds = data.model_predictions_history || {};
+                    const totalPredictions = data.total_predictions || {};
+                    const correctPredictions = data.correct_predictions || {};
+                    
+                    models.forEach((model, index) => {
+                        // 1. Prediction Accuracy - real accuracy from backend
+                        const accuracy = data.accuracy[model] || 0;
+                        
+                        // 2. Confidence Level - based on model type and performance
+                        let confidence = 33;
+                        if (model === 'enhanced' && data.confidence) {
+                            confidence = data.confidence * 100;
+                        } else if (model === 'lstm') {
+                            confidence = Math.min(90, 60 + (accuracy * 0.3));
+                        } else if (model === 'markov') {
+                            confidence = Math.min(80, 40 + (accuracy * 0.4));
+                        } else if (model === 'frequency') {
+                            confidence = Math.min(70, 30 + (accuracy * 0.5));
+                        }
+                        
+                        // 3. Consistency - variance in recent predictions
+                        let consistency = 50;
+                        const predictions = modelPreds[model] || [];
+                        if (predictions.length >= 10) {
+                            const recent = predictions.slice(-10);
+                            // Convert predictions to numbers for variance calculation
+                            const numericRecent = recent.map(pred => {
+                                if (typeof pred === 'string') {
+                                    const move = pred.toLowerCase();
+                                    if (move === 'paper') return 2;
+                                    if (move === 'stone' || move === 'rock') return 1;
+                                    if (move === 'scissor') return 0;
+                                    return 1; // default to stone
+                                }
+                                return pred || 1;
+                            }).filter(val => val !== null && val !== undefined);
+                            
+                            if (numericRecent.length > 0) {
+                                const variance = calculateVariance(numericRecent);
+                                consistency = Math.max(20, Math.min(100, 100 - (variance * 30)));
+                            }
+                        }
+                        
+                        // 4. Adaptability - based on model sophistication
+                        const adaptability = {
+                            'random': 10,
+                            'frequency': 35,
+                            'markov': 65,
+                            'enhanced': 85,
+                            'lstm': 95
+                        }[model] || 33;
+                        
+                        // 5. Success Rate - win rate when this model is active
+                        const successRate = accuracy;
+                        
+                        if (modelAccuracyChart.data.datasets[index]) {
+                            modelAccuracyChart.data.datasets[index].data = [
+                                Math.round(accuracy), 
+                                Math.round(confidence), 
+                                Math.round(consistency), 
+                                adaptability, 
+                                Math.round(successRate)
+                            ];
+                        }
+                    });
                     modelAccuracyChart.update('none');
+                }
+                
+                // Helper function to calculate variance
+                function calculateVariance(values) {
+                    if (values.length === 0) return 0;
+                    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+                    const variance = values.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / values.length;
+                    return Math.sqrt(variance);
                 }
                 
                 // Update Confidence Trend Chart
@@ -2155,6 +2962,31 @@
             applyPersonalityTheme(currentPersonality);
             updateRobotCharacter(currentDifficulty, currentStrategy, currentPersonality);
             updateRobotConversation(currentPersonality, 'start');
+        }
+        
+        function setGameLength() {
+            const gameLength = document.getElementById('game-length').value;
+            currentGameLimit = gameLength === 'infinite' ? null : parseInt(gameLength);
+            console.log('Game length set to:', currentGameLimit);
+            
+            // Show notification only if called from dropdown change (not initial load)
+            if (document.readyState === 'complete') {
+                const notification = document.createElement('div');
+                notification.className = 'game-notification';
+                notification.innerHTML = currentGameLimit 
+                    ? `🎯 Game limited to ${currentGameLimit} rounds`
+                    : '♾️ Game set to unlimited rounds';
+                notification.style.cssText = `
+                    position: fixed; top: 20px; right: 20px; z-index: 10000;
+                    background: var(--accent-color); color: white; padding: 15px 20px;
+                    border-radius: 8px; font-weight: bold; animation: slideIn 0.3s ease;
+                `;
+                document.body.appendChild(notification);
+                setTimeout(() => {
+                    notification.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => notification.remove(), 300);
+                }, 2000);
+            }
         }
         
         // DEBUG: Test function to manually trigger robot update

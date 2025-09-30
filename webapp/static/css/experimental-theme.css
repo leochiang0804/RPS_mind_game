@@ -628,7 +628,7 @@ body.experimental-ui {
 }
 
 .conversation-panel {
-    background: rgba(30, 64, 175, 0.25);
+    background: rgba(30, 64, 175, 0.15);
     border-color: rgba(99, 102, 241, 0.35);
 }
 
@@ -969,7 +969,7 @@ body.experimental-ui {
     padding: 20px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-subtle);
-    background: rgba(30, 64, 175, 0.25);
+    background: rgba(30, 64, 175, 0.15);
 }
 
 .conversation-heading {
@@ -1137,6 +1137,79 @@ body.experimental-ui {
     }
 }
 
+
+.overview-insights {
+    margin-top: 18px;
+    display: grid;
+    gap: 18px;
+}
+
+.overview-section {
+    display: grid;
+    gap: 12px;
+}
+
+.overview-title {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(226, 232, 255, 0.7);
+    margin: 0;
+}
+
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.overview-card {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: grid;
+    gap: 6px;
+}
+
+.overview-card.wide {
+    grid-column: span 2;
+}
+
+.overview-card .label {
+    font-size: 0.75rem;
+    color: rgba(226, 232, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.overview-card .value {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.overview-card .hint {
+    font-size: 0.7rem;
+    color: rgba(226, 232, 255, 0.5);
+    font-style: italic;
+    margin-top: 2px;
+}
+
+.overview-summary {
+    background: rgba(20, 32, 70, 0.95);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    font-size: 0.9rem;
+    color: rgba(226, 232, 255, 0.9);
+}
+
+@media (max-width: 900px) {
+    .overview-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+}
 .page-structure {
     display: grid;
     gap: 28px;
@@ -1246,7 +1319,7 @@ body.experimental-ui {
 
 .charts-grid.two-column {
     display: grid;
-    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 20px;
 }
 
