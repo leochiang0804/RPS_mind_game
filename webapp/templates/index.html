@@ -175,6 +175,40 @@
                 </div>
             </div>
         </div>
+        
+        <!-- New Strategy Timeline Section -->
+        <div class="chart-container" style="width:100%; max-width:1200px; margin:2em auto;">
+            <h3 style="text-align:center; color:#a86e3c; margin-bottom:1em;">Strategy Timeline & Analysis</h3>
+            <div id="current-strategy-display" style="text-align:center; margin-bottom:1em; padding:0.8em; background:#fff3e0; border-radius:10px; border-left:4px solid #ff9800;">
+                <strong>Current Strategy: </strong><span id="current-strategy-text" style="color:#e65100; font-weight:600;">Analyzing...</span>
+                <span id="strategy-confidence" style="margin-left:1em; color:#666; font-size:0.9em;"></span>
+            </div>
+            <canvas id="strategyTimeline" height="150"></canvas>
+            <div id="timeline-legend" style="text-align:center; margin-top:1em; font-size:0.95em; color:#666;">
+                <div style="display:inline-block; margin:0 1em;">
+                    <span style="display:inline-block; width:16px; height:16px; background:#ff5722; border-radius:3px; margin-right:6px; vertical-align:middle;"></span> Repeater
+                </div>
+                <div style="display:inline-block; margin:0 1em;">
+                    <span style="display:inline-block; width:16px; height:16px; background:#2196f3; border-radius:3px; margin-right:6px; vertical-align:middle;"></span> Cycler
+                </div>
+                <div style="display:inline-block; margin:0 1em;">
+                    <span style="display:inline-block; width:16px; height:16px; background:#4caf50; border-radius:3px; margin-right:6px; vertical-align:middle;"></span> Balanced
+                </div>
+                <div style="display:inline-block; margin:0 1em;">
+                    <span style="display:inline-block; width:16px; height:16px; background:#ff9800; border-radius:3px; margin-right:6px; vertical-align:middle;"></span> Biased
+                </div>
+                <div style="display:inline-block; margin:0 1em;">
+                    <span style="display:inline-block; width:16px; height:16px; background:#9c27b0; border-radius:3px; margin-right:6px; vertical-align:middle;"></span> Anti-Repeater
+                </div>
+                <div style="display:inline-block; margin:0 1em;">
+                    <span style="display:inline-block; width:16px; height:16px; background:#607d8b; border-radius:3px; margin-right:6px; vertical-align:middle;"></span> Warming Up
+                </div>
+            </div>
+            <div id="change-points-summary" style="margin-top:1em; padding:0.8em; background:#e8f5e8; border-radius:8px; border-left:4px solid #4caf50;">
+                <strong>Strategy Changes Detected: </strong><span id="change-count">0</span>
+                <div id="recent-changes" style="margin-top:0.5em; font-size:0.9em; color:#2e7d32;"></div>
+            </div>
+        </div>
         <div id="stats" style="margin-top:2.5em;">
             <h2>Game Statistics</h2>
             <p id="rounds">Rounds played: {{ round }}</p>
@@ -229,7 +263,22 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-    let moveChart, resultChart, roundChart;
+    let moveChart, resultChart, roundChart, strategyTimeline;
+    
+    // Strategy color mapping
+    const strategyColors = {
+        'repeater': '#ff5722',
+        'cycler': '#2196f3', 
+        'balanced': '#4caf50',
+        'biased': '#ff9800',
+        'stone-biased': '#ff9800',
+        'paper-biased': '#ff9800', 
+        'scissor-biased': '#ff9800',
+        'anti-repeater': '#9c27b0',
+        'warming up': '#607d8b',
+        'unknown': '#cccccc'
+    };
+    
     function updateCharts(human_history, stats, round_history) {
         // Defensive: ensure round_history is valid
         if (!Array.isArray(round_history) || round_history.length === 0) {
@@ -324,6 +373,106 @@
             data: resultData
         });
     }
+    
+    function updateStrategyTimeline(strategyHistory, changePoints) {
+        // Create strategy timeline chart
+        if (strategyTimeline) strategyTimeline.destroy();
+        
+        // Build datasets for strategy timeline
+        const datasets = [];
+        const strategyData = [];
+        
+        // If we have enough data, show strategy progression
+        if (strategyHistory && strategyHistory.length > 0) {
+            strategyHistory.forEach((strategy, index) => {
+                const round = index + 1;
+                const color = strategyColors[strategy] || strategyColors['unknown'];
+                strategyData.push({
+                    x: round,
+                    y: 1,
+                    strategy: strategy,
+                    backgroundColor: color,
+                    borderColor: color
+                });
+            });
+            
+            datasets.push({
+                label: 'Strategy Over Time',
+                data: strategyData,
+                backgroundColor: strategyData.map(d => d.backgroundColor),
+                borderColor: strategyData.map(d => d.borderColor),
+                pointRadius: 8,
+                pointHoverRadius: 10,
+                showLine: false,
+                pointStyle: 'rect'
+            });
+        }
+        
+        // Add change point markers
+        if (changePoints && changePoints.length > 0) {
+            const changePointData = changePoints.map(cp => ({
+                x: cp.round || cp.move_index || 0,
+                y: 1,
+                description: cp.description || 'Strategy change detected'
+            }));
+            
+            datasets.push({
+                label: 'Strategy Changes',
+                data: changePointData,
+                backgroundColor: '#e53935',
+                borderColor: '#d32f2f',
+                pointRadius: 12,
+                pointHoverRadius: 15,
+                showLine: false,
+                pointStyle: 'triangle'
+            });
+        }
+        
+        strategyTimeline = new Chart(document.getElementById('strategyTimeline'), {
+            type: 'scatter',
+            data: { datasets: datasets },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Round' },
+                        type: 'linear',
+                        min: 1,
+                        suggestedMax: Math.max(10, strategyHistory ? strategyHistory.length : 10)
+                    },
+                    y: {
+                        display: false,
+                        min: 0.5,
+                        max: 1.5
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    title: { 
+                        display: true, 
+                        text: 'Your Strategy Evolution',
+                        font: { size: 14, weight: 'bold' },
+                        color: '#a86e3c'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataset.label === 'Strategy Changes') {
+                                    return context.raw.description;
+                                } else {
+                                    return `Round ${context.raw.x}: ${context.raw.strategy}`;
+                                }
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'nearest'
+                }
+            }
+        });
+    }
         let currentDifficulty = document.getElementById('difficulty').value;
         let currentMultiplayer = document.getElementById('multiplayer').checked;
         function submitMove(move) {
@@ -398,6 +547,57 @@
                     confidenceElem.textContent = `Confidence: ${confLevel} (${confPercent}%)`;
                 }
             }
+            
+            // Update strategy display
+            if (data.current_strategy) {
+                const strategyElem = document.getElementById('current-strategy-text');
+                if (strategyElem) {
+                    const strategy = data.current_strategy;
+                    const strategyDisplay = strategy.charAt(0).toUpperCase() + strategy.slice(1);
+                    strategyElem.textContent = strategyDisplay;
+                    strategyElem.style.color = strategyColors[strategy] || '#666';
+                }
+            }
+            
+            // Update change points summary
+            if (data.change_points) {
+                const changeCountElem = document.getElementById('change-count');
+                const recentChangesElem = document.getElementById('recent-changes');
+                
+                if (changeCountElem) {
+                    changeCountElem.textContent = data.change_points.length;
+                }
+                
+                if (recentChangesElem && data.change_points.length > 0) {
+                    const recent = data.change_points.slice(-3); // Show last 3 changes
+                    const changeText = recent.map(cp => 
+                        `Round ${cp.round || cp.move_index}: ${cp.description}`
+                    ).join('<br>');
+                    recentChangesElem.innerHTML = changeText;
+                } else if (recentChangesElem) {
+                    recentChangesElem.innerHTML = 'No strategy changes detected yet.';
+                }
+            }
+            
+            // Build strategy history for timeline
+            const strategyHistory = [];
+            if (data.round_history && data.round_history.length > 0) {
+                // Create a simplified strategy history based on available data
+                // This is a placeholder - in a full implementation, we'd track strategy per round
+                const currentStrategy = data.current_strategy || 'unknown';
+                for (let i = 0; i < data.round_history.length; i++) {
+                    // For now, use current strategy for recent rounds
+                    // In practice, you'd want to track this per round
+                    if (i < data.round_history.length - 5) {
+                        strategyHistory.push('warming up');
+                    } else {
+                        strategyHistory.push(currentStrategy);
+                    }
+                }
+            }
+            
+            // Update strategy timeline
+            updateStrategyTimeline(strategyHistory, data.change_points || []);
             // Winner highlight logic
             let humanMove = data.human_history.length ? data.human_history[data.human_history.length-1] : null;
             let robotMove = data.robot_move;

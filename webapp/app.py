@@ -3,6 +3,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from strategy import EnhancedStrategy, FrequencyStrategy, MarkovStrategy
+from change_point_detector import ChangePointDetector
 
 app = Flask(__name__)
 
@@ -11,6 +12,9 @@ enhanced_strategy = EnhancedStrategy(order=2, recency_weight=0.8)
 frequency_strategy = FrequencyStrategy()
 markov_strategy = MarkovStrategy()
 
+# Initialize strategies and change detector with balanced settings for web gameplay
+change_detector = ChangePointDetector(window_size=6, chi2_threshold=3.5, min_segment_length=4)
+
 game_state = {
     'human_history': [],
     'robot_history': [],
@@ -18,8 +22,10 @@ game_state = {
     'round_history': [],  # Each entry: {'round': n, 'human': move, 'robot': move}
     'round': 0,
     'stats': {'human_win': 0, 'robot_win': 0, 'tie': 0},
-    'difficulty': 'markov',
+    'difficulty': 'enhanced',  # Default to enhanced mode
     'multiplayer': False,
+    'change_points': [],  # Store detected strategy changes
+    'current_strategy': 'warming up',  # Current strategy label
     'accuracy': {
         'random': None,
         'frequency': None,
@@ -163,6 +169,16 @@ def play():
         game_state['result_history'].append(result)
         game_state['round_history'].append({'round': game_state['round']+1, 'human': move, 'robot': robot_move})
         game_state['round'] += 1
+        
+        # Add move to change detector for strategy analysis
+        change_result = change_detector.add_move(move)
+        
+        if len(game_state['human_history']) >= 5:  # Need minimum moves for analysis
+            change_points = change_detector.get_all_change_points()
+            current_strategy = change_detector.get_current_strategy_label()
+            game_state['change_points'] = change_points
+            game_state['current_strategy'] = current_strategy
+        
         if result == 'human':
             game_state['stats']['human_win'] += 1
         elif result == 'robot':
@@ -183,7 +199,9 @@ def play():
         'difficulty': game_state['difficulty'],
         'multiplayer': game_state['multiplayer'],
         'accuracy': game_state['accuracy'],
-        'confidence': confidence
+        'confidence': confidence,
+        'change_points': game_state.get('change_points', []),
+        'current_strategy': game_state.get('current_strategy', 'unknown')
     })
 
 @app.route('/stats', methods=['GET'])
@@ -198,6 +216,21 @@ def stats():
         'accuracy': game_state['accuracy']
     })
 
+@app.route('/history', methods=['GET'])
+def history():
+    # Return full game history including round details
+    return jsonify({
+        'stats': game_state['stats'],
+        'human_history': game_state['human_history'],
+        'robot_history': game_state['robot_history'],
+        'result_history': game_state['result_history'],
+        'round_history': game_state.get('round_history', []),
+        'round': game_state['round'],
+        'accuracy': game_state['accuracy'],
+        'change_points': game_state.get('change_points', []),
+        'current_strategy': game_state.get('current_strategy', 'unknown')
+    })
+
 @app.route('/reset', methods=['POST', 'GET'])
 def reset():
     game_state['human_history'].clear()
@@ -205,8 +238,14 @@ def reset():
     game_state['result_history'].clear()
     game_state['round'] = 0
     game_state['stats'] = {'human_win': 0, 'robot_win': 0, 'tie': 0}
-    game_state['difficulty'] = 'markov'
+    game_state['difficulty'] = 'enhanced'  # Default to enhanced
     game_state['multiplayer'] = False
+    game_state['change_points'] = []
+    game_state['current_strategy'] = 'unknown'
+    
+    # Reset change detector
+    change_detector.reset()
+    
     if request.method == 'POST':
         return jsonify({'success': True})
     return redirect(url_for('index'))
