@@ -28,364 +28,310 @@
                 </div>
             </header>
 
-            <div class="page-structure">
-                <section class="panel top-intel" id="top-intel">
-                    <nav class="mode-switcher top-switcher" aria-label="Summary Switcher">
-                        <button class="mode-tab" data-mode="top-overview">📊 Overview</button>
-                        <button class="mode-tab active" data-mode="top-controls">🎛️ Controls</button>
-                    </nav>
-                    <div class="mode-panels top-panels">
-                        <div class="mode-panel" data-mode="top-overview">
-                            <div class="hero-summary-grid">
-                                <div class="hero-summary-block hero-strategy">
-                                    <div class="summary-heading">
-                                        <h2 class="panel-title">Adaptive Strategy Monitor</h2>
-                                        <span class="panel-subtitle">Live look at how the AI is approaching the next round.</span>
-                                    </div>
-                                    <div class="status-value">
-                                        Current Strategy: <span id="current-strategy-text">Analyzing...</span>
-                                    </div>
-                                </div>
-                                <div class="hero-summary-block hero-scoreboard">
-                                    <div class="summary-heading">
-                                        <h2 class="panel-title">Match Scoreboard</h2>
-                                        <span class="panel-subtitle">Keep tabs on the overall duel momentum.</span>
-                                    </div>
-                                    <div class="stat-grid">
-                                        <div class="stat-card">
-                                            <h4>Rounds</h4>
-                                            <div id="rounds" class="stat-value">{{ round }}</div>
-                                        </div>
-                                        <div class="stat-card">
-                                            <h4>Your Wins</h4>
-                                            <div id="human-wins" class="stat-value">{{ stats.human_win }}</div>
-                                        </div>
-                                        <div class="stat-card">
-                                            <h4>Computer Wins</h4>
-                                            <div id="robot-wins" class="stat-value">{{ stats.robot_win }}</div>
-                                        </div>
-                                        <div class="stat-card">
-                                            <h4>Ties</h4>
-                                            <div id="ties" class="stat-value">{{ stats.tie }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="hero-summary-block hero-alerts">
-                                    <div class="summary-heading">
-                                        <h2 class="panel-title">Live Alerts</h2>
-                                        <span class="panel-subtitle">We flag pattern shifts and strategy cues for you.</span>
-                                    </div>
-                                    <div id="alert-feed" class="alert-feed">
-                                        <div class="alert-chip muted">Play a round to populate insights.</div>
-                                    </div>
-                                </div>
-                            </div>
+            <section class="panel status-panel" id="strategy-monitor">
+                <div class="panel-heading">
+                    <h2 class="panel-title">Adaptive Strategy Monitor</h2>
+                    <span class="panel-subtitle">Live look at how the AI is approaching the next round.</span>
+                </div>
+                <div class="status-value">
+                    Current Strategy: <span id="current-strategy-text">Analyzing...</span>
+                </div>
+            </section>
+
+            <section class="panel controls-panel" id="control-center">
+                <div class="panel-heading">
+                    <h2 class="panel-title">Opponent Control Center</h2>
+                    <span class="panel-subtitle">Blend difficulty, tactic, and personality to craft your rival.</span>
+                </div>
+                <div class="control-grid">
+                    <div class="control-row">
+                        <div class="select-card">
+                            <label for="difficulty">🎯 AI Difficulty</label>
+                            <select id="difficulty" onchange="setDifficulty()">
+                                <option value="random" {{ 'selected' if default_difficulty == 'random' else '' }}>Random</option>
+                                <option value="frequency" {{ 'selected' if default_difficulty == 'frequency' else '' }}>Frequency</option>
+                                <option value="markov" {{ 'selected' if default_difficulty == 'markov' else '' }}>Markov</option>
+                                <option value="enhanced" {{ 'selected' if default_difficulty == 'enhanced' else '' }}>Enhanced ML</option>
+                                <option value="lstm" {{ 'selected' if default_difficulty == 'lstm' else '' }}>LSTM Neural</option>
+                            </select>
                         </div>
-                        <div class="mode-panel active" data-mode="top-controls">
-                            <div class="control-grid">
-                                <div class="control-row">
-                                    <div class="select-card">
-                                        <label for="difficulty">🎯 AI Difficulty</label>
-                                        <select id="difficulty" onchange="setDifficulty()">
-                                            <option value="random" {{ 'selected' if default_difficulty == 'random' else '' }}>Random</option>
-                                            <option value="frequency" {{ 'selected' if default_difficulty == 'frequency' else '' }}>Frequency</option>
-                                            <option value="markov" {{ 'selected' if default_difficulty == 'markov' else '' }}>Markov</option>
-                                            <option value="enhanced" {{ 'selected' if default_difficulty == 'enhanced' else '' }}>Enhanced ML</option>
-                                            <option value="lstm" {{ 'selected' if default_difficulty == 'lstm' else '' }}>LSTM Neural</option>
-                                        </select>
-                                    </div>
-                                    <div class="select-card">
-                                        <label for="strategy">⚔️ AI Strategy</label>
-                                        <select id="strategy" onchange="setStrategy()">
-                                            <option value="balanced">🎯 Balanced</option>
-                                            <option value="to_win">🗡️ To Win (Aggressive)</option>
-                                            <option value="not_to_lose">🛡️ Not to Lose (Defensive)</option>
-                                        </select>
-                                    </div>
-                                    <div class="select-card">
-                                        <label for="personality">🤖 AI Personality</label>
-                                        <select id="personality" onchange="setPersonality()">
-                                            <option value="neutral">😐 Neutral</option>
-                                            <option value="berserker">⚔️ The Berserker (Ultra Aggressive)</option>
-                                            <option value="guardian">🛡️ The Guardian (Defensive Expert)</option>
-                                            <option value="chameleon">🦎 The Chameleon (Adaptive)</option>
-                                            <option value="professor">🔬 The Professor (Analytical)</option>
-                                            <option value="wildcard">🃏 The Wildcard (Unpredictable)</option>
-                                            <option value="mirror">🪞 The Mirror (Mimicking)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="control-helpers relaxed-controls">
-                                <button class="btn outline" onclick="testRobotUpdate()">🔧 Test Update</button>
-                                <button class="btn destructive" onclick="resetGame()">🔄 Reset Game</button>
-                                <button class="btn primary" onclick="exportAnalytics()">📊 Export Data</button>
-                                <button class="btn" onclick="showTournamentDashboard()">🏆 Tournament</button>
-                            </div>
-                            <div id="robot-character-display" class="robot-profile">
-                                <div id="robot-avatar" class="robot-avatar">
-                                    <span class="avatar-emoji">🤖</span>
-                                    <div id="strategy-symbol" class="strategy-icon">⚔️</div>
-                                </div>
-                                <div class="robot-meta">
-                                    <div class="meta-title"><span id="robot-name">Standard Robot</span></div>
-                                    <div class="meta-tags">
-                                        <span class="tag">Difficulty: <span id="robot-difficulty">Easy</span></span>
-                                        <span class="tag">Strategy: <span id="robot-strategy">Random</span></span>
-                                        <span class="tag">Personality: <span id="robot-personality">Balanced</span></span>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="select-card">
+                            <label for="strategy">⚔️ AI Strategy</label>
+                            <select id="strategy" onchange="setStrategy()">
+                                <option value="balanced">🎯 Balanced</option>
+                                <option value="to_win">🗡️ To Win (Aggressive)</option>
+                                <option value="not_to_lose">🛡️ Not to Lose (Defensive)</option>
+                            </select>
+                        </div>
+                        <div class="select-card">
+                            <label for="personality">🤖 AI Personality</label>
+                            <select id="personality" onchange="setPersonality()">
+                                <option value="neutral">😐 Neutral</option>
+                                <option value="berserker">⚔️ The Berserker (Ultra Aggressive)</option>
+                                <option value="guardian">🛡️ The Guardian (Defensive Expert)</option>
+                                <option value="chameleon">🦎 The Chameleon (Adaptive)</option>
+                                <option value="professor">🔬 The Professor (Analytical)</option>
+                                <option value="wildcard">🃏 The Wildcard (Unpredictable)</option>
+                                <option value="mirror">🪞 The Mirror (Mimicking)</option>
+                            </select>
                         </div>
                     </div>
-                </section>
-
-                <div class="bottom-grid">
-                    <section class="panel combat-cluster" id="battle-console">
-                        <div class="combat-stack">
-                            <div class="conversation-wrapper">
-                                <div id="robot-conversation" class="conversation-panel">
-                                    <div class="conversation-heading">
-                                        <h3>AI Comms Channel</h3>
-                                        <span>Live banter from your opponent.</span>
-                                    </div>
-                                    <div class="conversation-body">
-                                        <div id="conversation-avatar" class="conversation-avatar">🤖</div>
-                                        <div class="conversation-content">
-                                            <div class="speech-bubble">
-                                                <div id="robot-speech">"Ready for battle? Let's see what you've got!"</div>
-                                                <span class="speech-tail"></span>
-                                            </div>
-                                            <div class="conversation-meta">
-                                                <span id="robot-mood">😎 Confident</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="move-display-window" class="move-display">
-                                <div id="human-move-display" class="move-display-card">
-                                    <h3 class="move-title">You</h3>
-                                    <div class="move-visual">
-                                        <img id="human-move-img" src="/static/paper.png" alt="Your Move" style="display: none;">
-                                        <span id="human-move-text">Choose your move</span>
-                                    </div>
-                                </div>
-                                <div id="robot-move-display" class="move-display-card">
-                                    <h3 class="move-title">Robot</h3>
-                                    <div class="move-visual">
-                                        <img id="robot-move-img" src="/static/paper.png" alt="Robot Move" style="display: none;">
-                                        <span id="robot-move-text">Thinking...</span>
-                                    </div>
-                                </div>
-                                <div class="move-display-card vs-card">
-                                    <div id="round-result" class="round-result" style="display: none;">Round Result</div>
-                                </div>
-                            </div>
-                            <div id="result" class="result-banner">
-                                Press buttons or use A, W, D keys to play!
-                            </div>
-                            <div class="move-pad">
-                                <button type="button" id="move-paper" class="move-btn" onclick="submitMove('paper')">Paper (P)</button>
-                                <button type="button" id="move-stone" class="move-btn" onclick="submitMove('stone')">Rock (R)</button>
-                                <button type="button" id="move-scissor" class="move-btn" onclick="submitMove('scissor')">Scissor (S)</button>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section class="panel intel-cluster">
-                        <nav class="mode-switcher intel-switcher" aria-label="Insight Switcher">
-                            <button class="mode-tab active" data-mode="pattern">🔄 Pattern View</button>
-                            <button class="mode-tab" data-mode="analytics">📈 Analytics View</button>
-                            <button class="mode-tab" data-mode="coach">🎓 Coach View</button>
-                        </nav>
-                        <div class="mode-panels intel-panels">
-                            <div class="mode-panel active" data-mode="pattern">
-                                <section class="panel pattern-overview">
-                                    <div class="panel-heading">
-                                        <h2 class="panel-title">Pattern Awareness</h2>
-                                        <span class="panel-subtitle">Spot the human tendencies the AI is tracking.</span>
-                                    </div>
-                                    <div class="pattern-metric-grid">
-                                        <div class="analytics-card">
-                                            <h4>🎯 Predictability Score</h4>
-                                            <div id="predictability-score" class="metric-value">--</div>
-                                            <div id="predictability-status" class="metric-caption">Analyzing...</div>
-                                        </div>
-                                        <div class="analytics-card">
-                                            <h4>🏆 Win Rate Trend</h4>
-                                            <div id="win-rate-trend" class="metric-value">--</div>
-                                            <div id="trend-status" class="metric-caption">Recent 10 games</div>
-                                        </div>
-                                        <div class="analytics-card">
-                                            <h4>🔄 Strategy Changes</h4>
-                                            <div id="strategy-changes-count" class="metric-value">--</div>
-                                            <div id="changes-status" class="metric-caption">Adaptability</div>
-                                        </div>
-                                        <div class="analytics-card">
-                                            <h4>🎲 Randomness Level</h4>
-                                            <div id="randomness-level" class="metric-value">--</div>
-                                            <div id="randomness-status" class="metric-caption">Unpredictability</div>
-                                        </div>
-                                    </div>
-                                </section>
-                                <section class="panel move-distribution-panel">
-                                    <div class="panel-heading">
-                                        <h2 class="panel-title">📈 Move Distribution Analysis</h2>
-                                        <span class="panel-subtitle">Where your habits are clustering right now.</span>
-                                    </div>
-                                    <div class="distribution-grid">
-                                        <div class="move-bar">
-                                            <div class="move-label">Paper (P)</div>
-                                            <div class="bar-container">
-                                                <div class="bar-fill paper" id="paper-fill"></div>
-                                            </div>
-                                            <div class="bar-percentage" id="paper-percent">0%</div>
-                                        </div>
-                                        <div class="move-bar">
-                                            <div class="move-label">Rock (R)</div>
-                                            <div class="bar-container">
-                                                <div class="bar-fill rock" id="rock-fill"></div>
-                                            </div>
-                                            <div class="bar-percentage" id="rock-percent">0%</div>
-                                        </div>
-                                        <div class="move-bar">
-                                            <div class="move-label">Scissor (S)</div>
-                                            <div class="bar-container">
-                                                <div class="bar-fill scissor" id="scissor-fill"></div>
-                                            </div>
-                                            <div class="bar-percentage" id="scissor-percent">0%</div>
-                                        </div>
-                                    </div>
-                                </section>
-                                <section class="panel history-panel compact-history">
-                                    <div class="panel-heading">
-                                        <h2 class="panel-title">Recent History</h2>
-                                        <span class="panel-subtitle">Last ten moves at a glance.</span>
-                                    </div>
-                                    <p><strong>Your moves:</strong> <span id="recent-human">{{ human_history[-10:]|join(', ') }}</span></p>
-                                    <p><strong>Computer moves:</strong> <span id="recent-robot">{{ robot_history[-10:]|join(', ') }}</span></p>
-                                </section>
-                            </div>
-
-                            <div class="mode-panel" data-mode="analytics">
-                                <section class="panel analytics-panel">
-                                    <div class="panel-heading">
-                                        <h2 class="panel-title">Visual Analytics</h2>
-                                        <span class="panel-subtitle">Real-time visuals of strategy performance.</span>
-                                    </div>
-                                    <div class="charts-grid two-column">
-                                        <div class="chart-card">
-                                            <h4>Move Distribution</h4>
-                                            <canvas id="moveDistributionChart"></canvas>
-                                        </div>
-                                        <div class="chart-card">
-                                            <h4>Model Accuracy Comparison</h4>
-                                            <canvas id="modelAccuracyChart"></canvas>
-                                        </div>
-                                        <div class="chart-card">
-                                            <h4>Strategy Timeline</h4>
-                                            <canvas id="strategyTimelineChart"></canvas>
-                                        </div>
-                                        <div class="chart-card">
-                                            <h4>Prediction Confidence Trends</h4>
-                                            <canvas id="confidenceTrendChart"></canvas>
-                                        </div>
-                                    </div>
-                                    <div class="chart-card wide">
-                                        <h4>🤖 Model Prediction Tracking</h4>
-                                        <p class="chart-hint">Compare human moves vs robot moves vs optional model predictions (Axis shows S=Scissor, R=Rock, P=Paper)</p>
-                                        <div class="prediction-toggle">
-                                            <div class="prediction-info">Human Move (always on)</div>
-                                            <label class="prediction-option">
-                                                <input type="checkbox" data-dataset-index="1">
-                                                Robot Move
-                                            </label>
-                                            <label class="prediction-option">
-                                                <input type="checkbox" data-dataset-index="2">
-                                                Random Prediction
-                                            </label>
-                                            <label class="prediction-option">
-                                                <input type="checkbox" data-dataset-index="3">
-                                                Frequency Prediction
-                                            </label>
-                                            <label class="prediction-option">
-                                                <input type="checkbox" data-dataset-index="4">
-                                                Markov Prediction
-                                            </label>
-                                            <label class="prediction-option">
-                                                <input type="checkbox" data-dataset-index="5">
-                                                Enhanced Prediction
-                                            </label>
-                                            <label class="prediction-option">
-                                                <input type="checkbox" id="prediction-range-toggle">
-                                                Show Full History
-                                            </label>
-                                        </div>
-                                        <canvas id="modelPredictionChart"></canvas>
-                                    </div>
-                                </section>
-                                <section class="panel analytics-quick">
-                                    <div class="panel-heading">
-                                        <h2 class="panel-title">Performance Snapshots</h2>
-                                        <span class="panel-subtitle">Key metrics from the analytical models.</span>
-                                    </div>
-                                    <div class="metric-board">
-                                        <h5 class="metric-title">📊 Model Performance Metrics</h5>
-                                        <div id="modelMetricsTable" class="metric-grid"></div>
-                                        <div class="recommended-strategy" id="recommendedStrategy">Analyzing performance...</div>
-                                    </div>
-                                </section>
-                                <section class="panel analytics-actions">
-                                    <div class="panel-heading">
-                                        <h2 class="panel-title">Analytics Actions</h2>
-                                        <span class="panel-subtitle">Take snapshots or refresh the data stream.</span>
-                                    </div>
-                                    <div class="advanced-actions">
-                                        <button class="btn primary" onclick="exportAnalytics('json')">📄 Export JSON Report</button>
-                                        <button class="btn" onclick="refreshAnalytics()">🔄 Refresh Analytics</button>
-                                        <button class="btn outline" onclick="showDeveloperMetrics()">🔧 Developer Metrics</button>
-                                    </div>
-                                </section>
-                            </div>
-
-                            <div class="mode-panel" data-mode="coach">
-                                <section class="panel coach-panel">
-                                    <div class="panel-heading">
-                                        <h2 class="panel-title">🎓 AI Coach</h2>
-                                        <span class="panel-subtitle">Personalized insights and experiments.</span>
-                                    </div>
-                                    <div class="secondary-panel">
-                                        <div class="panel coach-card">
-                                            <div class="panel-heading">
-                                                <h4 class="panel-title">💡 Your Strategy Tips</h4>
-                                                <button class="btn primary" onclick="refreshCoachingTips()">🔄 Get New Tips</button>
-                                            </div>
-                                            <div id="coaching-tips-list" class="coach-content">
-                                                <p>Play a few rounds to get personalized coaching tips!</p>
-                                            </div>
-                                        </div>
-                                        <div class="panel coach-card">
-                                            <div class="panel-heading">
-                                                <h4 class="panel-title">🧪 Experiments to Try</h4>
-                                            </div>
-                                            <div id="experiments-list" class="coach-content">
-                                                <p>Suggested strategies will appear here!</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div id="insights-summary" class="panel insights-panel" style="display: none;">
-                                        <div class="panel-heading">
-                                            <h4 class="panel-title">📊 Pattern Analysis</h4>
-                                        </div>
-                                        <div id="insights-content" class="coach-content"></div>
-                                    </div>
-                                </section>
-                            </div>
-                        </div>
-                    </section>
                 </div>
+                <div class="control-actions">
+                    <button class="btn outline" onclick="testRobotUpdate()">🔧 Test Update</button>
+                </div>
+                <div id="robot-character-display" class="robot-profile">
+                    <div id="robot-avatar" class="robot-avatar">
+                        <span class="avatar-emoji">🤖</span>
+                        <div id="strategy-symbol" class="strategy-icon">⚔️</div>
+                    </div>
+                    <div class="robot-meta">
+                        <div class="meta-title"><span id="robot-name">Standard Robot</span></div>
+                        <div class="meta-tags">
+                            <span class="tag">Difficulty: <span id="robot-difficulty">Easy</span></span>
+                            <span class="tag">Strategy: <span id="robot-strategy">Random</span></span>
+                            <span class="tag">Personality: <span id="robot-personality">Balanced</span></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="robot-conversation" class="panel conversation-panel">
+                <div class="panel-heading">
+                    <h2 class="panel-title">AI Comms Channel</h2>
+                    <span class="panel-subtitle">Live banter from your opponent.</span>
+                </div>
+                <div class="conversation-body">
+                    <div id="conversation-avatar" class="conversation-avatar">🤖</div>
+                    <div class="conversation-content">
+                        <div class="speech-bubble">
+                            <div id="robot-speech">"Ready for battle? Let's see what you've got!"</div>
+                            <span class="speech-tail"></span>
+                        </div>
+                        <div class="conversation-meta">
+                            <span id="robot-mood">😎 Confident</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel move-panel">
+                <div class="panel-heading">
+                    <h2 class="panel-title">Cinematic Battle Arena</h2>
+                    <span class="panel-subtitle">Moves, highlights, and round results.</span>
+                </div>
+                <div id="move-display-window" class="move-display">
+                    <div id="human-move-display" class="move-display-card">
+                        <h3 class="move-title">You</h3>
+                        <div class="move-visual">
+                            <img id="human-move-img" src="/static/paper.png" alt="Your Move" style="display: none;">
+                            <span id="human-move-text">Choose your move</span>
+                        </div>
+                    </div>
+                    <div class="move-display-card vs-card">
+                        <div id="round-result" class="round-result" style="display: none;">Round Result</div>
+                    </div>
+                    <div id="robot-move-display" class="move-display-card">
+                        <h3 class="move-title">Robot</h3>
+                        <div class="move-visual">
+                            <img id="robot-move-img" src="/static/paper.png" alt="Robot Move" style="display: none;">
+                            <span id="robot-move-text">Thinking...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="move-pad">
+                    <button type="button" id="move-paper" class="move-btn" onclick="submitMove('paper')">Paper (P)</button>
+                    <button type="button" id="move-stone" class="move-btn" onclick="submitMove('stone')">Rock (R)</button>
+                    <button type="button" id="move-scissor" class="move-btn" onclick="submitMove('scissor')">Scissor (S)</button>
+                </div>
+                <div class="control-actions">
+                    <button class="btn destructive" onclick="resetGame()">🔄 Reset Game</button>
+                    <button class="btn primary" onclick="exportAnalytics()">📊 Export Data</button>
+                    <button class="btn" onclick="showTournamentDashboard()">🏆 Tournament</button>
+                </div>
+            </section>
+
+            <div id="result" class="result-banner">
+                Press buttons or use A, W, D keys to play!
             </div>
+
+            <section class="panel stats-panel">
+                <div class="panel-heading">
+                    <h2 class="panel-title">Match Scoreboard</h2>
+                    <span class="panel-subtitle">Track the overall duel momentum.</span>
+                </div>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <h4>Rounds</h4>
+                        <div id="rounds" class="stat-value">{{ round }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Your Wins</h4>
+                        <div id="human-wins" class="stat-value">{{ stats.human_win }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Computer Wins</h4>
+                        <div id="robot-wins" class="stat-value">{{ stats.robot_win }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Ties</h4>
+                        <div id="ties" class="stat-value">{{ stats.tie }}</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel analytics-panel">
+                <div class="panel-heading">
+                    <h2 class="panel-title">Visual Analytics</h2>
+                    <span class="panel-subtitle">Real-time visuals of strategy performance.</span>
+                </div>
+                <div class="cards-grid">
+                    <div class="chart-card">
+                        <h4>Move Distribution</h4>
+                        <canvas id="moveDistributionChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h4>Win Rate Trend</h4>
+                        <canvas id="winRateTrendChart"></canvas>
+                    </div>
+                </div>
+                <div class="cards-grid">
+                    <div class="chart-card">
+                        <h4>Strategy Timeline</h4>
+                        <canvas id="strategyTimelineChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h4>🤖 Model Prediction Tracking</h4>
+                        <p class="chart-hint">Compare human moves vs robot moves vs all model predictions (Paper=2, Rock=1, Scissor=0)</p>
+                        <canvas id="modelPredictionChart"></canvas>
+                    </div>
+                </div>
+                <div class="cards-grid">
+                    <div class="chart-card">
+                        <h4>🧠 ML Model Comparison</h4>
+                        <div class="cards-grid">
+                            <div class="chart-card">
+                                <h5>Model Accuracy Comparison</h5>
+                                <canvas id="modelAccuracyChart"></canvas>
+                            </div>
+                            <div class="chart-card">
+                                <h5>Prediction Confidence Trends</h5>
+                                <canvas id="confidenceTrendChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="metric-board">
+                            <h5 class="metric-title">📊 Model Performance Metrics</h5>
+                            <div id="modelMetricsTable" class="metric-grid"></div>
+                            <div class="recommended-strategy" id="recommendedStrategy">Analyzing performance...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel history-panel">
+                <div class="panel-heading">
+                    <h2 class="panel-title">Recent History</h2>
+                    <span class="panel-subtitle">Last ten moves at a glance.</span>
+                </div>
+                <p><strong>Your moves:</strong> <span id="recent-human">{{ human_history[-10:]|join(', ') }}</span></p>
+                <p><strong>Computer moves:</strong> <span id="recent-robot">{{ robot_history[-10:]|join(', ') }}</span></p>
+            </section>
+
+            <section class="panel coach-panel">
+                <div class="panel-heading">
+                    <h2 class="panel-title">🎓 AI Coach</h2>
+                    <span class="panel-subtitle">Personalized insights and experiments.</span>
+                </div>
+                <div class="secondary-panel">
+                    <div class="panel coach-card">
+                        <div class="panel-heading">
+                            <h4 class="panel-title">💡 Your Strategy Tips</h4>
+                            <button class="btn primary" onclick="refreshCoachingTips()">🔄 Get New Tips</button>
+                        </div>
+                        <div id="coaching-tips-list" class="coach-content">
+                            <p>Play a few rounds to get personalized coaching tips!</p>
+                        </div>
+                    </div>
+                    <div class="panel coach-card">
+                        <div class="panel-heading">
+                            <h4 class="panel-title">🧪 Experiments to Try</h4>
+                        </div>
+                        <div id="experiments-list" class="coach-content">
+                            <p>Suggested strategies will appear here!</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="insights-summary" class="panel insights-panel" style="display: none;">
+                    <div class="panel-heading">
+                        <h4 class="panel-title">📊 Pattern Analysis</h4>
+                    </div>
+                    <div id="insights-content" class="coach-content"></div>
+                </div>
+            </section>
+
+            <section class="panel advanced-analytics-panel">
+                <div class="panel-heading">
+                    <h2 class="panel-title">Advanced Analytics Dashboard</h2>
+                    <span class="panel-subtitle">Deep dive into trends, randomness, and adaptability.</span>
+                </div>
+                <div class="cards-grid">
+                    <div class="analytics-card">
+                        <h4>🎯 Predictability Score</h4>
+                        <div id="predictability-score" class="metric-value">--</div>
+                        <div id="predictability-status" class="metric-caption">Analyzing...</div>
+                    </div>
+                    <div class="analytics-card">
+                        <h4>🏆 Win Rate Trend</h4>
+                        <div id="win-rate-trend" class="metric-value">--</div>
+                        <div id="trend-status" class="metric-caption">Recent 10 games</div>
+                    </div>
+                    <div class="analytics-card">
+                        <h4>🔄 Strategy Changes</h4>
+                        <div id="strategy-changes-count" class="metric-value">--</div>
+                        <div id="changes-status" class="metric-caption">Adaptability</div>
+                    </div>
+                    <div class="analytics-card">
+                        <h4>🎲 Randomness Level</h4>
+                        <div id="randomness-level" class="metric-value">--</div>
+                        <div id="randomness-status" class="metric-caption">Unpredictability</div>
+                    </div>
+                </div>
+
+                <div class="panel move-distribution-panel">
+                    <div class="panel-heading">
+                        <h4 class="panel-title">📈 Move Distribution Analysis</h4>
+                    </div>
+                    <div class="distribution-grid">
+                        <div class="move-bar">
+                            <div class="move-label">Paper (P)</div>
+                            <div class="bar-container">
+                                <div class="bar-fill paper" id="paper-fill"></div>
+                            </div>
+                            <div class="bar-percentage" id="paper-percent">0%</div>
+                        </div>
+                        <div class="move-bar">
+                            <div class="move-label">Rock (R)</div>
+                            <div class="bar-container">
+                                <div class="bar-fill rock" id="rock-fill"></div>
+                            </div>
+                            <div class="bar-percentage" id="rock-percent">0%</div>
+                        </div>
+                        <div class="move-bar">
+                            <div class="move-label">Scissor (S)</div>
+                            <div class="bar-container">
+                                <div class="bar-fill scissor" id="scissor-fill"></div>
+                            </div>
+                            <div class="bar-percentage" id="scissor-percent">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="advanced-actions">
+                    <button class="btn primary" onclick="exportAnalytics('json')">📄 Export JSON Report</button>
+                    <button class="btn" onclick="refreshAnalytics()">🔄 Refresh Analytics</button>
+                    <button class="btn outline" onclick="showDeveloperMetrics()">🔧 Developer Metrics</button>
+                </div>
+            </section>
         </div>
     </div>
 
@@ -471,7 +417,6 @@
             applyPersonalityTheme(currentPersonality);
             updateRobotCharacter(currentDifficulty, currentStrategy, currentPersonality);
             setTimeout(() => updateRobotConversation(currentPersonality, 'start'), 200);
-            setupModeTabs();
         });
         
         // Keyboard controls
@@ -482,107 +427,6 @@
             if (e.key === 's' || e.key === 'S') submitMove('scissor');
         });
         
-
-        function highlightMatches() {
-            if (!modelPredictionChart) return;
-            const humanDataset = modelPredictionChart.data.datasets[0];
-            const activeDatasets = modelPredictionChart.data.datasets
-                .map((dataset, index) => ({ dataset, index }))
-                .filter(({ dataset, index }) => index !== 0 && !dataset.hidden);
-
-            modelPredictionChart.data.datasets.forEach((dataset, idx) => {
-                if (idx === 0) {
-                    dataset.pointBackgroundColor = dataset.data.map(() => '#FF6384');
-                    dataset.pointRadius = dataset.data.map(() => 4);
-                } else {
-                    dataset.pointRadius = dataset.data.map(value => (dataset.hidden || value === null ? 0 : 3));
-                    dataset.pointBackgroundColor = dataset.data.map(() => dataset.borderColor);
-                }
-            });
-
-            if (activeDatasets.length === 1) {
-                const { dataset: activeDataset } = activeDatasets[0];
-                activeDataset.pointRadius = activeDataset.data.map((value, idx) => {
-                    const humanValue = humanDataset.data[idx];
-                    return value !== null && value === humanValue ? 6 : 3;
-                });
-                activeDataset.pointBackgroundColor = activeDataset.data.map((value, idx) => {
-                    const humanValue = humanDataset.data[idx];
-                    return value !== null && value === humanValue ? '#4ade80' : activeDataset.borderColor;
-                });
-            }
-        }
-
-        function initializePredictionToggle() {
-            const toggleContainer = document.querySelector('.prediction-toggle');
-            if (!toggleContainer) return;
-            const inputs = toggleContainer.querySelectorAll('input[data-dataset-index]');
-            const showAllToggle = document.getElementById('prediction-range-toggle');
-
-            inputs.forEach(input => {
-                const idx = parseInt(input.dataset.datasetIndex, 10);
-                if (!Number.isNaN(idx) && modelPredictionChart && modelPredictionChart.data.datasets[idx]) {
-                    input.checked = !modelPredictionChart.data.datasets[idx].hidden;
-                }
-
-                input.addEventListener('change', () => {
-                    if (!modelPredictionChart) return;
-                    const index = parseInt(input.dataset.datasetIndex, 10);
-                    if (Number.isNaN(index) || !modelPredictionChart.data.datasets[index]) return;
-                    modelPredictionChart.data.datasets[index].hidden = !input.checked;
-                    highlightMatches();
-                    modelPredictionChart.update();
-                });
-            });
-
-            if (showAllToggle) {
-                showAllToggle.checked = false;
-                showAllToggle.addEventListener('change', () => {
-                    if (lastChartData) {
-                        updateCharts(lastChartData);
-                    }
-                });
-            }
-
-            if (modelPredictionChart) {
-                highlightMatches();
-            }
-        }
-
-
-        function setupModeTabs() {
-            const switchers = document.querySelectorAll('.mode-switcher');
-            switchers.forEach(switcher => {
-                const tabs = switcher.querySelectorAll('.mode-tab');
-                const panelsContainer = switcher.nextElementSibling && switcher.nextElementSibling.classList.contains('mode-panels')
-                    ? switcher.nextElementSibling
-                    : null;
-
-                if (!tabs.length || !panelsContainer) return;
-
-                const panels = panelsContainer.querySelectorAll('.mode-panel');
-                if (!panels.length) return;
-
-                const activateMode = (mode) => {
-                    tabs.forEach(tab => {
-                        const isActive = tab.dataset.mode === mode;
-                        tab.classList.toggle('active', isActive);
-                        tab.setAttribute('aria-pressed', isActive);
-                    });
-                    panels.forEach(panel => {
-                        panel.classList.toggle('active', panel.dataset.mode === mode);
-                    });
-                };
-
-                tabs.forEach(tab => {
-                    tab.addEventListener('click', () => activateMode(tab.dataset.mode));
-                });
-
-                const initialTab = switcher.querySelector('.mode-tab.active') || tabs[0];
-                if (initialTab) activateMode(initialTab.dataset.mode);
-            });
-        }
-
         // Game functions
         function submitMove(move) {
             console.log('submitMove called with:', move);
@@ -674,9 +518,6 @@
             // Update move display window
             updateMoveDisplay(lastHumanMove, robotMove, result);
             
-            // Update live alert rail
-            updateAlertRail(data, result);
-
             // Update robot conversation based on result
             const conversationEventType = result === 'human' ? 'lose' : result === 'robot' ? 'win' : 'tie';
             setTimeout(() => {
@@ -1141,81 +982,6 @@
         }
         
         // Advanced Analytics Functions
-        function updateAlertRail(data, roundResult) {
-            const alertContainer = document.getElementById('alert-feed');
-            if (!alertContainer) return;
-
-            const alerts = [];
-
-            if (data && data.round) {
-                alerts.push({ type: 'info', message: `Round ${data.round} complete` });
-            }
-
-            if (roundResult === 'human') {
-                alerts.push({ type: 'positive', message: 'You claimed the last round — keep the momentum!' });
-            } else if (roundResult === 'robot') {
-                alerts.push({ type: 'warning', message: 'The AI won the last exchange. Consider shifting patterns.' });
-            } else if (roundResult === 'tie') {
-                alerts.push({ type: 'info', message: 'Tie round — a clean slate to pivot your strategy.' });
-            }
-
-            if (data && data.current_strategy) {
-                const strategyLabels = {
-                    'random': 'Random Baseline',
-                    'frequency': 'Frequency Counter',
-                    'markov': 'Markov Predictor',
-                    'enhanced': 'Enhanced ML',
-                    'lstm': 'LSTM Neural'
-                };
-                const label = strategyLabels[data.current_strategy] || data.current_strategy;
-                alerts.push({ type: 'info', message: `AI strategy focus: ${label}` });
-            }
-
-            if (data && Array.isArray(data.human_history) && data.human_history.length) {
-                const history = data.human_history;
-                const tally = history.reduce((acc, move) => {
-                    if (move) acc[move] = (acc[move] || 0) + 1;
-                    return acc;
-                }, {});
-
-                const moves = Object.keys(tally);
-                if (moves.length) {
-                    const total = history.length;
-                    const dominant = moves.reduce((a, b) => (tally[a] || 0) >= (tally[b] || 0) ? a : b);
-                    const dominantPercent = ((tally[dominant] / total) * 100).toFixed(1);
-
-                    if (dominantPercent >= 60) {
-                        const label = dominant.charAt(0).toUpperCase() + dominant.slice(1);
-                        alerts.push({ type: 'warning', message: `Pattern emerging: ${label} showing ${dominantPercent}% usage.` });
-                        alerts.push({ type: 'action', message: 'Hop into Pattern View to disrupt the streak.' });
-                    }
-
-                    const recent = history.slice(-3);
-                    if (recent.length === 3 && new Set(recent).size === 1) {
-                        const streakMove = recent[0];
-                        const label = streakMove.charAt(0).toUpperCase() + streakMove.slice(1);
-                        alerts.push({ type: 'warning', message: `Three-in-a-row streak detected (${label}).` });
-                    }
-                }
-            }
-
-            if (!alerts.length) {
-                alertContainer.innerHTML = "<div class='alert-chip muted'>Play a round to populate insights.</div>";
-                return;
-            }
-
-            const badgeClass = (type) => {
-                if (type === 'positive') return 'positive';
-                if (type === 'warning') return 'warning';
-                if (type === 'action') return 'action';
-                return 'info';
-            };
-
-            alertContainer.innerHTML = alerts
-                .map(alert => `<div class="alert-chip ${badgeClass(alert.type)}">${alert.message}</div>`)
-                .join('');
-        }
-
         function updateAnalyticsDashboard(data) {
             if (!data.human_history || data.human_history.length === 0) return;
             
@@ -1317,15 +1083,15 @@
             }
             
             // Update UI elements based on personality
-            const gameContainer = document.getElementById('app-root');
+            const gameContainer = document.querySelector('.game-container');
             if (gameContainer) {
                 const themes = {
-                    'neutral': { borderColor: 'rgba(79, 70, 229, 0.35)', backgroundColor: 'var(--bg-surface)' },
-                    'aggressive': { borderColor: 'rgba(255, 68, 68, 0.6)', backgroundColor: 'rgba(64, 0, 0, 0.35)' },
-                    'defensive': { borderColor: 'rgba(68, 68, 255, 0.6)', backgroundColor: 'rgba(0, 34, 68, 0.35)' },
-                    'adaptive': { borderColor: 'rgba(153, 68, 255, 0.6)', backgroundColor: 'rgba(40, 0, 80, 0.35)' },
-                    'chaotic': { borderColor: 'rgba(255, 136, 68, 0.6)', backgroundColor: 'rgba(68, 34, 0, 0.35)' },
-                    'copycat': { borderColor: 'rgba(68, 255, 68, 0.6)', backgroundColor: 'rgba(0, 68, 34, 0.35)' }
+                    'neutral': { borderColor: '#ddd', backgroundColor: '#fff' },
+                    'aggressive': { borderColor: '#ff4444', backgroundColor: '#fff5f5' },
+                    'defensive': { borderColor: '#4444ff', backgroundColor: '#f5f5ff' },
+                    'adaptive': { borderColor: '#9944ff', backgroundColor: '#faf5ff' },
+                    'chaotic': { borderColor: '#ff8844', backgroundColor: '#fff8f5' },
+                    'copycat': { borderColor: '#44ff44', backgroundColor: '#f5fff5' }
                 };
                 
                 const theme = themes[personality] || themes['neutral'];
@@ -1419,8 +1185,6 @@
                             }
                         }
                     });
-
-                    initializePredictionToggle();
                 }
                 
                 // Win Rate Trend Line Chart
@@ -1518,8 +1282,7 @@
                                     backgroundColor: 'rgba(54, 162, 235, 0.1)',
                                     fill: false,
                                     tension: 0.1,
-                                    pointRadius: 4,
-                                    hidden: true
+                                    pointRadius: 4
                                 },
                                 {
                                     label: 'Random Prediction',
@@ -1529,8 +1292,7 @@
                                     fill: false,
                                     tension: 0.1,
                                     borderDash: [5, 5],
-                                    pointRadius: 2,
-                                    hidden: true
+                                    pointRadius: 2
                                 },
                                 {
                                     label: 'Frequency Prediction',
@@ -1540,8 +1302,7 @@
                                     fill: false,
                                     tension: 0.1,
                                     borderDash: [5, 5],
-                                    pointRadius: 2,
-                                    hidden: true
+                                    pointRadius: 2
                                 },
                                 {
                                     label: 'Markov Prediction',
@@ -1551,8 +1312,7 @@
                                     fill: false,
                                     tension: 0.1,
                                     borderDash: [5, 5],
-                                    pointRadius: 2,
-                                    hidden: true
+                                    pointRadius: 2
                                 },
                                 {
                                     label: 'Enhanced Prediction',
@@ -1562,8 +1322,7 @@
                                     fill: false,
                                     tension: 0.1,
                                     borderDash: [5, 5],
-                                    pointRadius: 2,
-                                    hidden: true
+                                    pointRadius: 2
                                 }
                             ]
                         },
@@ -1598,16 +1357,16 @@
                                     display: true,
                                     title: {
                                         display: true,
-                                        text: 'Moves'
+                                        text: 'Move Type'
                                     },
                                     min: -0.5,
                                     max: 2.5,
                                     ticks: {
                                         stepSize: 1,
                                         callback: function(value) {
-                                            if (value === 0) return 'S';
-                                            if (value === 1) return 'R';
-                                            if (value === 2) return 'P';
+                                            if (value === 0) return 'Scissor';
+                                            if (value === 1) return 'Rock';
+                                            if (value === 2) return 'Paper';
                                             return '';
                                         }
                                     }
@@ -1753,13 +1512,10 @@
             }
         }
         
-        let lastChartData = null;
-
         function updateCharts(data) {
             if (!data.human_history || data.human_history.length === 0) return;
             
             try {
-                lastChartData = data;
                 // Update Move Distribution Chart
                 if (moveDistributionChart) {
                     const history = data.human_history;
@@ -1810,35 +1566,21 @@
                     
                     // Use real model predictions from backend
                     const modelPreds = data.model_predictions_history || {};
-                    const pad = (arr) => {
-                        const copy = Array.isArray(arr) ? arr.slice() : [];
-                        while (copy.length < humanData.length) {
-                            copy.push(null);
-                        }
-                        return copy;
-                    };
-
-                    const randomPreds = pad((modelPreds.random || []).map(moveToNumber));
-                    const frequencyPreds = pad((modelPreds.frequency || []).map(moveToNumber));
-                    const markovPreds = pad((modelPreds.markov || []).map(moveToNumber));
-                    const enhancedPreds = pad((modelPreds.enhanced || []).map(moveToNumber));
-
-                    const labels = Array.from({length: humanData.length}, (_, i) => i + 1);
-                    let displayStart = 0;
-                    const showAll = document.getElementById('prediction-range-toggle')?.checked;
-                    if (!showAll && labels.length > 20) {
-                        displayStart = labels.length - 20;
-                    }
-                    const displayLabels = labels.slice(displayStart);
-                    const sliceData = (arr) => (displayStart > 0 ? arr.slice(displayStart) : arr);
+                    const randomPreds = (modelPreds.random || []).map(moveToNumber);
+                    const frequencyPreds = (modelPreds.frequency || []).map(moveToNumber);
+                    const markovPreds = (modelPreds.markov || []).map(moveToNumber);
+                    const enhancedPreds = (modelPreds.enhanced || []).map(moveToNumber);
                     
-                    modelPredictionChart.data.labels = displayLabels;
-                    const datasets = [humanData, robotData, randomPreds, frequencyPreds, markovPreds, enhancedPreds];
-                    datasets.forEach((dataset, idx) => {
-                        modelPredictionChart.data.datasets[idx].data = sliceData(dataset);
-                    });
-
-                    highlightMatches();
+                    const labels = Array.from({length: humanData.length}, (_, i) => i + 1);
+                    
+                    modelPredictionChart.data.labels = labels;
+                    modelPredictionChart.data.datasets[0].data = humanData; // Human moves
+                    modelPredictionChart.data.datasets[1].data = robotData; // Robot moves
+                    modelPredictionChart.data.datasets[2].data = randomPreds; // Random predictions
+                    modelPredictionChart.data.datasets[3].data = frequencyPreds; // Frequency predictions
+                    modelPredictionChart.data.datasets[4].data = markovPreds; // Markov predictions
+                    modelPredictionChart.data.datasets[5].data = enhancedPreds; // Enhanced predictions
+                    
                     modelPredictionChart.update('none');
                 }
                 
