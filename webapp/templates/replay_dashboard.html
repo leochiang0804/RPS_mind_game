@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Replay Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard-content {
+            padding: 2rem;
+        }
+        
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .replay-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .replay-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .replay-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .replay-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .replay-id {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #6c757d;
+            background: #f8f9fa;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+        
+        .replay-date {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .replay-config {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .config-tag {
+            background: #667eea;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .config-tag.strategy {
+            background: #28a745;
+        }
+        
+        .config-tag.personality {
+            background: #fd7e14;
+        }
+        
+        .replay-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .score-display {
+            text-align: center;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 1rem;
+            color: #495057;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .search-box {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            width: 250px;
+        }
+        
+        .sort-select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem;
+                border-radius: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .stats-overview {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            .replay-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Game Replay Dashboard</h1>
+            <p>Review and analyze your Rock Paper Scissors game sessions</p>
+        </div>
+        
+        <div class="dashboard-content">
+            <!-- Stats Overview -->
+            <div class="stats-overview">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-replays">{{ replays|length }}</div>
+                    <div class="stat-label">Total Replays</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-rounds">-</div>
+                    <div class="stat-label">Total Rounds Played</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="avg-win-rate">-</div>
+                    <div class="stat-label">Average Win Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="best-strategy">-</div>
+                    <div class="stat-label">Best Strategy</div>
+                </div>
+            </div>
+            
+            <!-- Controls -->
+            <div class="controls">
+                <input type="text" class="search-box" placeholder="Search replays..." id="searchBox">
+                <select class="sort-select" id="sortSelect">
+                    <option value="date-desc">Newest First</option>
+                    <option value="date-asc">Oldest First</option>
+                    <option value="rounds-desc">Most Rounds</option>
+                    <option value="winrate-desc">Best Win Rate</option>
+                </select>
+                <a href="/" class="btn btn-secondary">← Back to Game</a>
+            </div>
+            
+            <!-- Replay Grid -->
+            <div class="replay-grid" id="replayGrid">
+                {% if replays %}
+                    {% for replay in replays %}
+                    <div class="replay-card" data-session="{{ replay.session_id }}" data-date="{{ replay.created_at }}" data-rounds="{{ replay.total_rounds }}">
+                        <div class="replay-header">
+                            <span class="replay-id">{{ replay.session_id[:8] }}...</span>
+                            <span class="replay-date">{{ replay.created_at.split('T')[0] }}</span>
+                        </div>
+                        
+                        <div class="replay-config">
+                            <span class="config-tag">{{ replay.difficulty.title() }}</span>
+                            <span class="config-tag strategy">{{ replay.strategy.title() }}</span>
+                            <span class="config-tag personality">{{ replay.personality.title() }}</span>
+                        </div>
+                        
+                        <div class="replay-stats">
+                            <div>
+                                <strong>{{ replay.total_rounds }}</strong> rounds
+                            </div>
+                            <div class="score-display">
+                                Human: {{ replay.final_score.human }} | 
+                                Robot: {{ replay.final_score.robot }} | 
+                                Ties: {{ replay.final_score.ties }}
+                            </div>
+                        </div>
+                        
+                        <div class="actions">
+                            <a href="/replay/viewer/{{ replay.session_id }}" class="btn btn-primary">
+                                📺 Watch Replay
+                            </a>
+                            <button class="btn btn-success" onclick="analyzeReplay('{{ replay.session_id }}')">
+                                📊 Analyze
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportReplay('{{ replay.session_id }}')">
+                                💾 Export
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <h3>No Replays Yet</h3>
+                        <p>Start playing to generate replay data!</p>
+                        <a href="/" class="btn btn-primary" style="margin-top: 1rem;">Start Playing</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Calculate overview stats
+        document.addEventListener('DOMContentLoaded', function() {
+            const replays = {{ replays|tojson }};
+            
+            if (replays.length > 0) {
+                // Total rounds
+                const totalRounds = replays.reduce((sum, r) => sum + r.total_rounds, 0);
+                document.getElementById('total-rounds').textContent = totalRounds;
+                
+                // Average win rate
+                const totalGames = replays.reduce((sum, r) => sum + r.final_score.human + r.final_score.robot + r.final_score.ties, 0);
+                const totalHumanWins = replays.reduce((sum, r) => sum + r.final_score.human, 0);
+                const avgWinRate = totalGames > 0 ? (totalHumanWins / totalGames * 100).toFixed(1) + '%' : '0%';
+                document.getElementById('avg-win-rate').textContent = avgWinRate;
+                
+                // Best strategy
+                const strategyStats = {};
+                replays.forEach(r => {
+                    const key = `${r.difficulty}_${r.strategy}`;
+                    if (!strategyStats[key]) {
+                        strategyStats[key] = { wins: 0, total: 0, name: `${r.difficulty} ${r.strategy}` };
+                    }
+                    strategyStats[key].wins += r.final_score.human;
+                    strategyStats[key].total += r.final_score.human + r.final_score.robot + r.final_score.ties;
+                });
+                
+                let bestStrategy = 'None';
+                let bestWinRate = 0;
+                Object.values(strategyStats).forEach(s => {
+                    const winRate = s.total > 0 ? s.wins / s.total : 0;
+                    if (winRate > bestWinRate) {
+                        bestWinRate = winRate;
+                        bestStrategy = s.name;
+                    }
+                });
+                
+                document.getElementById('best-strategy').textContent = bestStrategy;
+            }
+        });
+        
+        // Search and sort functionality
+        document.getElementById('searchBox').addEventListener('input', filterReplays);
+        document.getElementById('sortSelect').addEventListener('change', sortReplays);
+        
+        function filterReplays() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            const cards = document.querySelectorAll('.replay-card');
+            
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(searchTerm) ? 'block' : 'none';
+            });
+        }
+        
+        function sortReplays() {
+            const sortBy = document.getElementById('sortSelect').value;
+            const grid = document.getElementById('replayGrid');
+            const cards = Array.from(grid.querySelectorAll('.replay-card'));
+            
+            cards.sort((a, b) => {
+                switch(sortBy) {
+                    case 'date-desc':
+                        return new Date(b.dataset.date) - new Date(a.dataset.date);
+                    case 'date-asc':
+                        return new Date(a.dataset.date) - new Date(b.dataset.date);
+                    case 'rounds-desc':
+                        return parseInt(b.dataset.rounds) - parseInt(a.dataset.rounds);
+                    case 'winrate-desc':
+                        // This would need more complex calculation
+                        return 0;
+                    default:
+                        return 0;
+                }
+            });
+            
+            cards.forEach(card => grid.appendChild(card));
+        }
+        
+        function analyzeReplay(sessionId) {
+            window.open(`/replay/${sessionId}/analyze`, '_blank');
+        }
+        
+        function exportReplay(sessionId) {
+            window.open(`/replay/${sessionId}/export`, '_blank');
+        }
+    </script>
+</body>
+</html>
