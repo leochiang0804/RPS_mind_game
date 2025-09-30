@@ -127,6 +127,7 @@
                 <div style="font-weight:600; color:#a86e3c;">Robot Choice</div>
                 <img id="robot-choice-img" src="/static/paper.png" alt="Robot Choice" width="80" height="80" style="display:none; margin-top:0.5em; border-radius:12px; box-shadow:0 2px 8px #e0c9a6;">
                 <div id="robot-choice-label" style="margin-top:0.5em; font-size:1.1em; color:#6d4c1c;"></div>
+                <div id="confidence-indicator" style="margin-top:0.3em; font-size:0.9em; color:#888; font-style:italic;"></div>
                 <div id="robot-winner-overlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; border-radius:12px; background:rgba(33,150,243,0.18); border:2px solid #2196f3; pointer-events:none;"></div>
                 <div id="robot-winner-badge" style="display:none; position:absolute; top:10px; right:10px; background:#2196f3; color:#fff; font-weight:700; padding:4px 12px; border-radius:10px; font-size:1em; box-shadow:0 2px 8px #2196f3; z-index:3;">Winner!</div>
             </div>
@@ -137,6 +138,7 @@
                 <option value="random" {% if default_difficulty == 'random' %}selected{% endif %}>Random</option>
                 <option value="frequency" {% if default_difficulty == 'frequency' %}selected{% endif %}>Frequency</option>
                 <option value="markov" {% if default_difficulty == 'markov' %}selected{% endif %}>Markov Chain</option>
+                <option value="enhanced" {% if default_difficulty == 'enhanced' %}selected{% endif %}>Enhanced ML</option>
                 <option value="hybrid" {% if default_difficulty == 'hybrid' %}selected{% endif %}>Hybrid</option>
                 <option value="decision_tree" {% if default_difficulty == 'decision_tree' %}selected{% endif %}>Decision Tree</option>
             </select>
@@ -192,6 +194,7 @@
                     <li>Markov Chain: <span id="acc-markov">-</span>%</li>
                     <li>Hybrid: <span id="acc-hybrid">-</span>%</li>
                     <li>Decision Tree: <span id="acc-decision_tree">-</span>%</li>
+                    <li>Enhanced ML: <span id="acc-enhanced">-</span>%</li>
                 </ul>
             </div>
             {% set total = stats.human_win + stats.robot_win + stats.tie %}
@@ -376,8 +379,23 @@
             document.getElementById('tieRate').textContent = `Tie Rate: ${total ? (data.stats.tie / total * 100).toFixed(2) : 0}%`;
             // ML accuracy metrics
             if (data.accuracy) {
-                for (const key of ['random','frequency','markov','hybrid','decision_tree']) {
-                    document.getElementById('acc-' + key).textContent = (data.accuracy[key] !== null && data.accuracy[key] !== undefined) ? data.accuracy[key] : '-';
+                for (const key of ['random','frequency','markov','hybrid','decision_tree','enhanced']) {
+                    const elem = document.getElementById('acc-' + key);
+                    if (elem) {
+                        elem.textContent = (data.accuracy[key] !== null && data.accuracy[key] !== undefined) ? data.accuracy[key] : '-';
+                    }
+                }
+            }
+            
+            // Confidence indicator
+            if (data.confidence !== undefined) {
+                const confidenceElem = document.getElementById('confidence-indicator');
+                if (confidenceElem) {
+                    const confPercent = (data.confidence * 100).toFixed(1);
+                    let confLevel = 'Low';
+                    if (data.confidence > 0.7) confLevel = 'High';
+                    else if (data.confidence > 0.5) confLevel = 'Medium';
+                    confidenceElem.textContent = `Confidence: ${confLevel} (${confPercent}%)`;
                 }
             }
             // Winner highlight logic

@@ -1,7 +1,15 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from strategy import EnhancedStrategy, FrequencyStrategy, MarkovStrategy
 
 app = Flask(__name__)
+
+# Initialize strategy instances
+enhanced_strategy = EnhancedStrategy(order=2, recency_weight=0.8)
+frequency_strategy = FrequencyStrategy()
+markov_strategy = MarkovStrategy()
 
 game_state = {
     'human_history': [],
@@ -17,21 +25,24 @@ game_state = {
         'frequency': None,
         'markov': None,
         'hybrid': None,
-        'decision_tree': None
+        'decision_tree': None,
+        'enhanced': None
     },
     'correct_predictions': {
         'random': 0,
         'frequency': 0,
         'markov': 0,
         'hybrid': 0,
-        'decision_tree': 0
+        'decision_tree': 0,
+        'enhanced': 0
     },
     'total_predictions': {
         'random': 0,
         'frequency': 0,
         'markov': 0,
         'hybrid': 0,
-        'decision_tree': 0
+        'decision_tree': 0,
+        'enhanced': 0
     }
 }
 
@@ -65,35 +76,43 @@ def play():
     def robot_strategy(history, difficulty):
         # Predict next human move, then counter it
         predicted = None
+        confidence = 0.33
+        
         if difficulty == 'random':
             predicted = random.choice(MOVES)
+            confidence = 0.33
         elif difficulty == 'frequency':
-            if not history:
-                predicted = random.choice(MOVES)
-            else:
-                freq = {m: history.count(m) for m in MOVES}
-                most_common = max(freq, key=lambda k: freq[k])
-                predicted = most_common
+            predicted_counter = frequency_strategy.predict(history)
+            # Convert back to predicted human move
+            reverse_counter = {'scissor': 'paper', 'stone': 'scissor', 'paper': 'stone'}
+            predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
+            confidence = 0.5
         elif difficulty == 'markov':
-            if len(history) < 2:
-                predicted = random.choice(MOVES)
-            else:
-                last = history[-1]
-                next_moves = [history[i+1] for i in range(len(history)-1) if history[i] == last]
-                if not next_moves:
-                    predicted = random.choice(MOVES)
-                else:
-                    predicted = max(set(next_moves), key=next_moves.count)
+            markov_strategy.train(history)
+            predicted_counter = markov_strategy.predict(history)
+            reverse_counter = {'scissor': 'paper', 'stone': 'scissor', 'paper': 'stone'}
+            predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
+            confidence = 0.6
+        elif difficulty == 'enhanced':
+            enhanced_strategy.train(history)
+            predicted_counter = enhanced_strategy.predict(history)
+            confidence = enhanced_strategy.get_confidence()
+            reverse_counter = {'scissor': 'paper', 'stone': 'scissor', 'paper': 'stone'}
+            predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
         elif difficulty == 'hybrid':
             if len(history) < 5:
                 return robot_strategy(history, 'frequency')
-            return robot_strategy(history, 'markov')
+            return robot_strategy(history, 'enhanced')
         elif difficulty == 'decision_tree':
             predicted = random.choice(MOVES)
+            confidence = 0.33
         else:
             predicted = random.choice(MOVES)
+            confidence = 0.33
+            
         counter = {'paper': 'scissor', 'scissor': 'stone', 'stone': 'paper'}
         robot_move = counter[predicted]
+        
         # Track prediction accuracy
         if len(history) > 0:
             actual_next = history[-1]
@@ -103,10 +122,14 @@ def play():
             correct = game_state['correct_predictions'][difficulty]
             total = game_state['total_predictions'][difficulty]
             game_state['accuracy'][difficulty] = round((correct / total) * 100, 2) if total else None
-        return robot_move
+            
+        return robot_move, confidence
 
     results = []
-    robot_move = robot_strategy(game_state['human_history'], difficulty)
+    robot_move, confidence = robot_strategy(game_state['human_history'], difficulty)
+    
+    # Store confidence for response
+    game_state['last_confidence'] = confidence
     if multiplayer:
         move2 = data.get('move2', move)
         result1 = get_result(robot_move, move)
@@ -159,7 +182,8 @@ def play():
         'result': results,
         'difficulty': game_state['difficulty'],
         'multiplayer': game_state['multiplayer'],
-        'accuracy': game_state['accuracy']
+        'accuracy': game_state['accuracy'],
+        'confidence': confidence
     })
 
 @app.route('/stats', methods=['GET'])

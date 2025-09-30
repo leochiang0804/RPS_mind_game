@@ -1,6 +1,7 @@
 # Strategy interface and implementations for difficulty levels
 import random
 from ml_model import MLModel
+from ml_model_enhanced import EnhancedMLModel
 
 class Strategy:
     def predict(self, history):
@@ -47,7 +48,7 @@ class FrequencyStrategy(Strategy):
         if not history:
             return random.choice(['paper', 'scissor', 'stone'])
         freq = {move: history.count(move) for move in ['paper', 'scissor', 'stone']}
-        most_common = max(freq, key=freq.get)
+        most_common = max(freq.keys(), key=lambda k: freq[k])
         counter = {'paper': 'scissor', 'scissor': 'stone', 'stone': 'paper'}
         return counter[most_common]
 
@@ -69,3 +70,25 @@ class HybridStrategy(Strategy):
         if len(history) < 5:
             return FrequencyStrategy().predict(history)
         return self.markov.predict(history)
+
+class EnhancedStrategy(Strategy):
+    """Enhanced strategy using improved ML model with recency weighting"""
+    def __init__(self, order=2, recency_weight=0.8):
+        self.model = EnhancedMLModel(order=order, recency_weight=recency_weight)
+        self.confidence = 0.5
+        
+    def train(self, history):
+        self.model.train(history)
+        
+    def predict(self, history):
+        robot_move, confidence = self.model.predict(history)
+        self.confidence = confidence
+        return robot_move
+        
+    def get_confidence(self):
+        """Get confidence level for last prediction"""
+        return self.confidence
+        
+    def get_stats(self):
+        """Get detailed model statistics"""
+        return self.model.get_stats()
