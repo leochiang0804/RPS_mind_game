@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔧 Developer Console - Rock Paper Scissors</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .console-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .header h1 {
+            color: #333;
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: #e9ecef;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-right: 1px solid #dee2e6;
+        }
+        
+        .nav-tab:last-child {
+            border-right: none;
+        }
+        
+        .nav-tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .nav-tab:hover {
+            background: #5a6fd8;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .metric-card h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            font-size: 1.2em;
+        }
+        
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .metric-label {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .chart-container img {
+            width: 100%;
+            height: auto;
+            max-height: 600px;
+            object-fit: contain;
+        }
+        
+        .log-container {
+            background: #1e1e1e;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 15px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #444;
+        }
+        
+        .log-timestamp {
+            color: #6272a4;
+            font-size: 0.9em;
+        }
+        
+        .log-level-INFO {
+            color: #50fa7b;
+        }
+        
+        .log-level-WARNING {
+            color: #ffb86c;
+        }
+        
+        .log-level-ERROR {
+            color: #ff5555;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active {
+            background: #28a745;
+        }
+        
+        .status-warning {
+            background: #ffc107;
+        }
+        
+        .status-error {
+            background: #dc3545;
+        }
+        
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .insight-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .insight-card h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        
+        .insight-stat {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 3px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .auto-refresh {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            font-size: 14px;
+        }
+        
+        .warning-banner {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .warning-banner ul {
+            margin: 10px 0 0 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-tabs {
+                flex-direction: column;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .insights-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auto-refresh" id="autoRefresh">
+        <span class="status-indicator status-active"></span>
+        Auto-refresh: ON
+    </div>
+    
+    <div class="console-container">
+        <div class="header">
+            <h1>🔧 Developer Console</h1>
+            <p>Comprehensive debugging and performance monitoring interface</p>
+        </div>
+        
+        {% if report.warnings %}
+        <div class="warning-banner">
+            <strong>⚠️ Performance Warnings:</strong>
+            <ul>
+                {% for warning in report.warnings %}
+                <li>{{ warning }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('overview')">📊 Overview</button>
+            <button class="nav-tab" onclick="showTab('models')">🤖 Model Analysis</button>
+            <button class="nav-tab" onclick="showTab('performance')">⚡ Performance</button>
+            <button class="nav-tab" onclick="showTab('logs')">📝 Debug Logs</button>
+            <button class="nav-tab" onclick="showTab('export')">💾 Export/Import</button>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh Data</button>
+                <button class="btn btn-success" onclick="toggleAutoRefresh()">⏯️ Toggle Auto-refresh</button>
+                <a href="/" class="btn btn-warning">🎮 Back to Game</a>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Session Duration</h3>
+                    <div class="metric-value">{{ "%.1f"|format(report.session_info.duration|float / 60) }}</div>
+                    <div class="metric-label">minutes</div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Models Tracked</h3>
+                    <div class="metric-value">{{ report.performance_summary.models_tracked|length }}</div>
+                    <div class="metric-label">active models</div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Total Metrics</h3>
+                    <div class="metric-value">{{ report.performance_summary.total_metrics }}</div>
+                    <div class="metric-label">data points</div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Memory Usage</h3>
+                    <div class="metric-value">{{ "%.1f"|format(report.system_info.memory_usage_mb) }}</div>
+                    <div class="metric-label">MB</div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>CPU Usage</h3>
+                    <div class="metric-value">{{ "%.1f"|format(report.system_info.cpu_percent) }}</div>
+                    <div class="metric-label">%</div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Debug Entries</h3>
+                    <div class="metric-value">{{ report.session_info.total_debug_entries }}</div>
+                    <div class="metric-label">log entries</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Model Analysis Tab -->
+        <div id="models" class="tab-content">
+            {% if chart %}
+            <div class="chart-container">
+                <h3>📊 Model Performance Dashboard</h3>
+                <img src="data:image/png;base64,{{ chart }}" alt="Model Performance Chart" />
+            </div>
+            {% else %}
+            <div class="chart-container">
+                <h3>📊 Model Performance Dashboard</h3>
+                <p>No chart data available. Play some games to generate performance visualizations.</p>
+            </div>
+            {% endif %}
+            
+            <div class="insights-grid">
+                {% for model_name, insights in report.model_insights.items() %}
+                <div class="insight-card">
+                    <h4>🤖 {{ model_name|title }}</h4>
+                    <div class="insight-stat">
+                        <span>Predictions:</span>
+                        <span>{{ insights.total_predictions }}</span>
+                    </div>
+                    <div class="insight-stat">
+                        <span>Accuracy:</span>
+                        <span>{{ "%.1f"|format(insights.accuracy_rate) }}%</span>
+                    </div>
+                    <div class="insight-stat">
+                        <span>Avg Confidence:</span>
+                        <span>{{ "%.2f"|format(insights.avg_confidence) }}</span>
+                    </div>
+                    {% if insights.recent_trend is defined %}
+                    <div class="insight-stat">
+                        <span>Recent Trend:</span>
+                        <span style="color: {{ 'green' if insights.recent_trend > 0 else 'red' }}">
+                            {{ "%.1f"|format(insights.recent_trend) }}%
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Performance Tab -->
+        <div id="performance" class="tab-content">
+            <h3>⚡ Performance Metrics</h3>
+            
+            <div class="metric-card">
+                <h4>System Resources</h4>
+                <div class="insight-stat">
+                    <span>Memory Usage:</span>
+                    <span>{{ "%.1f"|format(report.system_info.memory_usage_mb) }} MB</span>
+                </div>
+                <div class="insight-stat">
+                    <span>Available Memory:</span>
+                    <span>{{ "%.1f"|format(report.system_info.available_memory_mb) }} MB</span>
+                </div>
+                <div class="insight-stat">
+                    <span>CPU Usage:</span>
+                    <span>{{ "%.1f"|format(report.system_info.cpu_percent) }}%</span>
+                </div>
+            </div>
+            
+            <div class="metric-card">
+                <h4>Model Performance</h4>
+                {% for model in report.performance_summary.models_tracked %}
+                <div class="insight-stat">
+                    <span>{{ model|title }} Model:</span>
+                    <span><span class="status-indicator status-active"></span>Active</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Debug Logs Tab -->
+        <div id="logs" class="tab-content">
+            <h3>📝 Recent Debug Logs</h3>
+            
+            <div class="log-container">
+                {% for log_entry in report.recent_debug_log %}
+                <div class="log-entry">
+                    <span class="log-timestamp">{{ log_entry.timestamp[:19] }}</span>
+                    <span class="log-level-{{ log_entry.level }}"> [{{ log_entry.level }}]</span>
+                    {{ log_entry.message }}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-primary" onclick="refreshLogs()">🔄 Refresh Logs</button>
+                <button class="btn btn-warning" onclick="clearLogs()">🗑️ Clear Logs</button>
+            </div>
+        </div>
+        
+        <!-- Export/Import Tab -->
+        <div id="export" class="tab-content">
+            <h3>💾 Data Export & Analysis</h3>
+            
+            <div class="metric-card">
+                <h4>Export Session Data</h4>
+                <p>Export comprehensive session data including performance metrics, model data, and debug logs for external analysis.</p>
+                <button class="btn btn-success" onclick="exportSessionData()">📥 Export Session Data</button>
+            </div>
+            
+            <div class="metric-card">
+                <h4>Session Information</h4>
+                <div class="insight-stat">
+                    <span>Session Start:</span>
+                    <span>{{ report.session_info.start_time[:19] }}</span>
+                </div>
+                <div class="insight-stat">
+                    <span>Session Duration:</span>
+                    <span>{{ report.session_info.duration }}</span>
+                </div>
+                <div class="insight-stat">
+                    <span>Total Debug Entries:</span>
+                    <span>{{ report.session_info.total_debug_entries }}</span>
+                </div>
+            </div>
+            
+            <div id="exportStatus" class="metric-card" style="display: none;">
+                <h4>Export Status</h4>
+                <div id="exportMessage"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let autoRefreshEnabled = true;
+        let refreshInterval;
+        
+        function showTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Remove active class from all nav tabs
+            const navTabs = document.querySelectorAll('.nav-tab');
+            navTabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked nav tab
+            event.target.classList.add('active');
+        }
+        
+        function refreshData() {
+            fetch('/developer/api/report')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Data refreshed:', data);
+                    // Update the page with new data
+                    location.reload(); // Simple approach for now
+                })
+                .catch(error => {
+                    console.error('Refresh failed:', error);
+                });
+        }
+        
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = !autoRefreshEnabled;
+            const indicator = document.querySelector('#autoRefresh .status-indicator');
+            const text = document.querySelector('#autoRefresh');
+            
+            if (autoRefreshEnabled) {
+                indicator.className = 'status-indicator status-active';
+                text.innerHTML = '<span class="status-indicator status-active"></span>Auto-refresh: ON';
+                startAutoRefresh();
+            } else {
+                indicator.className = 'status-indicator status-error';
+                text.innerHTML = '<span class="status-indicator status-error"></span>Auto-refresh: OFF';
+                stopAutoRefresh();
+            }
+        }
+        
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(refreshData, 10000); // Every 10 seconds
+        }
+        
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+        
+        function refreshLogs() {
+            // Refresh just the logs section
+            refreshData();
+        }
+        
+        function clearLogs() {
+            // This would need a backend endpoint to clear logs
+            if (confirm('Clear all debug logs? This action cannot be undone.')) {
+                console.log('Logs would be cleared');
+            }
+        }
+        
+        function exportSessionData() {
+            const statusDiv = document.getElementById('exportStatus');
+            const messageDiv = document.getElementById('exportMessage');
+            
+            statusDiv.style.display = 'block';
+            messageDiv.innerHTML = '⏳ Exporting session data...';
+            
+            fetch('/developer/api/export', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    messageDiv.innerHTML = `✅ ${data.message}`;
+                    messageDiv.style.color = 'green';
+                } else {
+                    messageDiv.innerHTML = `❌ Export failed: ${data.error}`;
+                    messageDiv.style.color = 'red';
+                }
+            })
+            .catch(error => {
+                messageDiv.innerHTML = `❌ Export failed: ${error}`;
+                messageDiv.style.color = 'red';
+            });
+        }
+        
+        // Initialize auto-refresh
+        if (autoRefreshEnabled) {
+            startAutoRefresh();
+        }
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopAutoRefresh();
+        });
+    </script>
+</body>
+</html>

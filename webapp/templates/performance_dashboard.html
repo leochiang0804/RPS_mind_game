@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>⚡ Performance Dashboard - Rock Paper Scissors</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+            min-height: 100vh;
+        }
+        
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #ff6b6b;
+        }
+        
+        .header h1 {
+            color: #333;
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .optimization-score {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #48cab2 0%, #35a0db 100%);
+            border-radius: 15px;
+            color: white;
+        }
+        
+        .score-value {
+            font-size: 4em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .score-label {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: #e9ecef;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-right: 1px solid #dee2e6;
+        }
+        
+        .nav-tab:last-child {
+            border-right: none;
+        }
+        
+        .nav-tab.active {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .nav-tab:hover {
+            background: #ff5252;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 5px solid #ff6b6b;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .metric-card h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            font-size: 1.2em;
+        }
+        
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+        
+        .metric-label {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .recommendations {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .recommendations h3 {
+            margin: 0 0 15px 0;
+            color: #856404;
+        }
+        
+        .recommendations ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .recommendations li {
+            margin: 8px 0;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+        
+        .performance-gauge {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .gauge-container {
+            position: relative;
+            width: 200px;
+            height: 100px;
+            margin: 0 auto 20px;
+        }
+        
+        .gauge-score {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .file-list {
+            max-height: 400px;
+            overflow-y: auto;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        
+        .file-path {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: #495057;
+            flex: 1;
+        }
+        
+        .file-size {
+            color: #6c757d;
+            font-weight: 600;
+            margin-left: 15px;
+        }
+        
+        .large-file {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .timing-analysis {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .timing-model {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .timing-model h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        
+        .timing-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        
+        .timing-stat {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .timing-stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+        
+        .timing-stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        
+        .performance-excellent { color: #28a745; }
+        .performance-good { color: #17a2b8; }
+        .performance-acceptable { color: #ffc107; }
+        .performance-slow { color: #fd7e14; }
+        .performance-critical { color: #dc3545; }
+        
+        .auto-refresh {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            font-size: 14px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-active {
+            background: #28a745;
+        }
+        
+        .status-warning {
+            background: #ffc107;
+        }
+        
+        .status-error {
+            background: #dc3545;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-tabs {
+                flex-direction: column;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .timing-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auto-refresh" id="autoRefresh">
+        <span class="status-indicator status-active"></span>
+        Auto-refresh: ON
+    </div>
+    
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>⚡ Performance Dashboard</h1>
+            <p>Real-time optimization and resource monitoring</p>
+        </div>
+        
+        <div class="optimization-score">
+            <div class="score-value">{{ "%.1f"|format(report.optimization_score) }}</div>
+            <div class="score-label">Optimization Score (out of 100)</div>
+        </div>
+        
+        {% if report.overall_recommendations %}
+        <div class="recommendations">
+            <h3>💡 Optimization Recommendations</h3>
+            <ul>
+                {% for recommendation in report.overall_recommendations %}
+                <li>{{ recommendation }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('overview')">📊 Overview</button>
+            <button class="nav-tab" onclick="showTab('bundle')">📦 Bundle Size</button>
+            <button class="nav-tab" onclick="showTab('timing')">⏱️ Inference Timing</button>
+            <button class="nav-tab" onclick="showTab('resources')">🖥️ Resource Usage</button>
+        </div>
+        
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh Data</button>
+                <button class="btn btn-success" onclick="runOptimization()">🚀 Run Optimization</button>
+                <a href="/" class="btn btn-warning">🎮 Back to Game</a>
+                <a href="/developer" class="btn btn-primary">🔧 Developer Console</a>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Analysis Duration</h3>
+                    <div class="metric-value">{{ "%.2f"|format(report.analysis_duration) }}</div>
+                    <div class="metric-label">seconds</div>
+                </div>
+                
+                {% if report.bundle_analysis %}
+                <div class="metric-card">
+                    <h3>Project Size</h3>
+                    <div class="metric-value">{{ "%.1f"|format(report.bundle_analysis.total_size / 1024 / 1024) }}</div>
+                    <div class="metric-label">MB</div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Large Files</h3>
+                    <div class="metric-value">{{ report.bundle_analysis.large_files|length }}</div>
+                    <div class="metric-label">files > 1MB</div>
+                </div>
+                {% endif %}
+                
+                {% if report.timing_analysis and report.timing_analysis.models %}
+                <div class="metric-card">
+                    <h3>Models Monitored</h3>
+                    <div class="metric-value">{{ report.timing_analysis.total_models }}</div>
+                    <div class="metric-label">active models</div>
+                </div>
+                {% endif %}
+                
+                {% if report.resource_analysis and report.resource_analysis.current %}
+                <div class="metric-card">
+                    <h3>Memory Usage</h3>
+                    <div class="metric-value">{{ "%.1f"|format(report.resource_analysis.current.memory_mb) }}</div>
+                    <div class="metric-label">MB</div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>CPU Usage</h3>
+                    <div class="metric-value">{{ "%.1f"|format(report.resource_analysis.current.cpu_percent) }}</div>
+                    <div class="metric-label">%</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Bundle Size Tab -->
+        <div id="bundle" class="tab-content">
+            <h3>📦 Bundle Size Analysis</h3>
+            
+            {% if report.bundle_analysis %}
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Total Project Size</h3>
+                    <div class="metric-value">{{ "%.1f"|format(report.bundle_analysis.total_size / 1024 / 1024) }}</div>
+                    <div class="metric-label">MB</div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Total Files</h3>
+                    <div class="metric-value">{{ report.bundle_analysis.file_breakdown|length }}</div>
+                    <div class="metric-label">files tracked</div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Large Files</h3>
+                    <div class="metric-value">{{ report.bundle_analysis.large_files|length }}</div>
+                    <div class="metric-label">files > 1MB</div>
+                </div>
+            </div>
+            
+            {% if report.bundle_analysis.large_files %}
+            <div class="file-list">
+                <h4>🚨 Large Files (> 1MB)</h4>
+                {% for file in report.bundle_analysis.large_files %}
+                <div class="file-item">
+                    <span class="file-path">{{ file.path }}</span>
+                    <span class="file-size large-file">{{ "%.1f"|format(file.size_mb) }} MB</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% if report.bundle_analysis.optimization_suggestions %}
+            <div class="recommendations">
+                <h3>📦 Bundle Optimization Suggestions</h3>
+                <ul>
+                    {% for suggestion in report.bundle_analysis.optimization_suggestions %}
+                    <li>{{ suggestion }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% else %}
+            <p>Bundle analysis data not available.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Timing Tab -->
+        <div id="timing" class="tab-content">
+            <h3>⏱️ Model Inference Timing</h3>
+            
+            {% if report.timing_analysis and report.timing_analysis.models %}
+            {% for model_name, model_data in report.timing_analysis.models.items() %}
+            <div class="timing-model">
+                <h4>
+                    🤖 {{ model_name|title }} 
+                    <span class="performance-{{ model_data.performance_category }}">
+                        ({{ model_data.performance_category|title }})
+                    </span>
+                </h4>
+                
+                <div class="timing-stats">
+                    <div class="timing-stat">
+                        <div class="timing-stat-value">{{ "%.1f"|format(model_data.avg_duration * 1000) }}</div>
+                        <div class="timing-stat-label">Avg (ms)</div>
+                    </div>
+                    
+                    <div class="timing-stat">
+                        <div class="timing-stat-value">{{ model_data.total_inferences }}</div>
+                        <div class="timing-stat-label">Total Calls</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>No timing data available. Play some games to generate timing metrics.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Resource Usage Tab -->
+        <div id="resources" class="tab-content">
+            <h3>🖥️ Resource Usage Monitoring</h3>
+            
+            {% if report.resource_analysis %}
+            {% if report.resource_analysis.current %}
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Current Memory</h3>
+                    <div class="metric-value">{{ "%.1f"|format(report.resource_analysis.current.memory_mb) }}</div>
+                    <div class="metric-label">MB</div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Current CPU</h3>
+                    <div class="metric-value">{{ "%.1f"|format(report.resource_analysis.current.cpu_percent) }}</div>
+                    <div class="metric-label">%</div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Disk I/O</h3>
+                    <div class="metric-value">{{ "%.1f"|format(report.resource_analysis.current.disk_io_mbps) }}</div>
+                    <div class="metric-label">MB/s</div>
+                </div>
+                
+                <div class="metric-card">
+                    <h3>Monitoring Duration</h3>
+                    <div class="metric-value">{{ "%.1f"|format(report.resource_analysis.monitoring_duration / 60) }}</div>
+                    <div class="metric-label">minutes</div>
+                </div>
+            </div>
+            
+            {% if report.resource_analysis.recent_averages %}
+            <div class="timing-analysis">
+                <h4>📊 Recent Averages (Last 60 seconds)</h4>
+                <div class="timing-stats">
+                    <div class="timing-stat">
+                        <div class="timing-stat-value">{{ "%.1f"|format(report.resource_analysis.recent_averages.memory_mb) }}</div>
+                        <div class="timing-stat-label">Avg Memory (MB)</div>
+                    </div>
+                    
+                    <div class="timing-stat">
+                        <div class="timing-stat-value">{{ "%.1f"|format(report.resource_analysis.recent_averages.cpu_percent) }}</div>
+                        <div class="timing-stat-label">Avg CPU (%)</div>
+                    </div>
+                    
+                    <div class="timing-stat">
+                        <div class="timing-stat-value">{{ "%.1f"|format(report.resource_analysis.recent_averages.disk_io_mbps) }}</div>
+                        <div class="timing-stat-label">Avg I/O (MB/s)</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if report.resource_analysis.active_alerts %}
+            <div class="recommendations">
+                <h3>🚨 Active Resource Alerts</h3>
+                <ul>
+                    {% for alert in report.resource_analysis.active_alerts %}
+                    <li>{{ alert.metric }}: {{ "%.1f"|format(alert.value) }} (threshold: {{ alert.threshold }})</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% else %}
+            <p>Resource monitoring not active or no data available.</p>
+            {% endif %}
+            {% else %}
+            <p>Resource analysis not available.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        let autoRefreshEnabled = true;
+        let refreshInterval;
+        
+        function showTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Remove active class from all nav tabs
+            const navTabs = document.querySelectorAll('.nav-tab');
+            navTabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked nav tab
+            event.target.classList.add('active');
+        }
+        
+        function refreshData() {
+            fetch('/performance/api/report')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Performance data refreshed:', data);
+                    // Update the page with new data
+                    location.reload(); // Simple approach for now
+                })
+                .catch(error => {
+                    console.error('Refresh failed:', error);
+                });
+        }
+        
+        function runOptimization() {
+            alert('🚀 Running comprehensive optimization analysis...');
+            refreshData();
+        }
+        
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = !autoRefreshEnabled;
+            const indicator = document.querySelector('#autoRefresh .status-indicator');
+            const text = document.querySelector('#autoRefresh');
+            
+            if (autoRefreshEnabled) {
+                indicator.className = 'status-indicator status-active';
+                text.innerHTML = '<span class="status-indicator status-active"></span>Auto-refresh: ON';
+                startAutoRefresh();
+            } else {
+                indicator.className = 'status-indicator status-error';
+                text.innerHTML = '<span class="status-indicator status-error"></span>Auto-refresh: OFF';
+                stopAutoRefresh();
+            }
+        }
+        
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(refreshData, 15000); // Every 15 seconds
+        }
+        
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+        
+        // Initialize auto-refresh
+        if (autoRefreshEnabled) {
+            startAutoRefresh();
+        }
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopAutoRefresh();
+        });
+    </script>
+</body>
+</html>

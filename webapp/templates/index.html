@@ -102,6 +102,27 @@
         p, span {
             /* max-width: 98vw; */
         }
+        
+        /* Enhanced Replay Button Styles */
+        .btn-replay-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(40,167,69,0.4) !important;
+        }
+        
+        .btn-replay-view:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,123,255,0.4) !important;
+        }
+        
+        .btn-developer:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(111,66,193,0.4) !important;
+        }
+        
+        .btn-performance:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(253,126,20,0.4) !important;
+        }
     </style>
     <script>
         document.addEventListener('keydown', function(e) {
@@ -124,6 +145,26 @@
 <body>
     <div class="container" style="max-width:1400px;">
         <h1>Paper Scissor Stone ML Game</h1>
+        
+        <!-- Enhanced Replay Controls - Prominent Location -->
+        <div class="game-controls" style="text-align: center; margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="margin-bottom: 10px; font-weight: 600; color: #495057; font-size: 1.1em;">🎮 Game Controls</div>
+            <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                <button onclick="saveCurrentReplay()" class="btn-replay-save" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 4px rgba(40,167,69,0.3); transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
+                    💾 Save Current Replay
+                </button>
+                <button onclick="window.open('/replay/dashboard', '_blank')" class="btn-replay-view" style="background: linear-gradient(135deg, #007bff 0%, #6610f2 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 4px rgba(0,123,255,0.3); transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
+                    🎬 View All Replays
+                </button>
+                <button onclick="window.open('/developer', '_blank')" class="btn-developer" style="background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 4px rgba(111,66,193,0.3); transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
+                    🔧 Developer Console
+                </button>
+                <button onclick="window.open('/performance', '_blank')" class="btn-performance" style="background: linear-gradient(135deg, #fd7e14 0%, #dc3545 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 4px rgba(253,126,20,0.3); transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
+                    ⚡ Performance Dashboard
+                </button>
+            </div>
+        </div>
+        
         <div id="selection-window" style="display:flex; justify-content:center; align-items:center; gap:3em; margin-bottom:2em;">
             <div id="human-selection" style="position:relative; text-align:center; min-width:180px; min-height:160px; background:#fff8f0; border-radius:16px; box-shadow:0 2px 8px #e0c9a6; padding:1em 0.5em 0.5em 0.5em;">
                 <div style="font-weight:600; color:#a86e3c;">Human Choice</div>
@@ -148,9 +189,24 @@
                 <option value="frequency" {% if default_difficulty == 'frequency' %}selected{% endif %}>Frequency</option>
                 <option value="markov" {% if default_difficulty == 'markov' %}selected{% endif %}>Markov Chain</option>
                 <option value="enhanced" {% if default_difficulty == 'enhanced' %}selected{% endif %}>Enhanced ML</option>
+                <option value="lstm" {% if default_difficulty == 'lstm' %}selected{% endif %}>🧠 LSTM Neural</option>
                 <option value="hybrid" {% if default_difficulty == 'hybrid' %}selected{% endif %}>Hybrid</option>
                 <option value="decision_tree" {% if default_difficulty == 'decision_tree' %}selected{% endif %}>Decision Tree</option>
             </select>
+            
+            <label for="personality">AI Personality:</label>
+            <select id="personality" onchange="setPersonality()">
+                <option value="neutral">🤖 Neutral (Standard)</option>
+                <optgroup label="🎭 Advanced Personalities">
+                    <option value="berserker">⚔️ The Berserker (Ultra Aggressive)</option>
+                    <option value="guardian">🛡️ The Guardian (Defensive)</option>
+                    <option value="chameleon">🦎 The Chameleon (Adaptive)</option>
+                    <option value="professor">🎓 The Professor (Analytical)</option>
+                    <option value="wildcard">🎲 The Wildcard (Unpredictable)</option>
+                    <option value="mirror">🪞 The Mirror (Mimicking)</option>
+                </optgroup>
+            </select>
+            
             <label for="multiplayer">Multiplayer:</label>
             <input type="checkbox" id="multiplayer" onchange="setMultiplayer()">
             <form id="moveForm" style="display:inline;">
@@ -266,6 +322,7 @@
                     <li>Hybrid: <span id="acc-hybrid">-</span>%</li>
                     <li>Decision Tree: <span id="acc-decision_tree">-</span>%</li>
                     <li>Enhanced ML: <span id="acc-enhanced">-</span>%</li>
+                    <li>LSTM Neural: <span id="acc-lstm">-</span>%</li>
                 </ul>
             </div>
             {% set total = stats.human_win + stats.robot_win + stats.tie %}
@@ -511,6 +568,7 @@
         });
     }
         let currentDifficulty = 'enhanced'; // Default value
+        let currentPersonality = 'neutral'; // Default personality
         let currentMultiplayer = false; // Default value
         
         // Initialize values when DOM is ready
@@ -528,7 +586,7 @@
             const difficulty = currentDifficulty || 'enhanced';
             const multiplayer = currentMultiplayer || false;
             
-            let payload = {move, difficulty, multiplayer};
+            let payload = {move, difficulty, multiplayer, personality: currentPersonality};
             
             if (multiplayer) {
                 let move2 = prompt('Player 2, choose paper, scissor, or stone:');
@@ -562,6 +620,29 @@
         function setDifficulty() {
             currentDifficulty = document.getElementById('difficulty').value;
         }
+        function setPersonality() {
+            currentPersonality = document.getElementById('personality').value;
+            // Show personality description
+            const descriptions = {
+                'neutral': 'Standard balanced AI behavior',
+                'berserker': 'Ultra-aggressive, high-risk playstyle that targets weaknesses ruthlessly',
+                'guardian': 'Highly defensive, prioritizes not losing over winning. Patient and calculating',
+                'chameleon': 'Highly adaptive, changes strategy based on opponent. Unpredictable',
+                'professor': 'Analytical and methodical. Uses complex patterns and psychological insights',
+                'wildcard': 'Completely unpredictable and chaotic. Thrives on confusion',
+                'mirror': 'Reflects and learns from opponent style. Becomes more similar over time'
+            };
+            
+            // Create or update personality info display
+            let infoDiv = document.getElementById('personality-info');
+            if (!infoDiv) {
+                infoDiv = document.createElement('div');
+                infoDiv.id = 'personality-info';
+                infoDiv.style.cssText = 'margin-top: 10px; padding: 8px; background: #f8f9fa; border-radius: 6px; font-size: 0.9em; color: #6c757d; border-left: 3px solid #007bff;';
+                document.getElementById('personality').parentNode.insertBefore(infoDiv, document.getElementById('personality').nextSibling);
+            }
+            infoDiv.textContent = descriptions[currentPersonality] || 'Standard AI behavior';
+        }
         function setMultiplayer() {
             currentMultiplayer = document.getElementById('multiplayer').checked;
         }
@@ -569,6 +650,32 @@
             fetch('/reset', {method: 'POST'})
             .then(res => res.json())
             .then(() => location.reload());
+        }
+        
+        function saveCurrentReplay() {
+            const name = prompt('Enter a name for this replay:', 'Game Session ' + new Date().toLocaleString());
+            if (name) {
+                const notes = prompt('Enter any notes (optional):', '');
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('notes', notes || '');
+                
+                fetch('/replay/save', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`✅ Replay saved successfully!\nSession ID: ${data.session_id}\nTotal rounds: ${data.total_rounds}`);
+                    } else {
+                        alert(`❌ Failed to save replay: ${data.message}`);
+                    }
+                })
+                .catch(err => {
+                    alert('❌ Error saving replay: ' + err.message);
+                });
+            }
         }
         function updateUI(data) {
             // Debug: show round_history table
@@ -594,7 +701,7 @@
             document.getElementById('tieRate').textContent = `Tie Rate: ${total ? (data.stats.tie / total * 100).toFixed(2) : 0}%`;
             // ML accuracy metrics
             if (data.accuracy) {
-                for (const key of ['random','frequency','markov','hybrid','decision_tree','enhanced']) {
+                for (const key of ['random','frequency','markov','hybrid','decision_tree','enhanced','lstm']) {
                     const elem = document.getElementById('acc-' + key);
                     if (elem) {
                         elem.textContent = (data.accuracy[key] !== null && data.accuracy[key] !== undefined) ? data.accuracy[key] : '-';
@@ -820,7 +927,6 @@
             // SKIP ALL CHART AND DATA PROCESSING FOR NOW
             console.log('Skipping all chart initialization to test basic functionality');
             console.log('Page should be ready for input now');
-        });
         });
     </script>
 </body>

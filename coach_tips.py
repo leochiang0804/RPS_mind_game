@@ -124,7 +124,7 @@ class CoachTipsGenerator:
     def generate_tips(self, human_history: List[str], robot_history: List[str], 
                      result_history: List[str], change_points: List[Dict], 
                      current_strategy: str = 'unknown') -> Dict:
-        """Generate 3-5 actionable coaching tips"""
+        """Generate 3-5 actionable coaching tips deterministically based on game state"""
         if len(human_history) < 5:
             return {
                 'tips': [
@@ -132,9 +132,23 @@ class CoachTipsGenerator:
                     "Try different moves to see how the AI responds.",
                     "Experiment with different strategies early on."
                 ],
-                'experiments': random.sample(self.experiments, 2),
+                'experiments': self.experiments[:2],  # First 2 experiments consistently
                 'insights': {}
             }
+        
+        # Create deterministic seed based on recent game state
+        state_components = (
+            tuple(human_history[-10:]),  # Last 10 moves
+            tuple(result_history[-10:]),  # Last 10 results
+            current_strategy,
+            len(change_points),
+            len(human_history)
+        )
+        state_hash = hash(state_components)
+        
+        # Use deterministic pseudo-random selection based on state
+        import random
+        random.seed(state_hash)
         
         # Analyze patterns
         insights = self.analyze_player_patterns(human_history, robot_history, result_history, change_points)
@@ -187,8 +201,11 @@ class CoachTipsGenerator:
         
         tips = tips[:5]  # Cap at 5 tips
         
-        # Select appropriate experiments
-        experiments = self._select_experiments(insights, current_strategy)
+        # Select appropriate experiments deterministically
+        experiments = self._select_experiments_deterministic(insights, current_strategy, state_hash)
+        
+        # Reset random seed to avoid affecting other parts of the system
+        random.seed()
         
         return {
             'tips': tips,
@@ -361,3 +378,45 @@ class CoachTipsGenerator:
             suitable_experiments.extend(random.sample(remaining, 3 - len(suitable_experiments)))
         
         return random.sample(suitable_experiments, min(3, len(suitable_experiments)))
+    
+    def _select_experiments_deterministic(self, insights: Dict, current_strategy: str, state_hash: int) -> List[Dict]:
+        """Select 2-3 appropriate experiments deterministically based on current patterns"""
+        import random
+        random.seed(state_hash)
+        
+        pattern_type = insights['pattern_type']
+        predictability = insights['predictability']
+        
+        # Filter experiments based on current situation
+        suitable_experiments = []
+        
+        if pattern_type == 'repeater':
+            suitable_experiments.extend([
+                exp for exp in self.experiments 
+                if exp['name'] in ['Random Play', 'Counter-Cycle', 'Double Repeat']
+            ])
+        elif pattern_type == 'cycler':
+            suitable_experiments.extend([
+                exp for exp in self.experiments
+                if exp['name'] in ['Anti-Mirror', 'Random Play', 'Frequency Counter']
+            ])
+        elif predictability > 0.6:
+            suitable_experiments.extend([
+                exp for exp in self.experiments
+                if exp['name'] in ['Random Play', 'Emotional Play', 'Mirror Strategy']
+            ])
+        else:
+            # Good unpredictable play - suggest advanced techniques
+            suitable_experiments.extend([
+                exp for exp in self.experiments
+                if exp['name'] in ['Frequency Counter', 'Anti-Mirror', 'Emotional Play']
+            ])
+        
+        # Ensure we have enough experiments
+        if len(suitable_experiments) < 3:
+            remaining = [exp for exp in self.experiments if exp not in suitable_experiments]
+            suitable_experiments.extend(random.sample(remaining, 3 - len(suitable_experiments)))
+        
+        result = random.sample(suitable_experiments, min(3, len(suitable_experiments)))
+        random.seed()  # Reset seed
+        return result

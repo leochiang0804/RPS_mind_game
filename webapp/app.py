@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import os
 import sys
+import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from strategy import EnhancedStrategy, FrequencyStrategy, MarkovStrategy
 from change_point_detector import ChangePointDetector
@@ -10,6 +11,36 @@ from optimized_strategies import ToWinStrategy, NotToLoseStrategy
 from personality_engine import get_personality_engine
 from replay_system import GameReplay, get_replay_manager, get_replay_analyzer
 
+# Import Developer Console
+try:
+    from developer_console import console, track_move, track_inference, get_developer_report, get_chart
+    DEVELOPER_CONSOLE_AVAILABLE = True
+    print("✅ Developer Console available")
+except ImportError as e:
+    DEVELOPER_CONSOLE_AVAILABLE = False
+    print(f"⚠️ Developer Console not available: {e}")
+
+# Import Performance Optimizer
+try:
+    from performance_optimizer import optimizer, time_model_inference, get_performance_report, start_performance_monitoring
+    PERFORMANCE_OPTIMIZER_AVAILABLE = True
+    print("✅ Performance Optimizer available")
+    # Start performance monitoring
+    start_performance_monitoring()
+    print("📊 Performance monitoring started")
+except ImportError as e:
+    PERFORMANCE_OPTIMIZER_AVAILABLE = False
+    print(f"⚠️ Performance Optimizer not available: {e}")
+
+# Try to import LSTM functionality
+try:
+    from lstm_web_integration import get_lstm_predictor, init_lstm_model
+    LSTM_AVAILABLE = True
+    print("✅ LSTM integration available")
+except ImportError as e:
+    LSTM_AVAILABLE = False
+    print(f"⚠️ LSTM not available: {e}")
+
 app = Flask(__name__)
 
 # Initialize strategy instances
@@ -18,6 +49,20 @@ frequency_strategy = FrequencyStrategy()
 markov_strategy = MarkovStrategy()
 to_win_strategy = ToWinStrategy()
 not_to_lose_strategy = NotToLoseStrategy()
+
+# Initialize LSTM if available
+lstm_predictor = None
+if LSTM_AVAILABLE:
+    try:
+        lstm_predictor = get_lstm_predictor()
+        if init_lstm_model():
+            print("✅ LSTM model initialized for webapp")
+        else:
+            print("⚠️ LSTM model failed to initialize")
+            LSTM_AVAILABLE = False
+    except Exception as e:
+        print(f"⚠️ LSTM initialization error: {e}")
+        LSTM_AVAILABLE = False
 
 # Initialize advanced personality engine
 personality_engine = get_personality_engine()
@@ -78,6 +123,7 @@ game_state = {
             'frequency': [],
             'markov': [],
             'enhanced': [],
+            'lstm': [],
             'to_win': [],
             'not_to_lose': []
         },
@@ -86,6 +132,7 @@ game_state = {
             'frequency': [],
             'markov': [],
             'enhanced': [],
+            'lstm': [],
             'to_win': [],
             'not_to_lose': []
         }
@@ -96,7 +143,7 @@ HOTKEYS = {'a': 'paper', 'w': 'scissor', 'd': 'stone'}
 
 @app.route('/')
 def index():
-    # Serve all game state for single-page UI - using working template temporarily
+    # Serve all game state for single-page UI - using working template that user likes
     return render_template('index_working.html', moves=MOVES, hotkeys=HOTKEYS,
         stats=game_state['stats'],
         human_history=game_state['human_history'],
@@ -144,6 +191,9 @@ def play():
     import random
     # Difficulty strategies
     def robot_strategy(history, difficulty, strategy_preference='balanced', personality='neutral'):
+        # Performance tracking - start timing
+        start_time = time.time()
+        
         # Set the personality in the engine
         advanced_personalities = ['berserker', 'guardian', 'chameleon', 'professor', 'wildcard', 'mirror']
         
@@ -189,11 +239,35 @@ def play():
                 predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
                 confidence = 0.6
             elif difficulty == 'enhanced':
-                enhanced_strategy.train(history)
-                predicted_counter = enhanced_strategy.predict(history)
+                if PERFORMANCE_OPTIMIZER_AVAILABLE:
+                    # Use performance-timed inference
+                    def enhanced_inference():
+                        enhanced_strategy.train(history)
+                        return enhanced_strategy.predict(history)
+                    predicted_counter, inference_time = time_model_inference('enhanced', enhanced_inference)
+                else:
+                    enhanced_strategy.train(history)
+                    predicted_counter = enhanced_strategy.predict(history)
+                    
                 confidence = enhanced_strategy.get_confidence()
                 reverse_counter = {'scissor': 'paper', 'stone': 'scissor', 'paper': 'stone'}
                 predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
+            elif difficulty == 'lstm' and LSTM_AVAILABLE and lstm_predictor:
+                # LSTM prediction
+                try:
+                    base_move = lstm_predictor.get_counter_move(history)
+                    confidence = lstm_predictor.get_confidence(history)
+                    
+                    # Track LSTM inference time
+                    inference_duration = time.time() - start_time
+                    if DEVELOPER_CONSOLE_AVAILABLE:
+                        track_inference('lstm', inference_duration)
+                    
+                    return base_move, confidence
+                except Exception as e:
+                    print(f"LSTM prediction error: {e}")
+                    predicted = random.choice(MOVES)
+                    confidence = 0.33
             else:
                 predicted = random.choice(MOVES)
                 confidence = 0.33
@@ -201,6 +275,11 @@ def play():
             # Convert prediction to robot move
             counter = {'paper': 'scissor', 'scissor': 'stone', 'stone': 'paper'}
             base_move = counter.get(predicted) if predicted else random.choice(MOVES)
+        
+        # Track inference time for non-LSTM models
+        inference_duration = time.time() - start_time
+        if DEVELOPER_CONSOLE_AVAILABLE:
+            track_inference(difficulty, inference_duration)
         
         # Apply personality modifications using the advanced engine
         if personality in advanced_personalities:
@@ -273,6 +352,17 @@ def play():
         enhanced_pred = reverse_counter.get(enhanced_pred_counter, random.choice(MOVES))
         game_state['model_predictions_history']['enhanced'].append(enhanced_pred)
         
+        # LSTM prediction (if available)
+        if LSTM_AVAILABLE and lstm_predictor:
+            try:
+                lstm_probs = lstm_predictor.predict(history)
+                lstm_pred = max(lstm_probs.items(), key=lambda x: x[1])[0]  # Most likely human move
+                game_state['model_predictions_history']['lstm'].append(lstm_pred)
+            except Exception as e:
+                game_state['model_predictions_history']['lstm'].append(random.choice(MOVES))
+        else:
+            game_state['model_predictions_history']['lstm'].append(random.choice(MOVES))
+        
         # To Win prediction
         to_win_pred = to_win_strategy.predict(history)
         game_state['model_predictions_history']['to_win'].append(to_win_pred)
@@ -286,6 +376,17 @@ def play():
         game_state['model_confidence_history']['frequency'].append(min(0.8, 0.3 + len(history) * 0.02))
         game_state['model_confidence_history']['markov'].append(min(0.85, 0.4 + len(history) * 0.015))
         game_state['model_confidence_history']['enhanced'].append(enhanced_strategy.get_confidence())
+        
+        # LSTM confidence
+        if LSTM_AVAILABLE and lstm_predictor:
+            try:
+                lstm_confidence = lstm_predictor.get_confidence(history)
+                game_state['model_confidence_history']['lstm'].append(lstm_confidence)
+            except:
+                game_state['model_confidence_history']['lstm'].append(0.33)
+        else:
+            game_state['model_confidence_history']['lstm'].append(0.33)
+        
         game_state['model_confidence_history']['to_win'].append(to_win_strategy.get_confidence())
         game_state['model_confidence_history']['not_to_lose'].append(not_to_lose_strategy.get_confidence())
     
@@ -331,6 +432,8 @@ def play():
         # Add move to change detector for strategy analysis
         change_result = change_detector.add_move(move)
         
+        change_points = []
+        current_strategy = 'warming up'
         if len(game_state['human_history']) >= 5:  # Need minimum moves for analysis
             change_points = change_detector.get_all_change_points()
             current_strategy = change_detector.get_current_strategy_label()
@@ -347,8 +450,8 @@ def play():
         # Add move to replay system
         if game_state['current_replay']:
             analysis_data = {
-                'human_pattern': current_strategy if 'current_strategy' in locals() else 'unknown',
-                'change_points_detected': len(change_points) if 'change_points' in locals() else 0,
+                'human_pattern': current_strategy,
+                'change_points_detected': len(change_points),
                 'robot_strategy': f"{difficulty}_{strategy_preference}_{personality}"
             }
             
@@ -363,6 +466,50 @@ def play():
             )
         
         results = [result]
+    
+    # Calculate model accuracy after each move (only if we have predictions to compare)
+    if len(game_state['human_history']) > 1:  # Need at least 2 moves to have a prediction
+        current_human_move = game_state['human_history'][-1]  # Just played move
+        
+        # Calculate accuracy for each model
+        for model_name in game_state['model_predictions_history']:
+            predictions = game_state['model_predictions_history'][model_name]
+            if len(predictions) > 0:
+                # Compare predictions to actual human moves (excluding first move since no prediction exists)
+                correct_predictions = 0
+                total_predictions = min(len(predictions), len(game_state['human_history']) - 1)
+                
+                for i in range(total_predictions):
+                    if predictions[i] == game_state['human_history'][i + 1]:  # i+1 because predictions start from move 2
+                        correct_predictions += 1
+                
+                # Calculate accuracy percentage
+                accuracy = (correct_predictions / total_predictions * 100) if total_predictions > 0 else 0
+                game_state['accuracy'][model_name] = round(accuracy, 1)
+    
+    # Track game move in developer console
+    if DEVELOPER_CONSOLE_AVAILABLE and len(game_state['human_history']) > 0:
+        # Get all model predictions for this move
+        model_predictions = {}
+        model_confidences = {}
+        
+        for model_name in game_state['model_predictions_history']:
+            if game_state['model_predictions_history'][model_name]:
+                model_predictions[model_name] = game_state['model_predictions_history'][model_name][-1]
+        
+        for model_name in game_state['model_confidence_history']:
+            if game_state['model_confidence_history'][model_name]:
+                model_confidences[model_name] = game_state['model_confidence_history'][model_name][-1]
+        
+        # Track the complete move
+        track_move(
+            human_move=game_state['human_history'][-1],
+            robot_move=game_state['robot_history'][-1] if game_state['robot_history'] else 'unknown',
+            result=game_state['result_history'][-1] if game_state['result_history'] else 'unknown',
+            model_predictions=model_predictions,
+            model_confidences=model_confidences
+        )
+    
     # Return updated state for AJAX
     return jsonify({
         'stats': game_state['stats'],
@@ -741,6 +888,92 @@ def reset_game():
     game_state['current_replay'] = None  # Reset replay
     
     return jsonify({'message': 'Game reset successfully'})
+
+@app.route('/developer', methods=['GET'])
+def developer_console():
+    """Developer console interface with comprehensive debugging and monitoring."""
+    if not DEVELOPER_CONSOLE_AVAILABLE:
+        return jsonify({'error': 'Developer console not available'}), 503
+    
+    report = get_developer_report()
+    chart = get_chart()
+    
+    return render_template('developer_console.html', 
+                         report=report, 
+                         chart=chart,
+                         session_active=True)
+
+@app.route('/developer/api/report', methods=['GET'])
+def developer_api_report():
+    """API endpoint for developer report data."""
+    if not DEVELOPER_CONSOLE_AVAILABLE:
+        return jsonify({'error': 'Developer console not available'}), 503
+    
+    return jsonify(get_developer_report())
+
+@app.route('/developer/api/chart', methods=['GET'])
+def developer_api_chart():
+    """API endpoint for model comparison chart."""
+    if not DEVELOPER_CONSOLE_AVAILABLE:
+        return jsonify({'error': 'Developer console not available'}), 503
+    
+    chart_data = get_chart()
+    return jsonify({'chart': chart_data})
+
+@app.route('/developer/api/export', methods=['POST'])
+def developer_api_export():
+    """Export session data for analysis."""
+    if not DEVELOPER_CONSOLE_AVAILABLE:
+        return jsonify({'error': 'Developer console not available'}), 503
+    
+    try:
+        timestamp = int(time.time())
+        filename = f'session_export_{timestamp}.json'
+        filepath = os.path.join(os.path.dirname(__file__), '..', filename)
+        
+        console.export_session_data(filepath)
+        
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'filepath': filepath,
+            'message': f'Session data exported to {filename}'
+        })
+    except Exception as e:
+        return jsonify({'error': f'Export failed: {str(e)}'}), 500
+
+@app.route('/performance', methods=['GET'])
+def performance_dashboard():
+    """Performance optimization dashboard."""
+    if not PERFORMANCE_OPTIMIZER_AVAILABLE:
+        return jsonify({'error': 'Performance optimizer not available'}), 503
+    
+    report = get_performance_report()
+    return render_template('performance_dashboard.html', report=report)
+
+@app.route('/performance/api/report', methods=['GET'])
+def performance_api_report():
+    """API endpoint for performance report."""
+    if not PERFORMANCE_OPTIMIZER_AVAILABLE:
+        return jsonify({'error': 'Performance optimizer not available'}), 503
+    
+    return jsonify(get_performance_report())
+
+@app.route('/performance/api/bundle-analysis', methods=['GET'])
+def performance_api_bundle():
+    """API endpoint for bundle size analysis."""
+    if not PERFORMANCE_OPTIMIZER_AVAILABLE:
+        return jsonify({'error': 'Performance optimizer not available'}), 503
+    
+    return jsonify(optimizer.bundle_analyzer.analyze_file_sizes())
+
+@app.route('/performance/api/timing/<model_name>', methods=['GET'])
+def performance_api_timing(model_name):
+    """API endpoint for model timing analysis."""
+    if not PERFORMANCE_OPTIMIZER_AVAILABLE:
+        return jsonify({'error': 'Performance optimizer not available'}), 503
+    
+    return jsonify(optimizer.timing_validator.get_timing_analysis(model_name))
 
 
 import threading

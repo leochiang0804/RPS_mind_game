@@ -188,6 +188,25 @@
     <div class="container">
         <h1>Paper Scissor Stone ML Game</h1>
         
+        <!-- 🎮 ENHANCED REPLAY CONTROLS (New Feature #1) -->
+        <div style="text-align: center; margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="margin-bottom: 10px; font-weight: 600; color: #495057; font-size: 1.1em;">🎮 Game Controls</div>
+            <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                <button onclick="saveCurrentReplay()" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 4px rgba(40,167,69,0.3); transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
+                    💾 Save Current Replay
+                </button>
+                <button onclick="window.open('/replay/dashboard', '_blank')" style="background: linear-gradient(135deg, #007bff 0%, #6610f2 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 4px rgba(0,123,255,0.3); transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
+                    🎬 View All Replays
+                </button>
+                <button onclick="window.open('/developer', '_blank')" style="background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 4px rgba(111,66,193,0.3); transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
+                    🔧 Developer Console
+                </button>
+                <button onclick="window.open('/performance', '_blank')" style="background: linear-gradient(135deg, #fd7e14 0%, #dc3545 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 4px rgba(253,126,20,0.3); transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
+                    ⚡ Performance Dashboard
+                </button>
+            </div>
+        </div>
+        
         <div class="current-strategy">
             <strong>Current Strategy: </strong>
             <span id="current-strategy-text">Analyzing...</span>
@@ -200,6 +219,7 @@
                 <option value="frequency" {{ 'selected' if default_difficulty == 'frequency' else '' }}>Frequency</option>
                 <option value="markov" {{ 'selected' if default_difficulty == 'markov' else '' }}>Markov</option>
                 <option value="enhanced" {{ 'selected' if default_difficulty == 'enhanced' else '' }}>Enhanced ML</option>
+                <option value="lstm" {{ 'selected' if default_difficulty == 'lstm' else '' }}>🧠 LSTM Neural</option>
             </select>
             
             <label for="strategy" style="margin-left: 15px;">⚔️ AI Strategy:</label>
@@ -1021,21 +1041,23 @@
                     modelAccuracyChart = new Chart(accuracyCtx, {
                         type: 'bar',
                         data: {
-                            labels: ['Random', 'Frequency', 'Markov', 'Enhanced'],
+                            labels: ['Random', 'Frequency', 'Markov', 'Enhanced', 'LSTM'],
                             datasets: [{
                                 label: 'Accuracy (%)',
-                                data: [0, 0, 0, 0],
+                                data: [0, 0, 0, 0, 0],
                                 backgroundColor: [
                                     'rgba(255, 206, 86, 0.8)',
                                     'rgba(75, 192, 192, 0.8)',
                                     'rgba(153, 102, 255, 0.8)',
-                                    'rgba(255, 159, 64, 0.8)'
+                                    'rgba(255, 159, 64, 0.8)',
+                                    'rgba(54, 162, 235, 0.8)'
                                 ],
                                 borderColor: [
                                     'rgba(255, 206, 86, 1)',
                                     'rgba(75, 192, 192, 1)',
                                     'rgba(153, 102, 255, 1)',
-                                    'rgba(255, 159, 64, 1)'
+                                    'rgba(255, 159, 64, 1)',
+                                    'rgba(54, 162, 235, 1)'
                                 ],
                                 borderWidth: 2
                             }]
@@ -1097,6 +1119,14 @@
                                     data: [],
                                     borderColor: 'rgba(255, 159, 64, 1)',
                                     backgroundColor: 'rgba(255, 159, 64, 0.1)',
+                                    fill: false,
+                                    tension: 0.4
+                                },
+                                {
+                                    label: 'LSTM',
+                                    data: [],
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
                                     fill: false,
                                     tension: 0.4
                                 }
@@ -1219,7 +1249,8 @@
                         data.accuracy.random || 0,
                         data.accuracy.frequency || 0, 
                         data.accuracy.markov || 0,
-                        data.accuracy.enhanced || 0
+                        data.accuracy.enhanced || 0,
+                        data.accuracy.lstm || 0
                     ];
                     modelAccuracyChart.data.datasets[0].data = accuracyData;
                     modelAccuracyChart.update('none');
@@ -1234,7 +1265,8 @@
                         random: 0.33,
                         frequency: Math.min(0.8, 0.3 + (data.round * 0.02)),
                         markov: Math.min(0.85, 0.4 + (data.round * 0.015)),
-                        enhanced: data.confidence || 0.5
+                        enhanced: data.confidence || 0.5,
+                        lstm: Math.min(0.9, 0.5 + (data.round * 0.01))
                     };
                     
                     if (confidenceTrendChart.data.labels.length > 20) {
@@ -1248,6 +1280,7 @@
                     confidenceTrendChart.data.datasets[1].data.push(confidenceValues.frequency);
                     confidenceTrendChart.data.datasets[2].data.push(confidenceValues.markov);
                     confidenceTrendChart.data.datasets[3].data.push(confidenceValues.enhanced);
+                    confidenceTrendChart.data.datasets[4].data.push(confidenceValues.lstm);
                     confidenceTrendChart.update('none');
                 }
                 
@@ -1271,7 +1304,8 @@
                 { name: 'Random', key: 'random', color: '#FFCE56' },
                 { name: 'Frequency', key: 'frequency', color: '#4BC0C0' },
                 { name: 'Markov', key: 'markov', color: '#9966FF' },
-                { name: 'Enhanced', key: 'enhanced', color: '#FF9F40' }
+                { name: 'Enhanced', key: 'enhanced', color: '#FF9F40' },
+                { name: 'LSTM Neural', key: 'lstm', color: '#36A2EB' }
             ];
             
             metricsContainer.innerHTML = models.map(model => {
@@ -1533,6 +1567,33 @@
                 console.error('Reset error:', error);
                 location.reload();
             });
+        }
+        
+        // 🎮 ENHANCED REPLAY FUNCTIONS (New Feature #1)
+        function saveCurrentReplay() {
+            const name = prompt('Enter a name for this replay:', 'Game Session ' + new Date().toLocaleString());
+            if (name) {
+                const notes = prompt('Enter any notes (optional):', '');
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('notes', notes || '');
+                
+                fetch('/replay/save', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`✅ Replay saved successfully!\nSession ID: ${data.session_id}\nTotal rounds: ${data.total_rounds}`);
+                    } else {
+                        alert(`❌ Failed to save replay: ${data.message}`);
+                    }
+                })
+                .catch(err => {
+                    alert('❌ Error saving replay: ' + err.message);
+                });
+            }
         }
         
         console.log('Main page script loaded successfully');

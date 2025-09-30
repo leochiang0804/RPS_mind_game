@@ -1,0 +1,23 @@
+{
+  "model_type": "TinyLSTM",
+  "vocab_size": 3,
+  "embed_dim": 8,
+  "hidden_dim": 24,
+  "num_layers": 2,
+  "move_mapping": {
+    "stone": 0,
+    "paper": 1,
+    "scissor": 2
+  },
+  "training_data_size": 700,
+  "created_at": "2025-09-30T12:18:58.805004",
+  "training_history": [
+    {
+      "timestamp": "2025-09-30T12:18:58.802343",
+      "data_size": 700,
+      "sequences": 690,
+      "epochs": 100,
+      "final_loss": 1.0573882842063904
+    }
+  ]
+}
