@@ -25,6 +25,11 @@
                     <button class="pill-button gradient-info" onclick="window.open('/replay/dashboard', '_blank')">🎬 View All Replays</button>
                     <button class="pill-button" onclick="window.open('/developer', '_blank')">🔧 Developer Console</button>
                     <button class="pill-button gradient-danger" onclick="window.open('/performance', '_blank')">⚡ Performance Dashboard</button>
+                    <button class="pill-button outline" onclick="testRobotUpdate()">🔧 Test Update</button>
+                    <button class="pill-button gradient-danger" onclick="resetGame()">🔄 Reset Game</button>
+                    <button class="pill-button gradient-info" onclick="exportAnalytics()">📊 Export Data</button>
+                    <button class="pill-button gradient-success" onclick="showTournamentDashboard()">🏆 Tournament</button>
+                    <button class="pill-button outline" onclick="showDeveloperMetrics()">🔧 Developer Metrics</button>
                 </div>
             </header>
 
@@ -171,17 +176,17 @@
                                     <div class="select-card">
                                         <label for="difficulty">🎯 AI Difficulty</label>
                                         <select id="difficulty" onchange="setDifficulty()">
-                                            <option value="random" {{ 'selected' if default_difficulty == 'random' else '' }}>Random</option>
-                                            <option value="frequency" {{ 'selected' if default_difficulty == 'frequency' else '' }}>Frequency</option>
-                                            <option value="markov" {{ 'selected' if default_difficulty == 'markov' else '' }}>Markov</option>
-                                            <option value="enhanced" {{ 'selected' if default_difficulty == 'enhanced' else '' }}>Enhanced ML</option>
-                                            <option value="lstm" {{ 'selected' if default_difficulty == 'lstm' else '' }}>LSTM Neural</option>
+                                            <option value="random" selected>Random</option>
+                                            <option value="frequency">Frequency</option>
+                                            <option value="markov">Markov</option>
+                                            <option value="enhanced">Enhanced ML</option>
+                                            <option value="lstm">LSTM Neural</option>
                                         </select>
                                     </div>
                                     <div class="select-card">
                                         <label for="strategy">⚔️ AI Strategy</label>
                                         <select id="strategy" onchange="setStrategy()">
-                                            <option value="balanced">🎯 Balanced</option>
+                                            <option value="balanced" selected>🎯 Balanced</option>
                                             <option value="to_win">🗡️ To Win (Aggressive)</option>
                                             <option value="not_to_lose">🛡️ Not to Lose (Defensive)</option>
                                         </select>
@@ -189,7 +194,7 @@
                                     <div class="select-card">
                                         <label for="personality">🤖 AI Personality</label>
                                         <select id="personality" onchange="setPersonality()">
-                                            <option value="neutral">😐 Neutral</option>
+                                            <option value="neutral" selected>😐 Neutral</option>
                                             <option value="berserker">⚔️ The Berserker (Ultra Aggressive)</option>
                                             <option value="guardian">🛡️ The Guardian (Defensive Expert)</option>
                                             <option value="chameleon">🦎 The Chameleon (Adaptive)</option>
@@ -201,22 +206,18 @@
                                     <div class="select-card">
                                         <label for="game-length">⏱️ Game Length</label>
                                         <select id="game-length" onchange="setGameLength()">
-                                            <option value="infinite" selected>Infinite</option>
+                                            <option value="25" selected>25 Moves</option>
                                             <option value="50">50 Moves</option>
                                             <option value="100">100 Moves</option>
                                             <option value="250">250 Moves</option>
                                             <option value="500">500 Moves</option>
                                             <option value="1000">1000 Moves</option>
+                                            <option value="infinite">Infinite</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
-                            <div class="control-helpers relaxed-controls">
-                                <button class="btn outline" onclick="testRobotUpdate()">🔧 Test Update</button>
-                                <button class="btn destructive" onclick="resetGame()">🔄 Reset Game</button>
-                                <button class="btn primary" onclick="exportAnalytics()">📊 Export Data</button>
-                                <button class="btn" onclick="showTournamentDashboard()">🏆 Tournament</button>
-                            </div>
+                            <!-- Buttons moved to header-actions -->
                             <div id="robot-character-display" class="robot-profile">
                                 <div id="robot-avatar" class="robot-avatar">
                                     <span class="avatar-emoji">🤖</span>
@@ -372,6 +373,7 @@
                                     <div class="charts-grid two-column">
                                         <div class="chart-card">
                                             <h4>Move Distribution</h4>
+                                            <div id="moveDistributionPercentages" class="chart-percentage-display" style="text-align:center; color:#f8fafc; font-size:1.1em; margin-bottom:4px;"></div>
                                             <canvas id="moveDistributionChart"></canvas>
                                         </div>
                                         <div class="chart-card">
@@ -442,8 +444,6 @@
                                     </div>
                                     <div class="advanced-actions">
                                         <button class="btn primary" onclick="exportAnalytics('json')">📄 Export JSON Report</button>
-                                        <button class="btn" onclick="refreshAnalytics()">🔄 Refresh Analytics</button>
-                                        <button class="btn outline" onclick="showDeveloperMetrics()">🔧 Developer Metrics</button>
                                     </div>
                                 </section>
                             </div>
@@ -538,9 +538,9 @@
         console.log('Main page script loading...');
         
         // Global variables (will be updated from dropdown values on page load)
-        let currentDifficulty = 'random';  // Default fallback
-        let currentStrategy = 'balanced';  // Match dropdown default
-        let currentPersonality = 'neutral';  // Match dropdown default
+    let currentDifficulty = 'random';  // Default fallback (mildest)
+    let currentStrategy = 'balanced';  // Default fallback (mildest)
+    let currentPersonality = 'neutral';  // Default fallback (mildest)
         
         // Chart variables
         let moveDistributionChart = null;
@@ -1156,6 +1156,7 @@
         }
         
         function updateUI(data) {
+            if (isGameFrozen) return;
             console.log('Updating UI with:', data);
             
             // Safely get the last human move
@@ -1762,6 +1763,7 @@
         }
 
         function updateAnalyticsDashboard(data, insights) {
+            if (isGameFrozen) return;
             if (!data.human_history || data.human_history.length === 0) return;
 
             // Check if game has ended based on round limit
@@ -2101,7 +2103,11 @@
                             maintainAspectRatio: false,
                             plugins: {
                                 legend: {
-                                    position: 'bottom'
+                                    position: 'bottom',
+                                    labels: {
+                                        color: '#f8fafc',
+                                        font: { weight: 'bold', size: 13 }
+                                    }
                                 }
                             }
                         }
@@ -2134,9 +2140,21 @@
                                     beginAtZero: true,
                                     max: 100,
                                     ticks: {
+                                        color: '#f8fafc',
                                         callback: function(value) {
                                             return value + '%';
                                         }
+                                    },
+                                    grid: {
+                                        color: 'rgba(248,250,252,0.12)'
+                                    }
+                                },
+                                x: {
+                                    ticks: {
+                                        color: '#f8fafc'
+                                    },
+                                    grid: {
+                                        color: 'rgba(248,250,252,0.08)'
                                     }
                                 }
                             },
@@ -2237,7 +2255,8 @@
                                         padding: 10,
                                         font: {
                                             size: 11
-                                        }
+                                        },
+                                        color: '#f8fafc'
                                     }
                                 }
                             },
@@ -2246,25 +2265,39 @@
                                     display: true,
                                     title: {
                                         display: true,
-                                        text: 'Move Number'
+                                        text: 'Move Number',
+                                        color: '#f8fafc',
+                                        font: { weight: 'bold' }
+                                    },
+                                    ticks: {
+                                        color: '#f8fafc'
+                                    },
+                                    grid: {
+                                        color: 'rgba(248,250,252,0.08)'
                                     }
                                 },
                                 y: {
                                     display: true,
                                     title: {
                                         display: true,
-                                        text: 'Moves'
+                                        text: 'Moves',
+                                        color: '#f8fafc',
+                                        font: { weight: 'bold' }
                                     },
                                     min: -0.5,
                                     max: 2.5,
                                     ticks: {
                                         stepSize: 1,
+                                        color: '#f8fafc',
                                         callback: function(value) {
                                             if (value === 0) return 'S';
                                             if (value === 1) return 'R';
                                             if (value === 2) return 'P';
                                             return '';
                                         }
+                                    },
+                                    grid: {
+                                        color: 'rgba(248,250,252,0.12)'
                                     }
                                 }
                             }
@@ -2323,15 +2356,29 @@
                             plugins: {
                                 legend: { 
                                     display: true,
-                                    position: 'bottom'
+                                    position: 'bottom',
+                                    labels: {
+                                        color: '#f8fafc',
+                                        font: { weight: 'bold', size: 13 }
+                                    }
                                 }
                             },
                             scales: {
                                 r: {
                                     beginAtZero: true,
                                     max: 100,
+                                    pointLabels: {
+                                        color: '#f8fafc',
+                                        font: { weight: 'bold', size: 13 }
+                                    },
+                                    angleLines: {
+                                        color: 'rgba(248,250,252,0.12)'
+                                    },
+                                    grid: {
+                                        color: 'rgba(248,250,252,0.12)'
+                                    },
                                     ticks: {
-                                        stepSize: 20
+                                        display: false
                                     }
                                 }
                             }
@@ -2364,21 +2411,34 @@
                                 y: {
                                     title: {
                                         display: true,
-                                        text: 'Score Difference (You - AI)'
+                                        text: 'Score Difference (You - AI)',
+                                        color: '#f8fafc',
+                                        font: { weight: 'bold' }
+                                    },
+                                    ticks: {
+                                        color: '#f8fafc'
                                     },
                                     grid: {
                                         color: function(context) {
                                             if (context.tick.value === 0) {
-                                                return '#666'; // Highlight zero line
+                                                return '#f8fafc';
                                             }
-                                            return '#333';
+                                            return 'rgba(248,250,252,0.12)';
                                         }
                                     }
                                 },
                                 x: {
                                     title: {
                                         display: true,
-                                        text: 'Round Number'
+                                        text: 'Round Number',
+                                        color: '#f8fafc',
+                                        font: { weight: 'bold' }
+                                    },
+                                    ticks: {
+                                        color: '#f8fafc'
+                                    },
+                                    grid: {
+                                        color: 'rgba(248,250,252,0.08)'
                                     }
                                 }
                             },
@@ -2450,7 +2510,8 @@
                                     labels: {
                                         usePointStyle: true,
                                         padding: 10,
-                                        font: { size: 10 }
+                                        font: { size: 10 },
+                                        color: '#f8fafc'
                                     }
                                 }
                             },
@@ -2458,7 +2519,15 @@
                                 x: {
                                     title: {
                                         display: true,
-                                        text: 'Move Number'
+                                        text: 'Move Number',
+                                        color: '#f8fafc',
+                                        font: { weight: 'bold' }
+                                    },
+                                    ticks: {
+                                        color: '#f8fafc'
+                                    },
+                                    grid: {
+                                        color: 'rgba(248,250,252,0.08)'
                                     }
                                 },
                                 y: {
@@ -2466,7 +2535,15 @@
                                     max: 1,
                                     title: {
                                         display: true,
-                                        text: 'Confidence'
+                                        text: 'Confidence',
+                                        color: '#f8fafc',
+                                        font: { weight: 'bold' }
+                                    },
+                                    ticks: {
+                                        color: '#f8fafc'
+                                    },
+                                    grid: {
+                                        color: 'rgba(248,250,252,0.12)'
                                     }
                                 }
                             }
@@ -2483,6 +2560,7 @@
         let lastChartData = null;
 
         function updateCharts(data) {
+            if (isGameFrozen) return;
             if (!data.human_history || data.human_history.length === 0) return;
             
             try {
@@ -2493,9 +2571,21 @@
                     const paperCount = history.filter(m => m === 'paper').length;
                     const stoneCount = history.filter(m => m === 'stone').length;
                     const scissorCount = history.filter(m => m === 'scissor').length;
-                    
+                    const total = paperCount + stoneCount + scissorCount;
+                    let paperPct = 0, stonePct = 0, scissorPct = 0;
+                    if (total > 0) {
+                        paperPct = ((paperCount / total) * 100).toFixed(1);
+                        stonePct = ((stoneCount / total) * 100).toFixed(1);
+                        scissorPct = ((scissorCount / total) * 100).toFixed(1);
+                    }
+                    // Update the chart
                     moveDistributionChart.data.datasets[0].data = [paperCount, stoneCount, scissorCount];
                     moveDistributionChart.update('none'); // No animation for performance
+                    // Update the percentage display above the chart
+                    const pctDiv = document.getElementById('moveDistributionPercentages');
+                    if (pctDiv) {
+                        pctDiv.innerHTML = `Paper: <b>${paperPct}%</b> &nbsp; | &nbsp; Rock: <b>${stonePct}%</b> &nbsp; | &nbsp; Scissor: <b>${scissorPct}%</b>`;
+                    }
                 }
                 
                 // Update Win Rate Trend Chart
