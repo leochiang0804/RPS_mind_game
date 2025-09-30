@@ -308,4 +308,99 @@ The final implementation represents a complete, polished gaming experience that 
 
 ------------------------------------------------------------------------
 
-*Last Updated: Phase 4 Complete - Visual & Character System Implementation*
+## 13) Character System Sub-Project Plan
+
+> **Goal:** Add a real-time, modular character design and display system for both human and robot players, supporting customization and dynamic avatar rendering.
+
+### Phase 1: Requirements & Asset Preparation
+
+1. **Define Customization Options**
+   - List all base character types (e.g., male, female, non-binary, robot, etc.).
+   - List all outfit categories (tops, bottoms, shoes, accessories).
+   - List all gear types (weapons, shields, hats, etc.).
+   - List robot character personalities and how they map to visuals.
+
+2. **Design/Collect Art Assets**
+   - Create or source layered PNG/SVG assets for each character part.
+   - Ensure all assets are visually compatible and sized for your UI.
+   - Organize assets in a clear folder structure (e.g., `/static/avatars/`).
+
+---
+
+### Phase 2: Frontend UI Implementation
+
+3. **Character Customization UI**
+   - Add a “Character Creator” modal or panel (shown before game starts).
+   - UI elements for:
+     - Selecting base character
+     - Choosing outfit/gear (dropdowns, color pickers, etc.)
+     - Live preview area (canvas or stacked images)
+   - Store player selections in JS variables or localStorage.
+
+4. **Robot Character Generation**
+   - Map AI difficulty, strategy, and personality to robot avatar parts.
+   - Auto-generate robot character based on player’s AI settings.
+
+---
+
+### Phase 3: Game Integration
+
+5. **Combat Panel Character Display**
+   - Update the combat panel to show:
+     - Human character on the left (facing right)
+     - Robot character on the right (facing left)
+   - Render avatars using selected assets (canvas, SVG, or stacked `<img>`).
+
+6. **Robot Chat Bubble Integration**
+   - Position robot chat bubble near the robot avatar.
+   - Ensure chat bubble content is derived from robot personality.
+
+---
+
+### Phase 4: Persistence & Advanced Features
+
+7. **(Optional) Backend Integration**
+   - Save/load player character selections to backend (Flask, DB, or JSON).
+   - Store character data with replays or user profiles.
+
+8. **(Optional) Animation & Effects**
+   - Add simple animations (idle, win/lose, gear equip).
+   - Add sound effects for gear/outfit changes.
+
+---
+
+### Phase 5: Testing & Polish
+
+9. **Testing**
+   - Test UI on different devices and browsers.
+   - Ensure all combinations of outfits/gears render correctly.
+   - Test robot avatar mapping for all AI settings.
+
+10. **Polish & Documentation**
+    - Refine UI/UX for ease of use.
+    - Document asset structure and customization logic.
+    - Write usage instructions for future contributors.
+
+---
+
+### Milestones & Deliverables
+
+- **M1:** Asset library and requirements doc
+- **M2:** Character Creator UI (with live preview)
+- **M3:** Robot avatar auto-generation logic
+- **M4:** Combat panel with both avatars and chat bubble
+- **M5:** (Optional) Persistence and animation
+- **M6:** Testing, polish, and documentation
+
+---
+
+### Tips for Working with AI
+
+- Ask for code scaffolds for the Character Creator modal/panel.
+- Request help with image layering (canvas/SVG/CSS).
+- Get sample code for mapping AI settings to robot avatars.
+- Ask for best practices on asset management and UI state.
+
+---
+
+*Last Updated: Phase 4 Complete - Visual & Character System Implementation, Character System Sub-Project Plan Added*

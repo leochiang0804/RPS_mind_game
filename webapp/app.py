@@ -982,9 +982,10 @@ import time
 
 def open_browser():
     time.sleep(1)  # Wait a moment for the server to start
-    webbrowser.open('http://127.0.0.1:5000')
+    webbrowser.open('http://192.168.0.229:5050')
 
 if __name__ == '__main__':
     threading.Thread(target=open_browser).start()
     threading.Thread(target=open_browser).start()
-    app.run(debug=True)
+    #app.run(debug=True)
+    app.run(host="0.0.0.0", port=5050)

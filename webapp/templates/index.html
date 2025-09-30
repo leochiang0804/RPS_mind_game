@@ -695,6 +695,7 @@
             }
         }
 
+        let endgameModalShown = false;
         function freezeGame(data, insights) {
             if (isGameFrozen) return;
             isGameFrozen = true;
@@ -716,6 +717,8 @@
         }
 
         function showGameSummaryModal(insights) {
+            if (endgameModalShown) return;
+            endgameModalShown = true;
             // Create modal overlay
             const overlay = document.createElement('div');
             overlay.style.cssText = `
@@ -1768,8 +1771,9 @@
 
             // Check if game has ended based on round limit
             if (currentGameLimit && data.round >= currentGameLimit) {
-                if (!isGameFrozen) {
+                if (!isGameFrozen && !endgameModalShown) {
                     isGameFrozen = true;
+                    endgameModalShown = true;
                     console.log(`Game ended at round ${data.round}, limit was ${currentGameLimit}`);
                     showGameSummaryModal(data);
                 }
@@ -2584,7 +2588,7 @@
                     // Update the percentage display above the chart
                     const pctDiv = document.getElementById('moveDistributionPercentages');
                     if (pctDiv) {
-                        pctDiv.innerHTML = `Paper: <b>${paperPct}%</b> &nbsp; | &nbsp; Rock: <b>${stonePct}%</b> &nbsp; | &nbsp; Scissor: <b>${scissorPct}%</b>`;
+                        pctDiv.innerHTML = `P: <b>${paperPct}%</b> &nbsp; | &nbsp; R: <b>${stonePct}%</b> &nbsp; | &nbsp; S: <b>${scissorPct}%</b>`;
                     }
                 }
                 
