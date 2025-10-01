@@ -5,6 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paper Scissor Stone ML Game</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/experimental-theme.css') }}">
+    <style>
+        /* Disabled Tournament Button Styling */
+        .disabled-tournament {
+            opacity: 0.5 !important;
+            cursor: not-allowed !important;
+            background: #666 !important;
+            border-color: #555 !important;
+        }
+        .disabled-tournament:hover {
+            background: #666 !important;
+            transform: none !important;
+        }
+        .disabled-notification {
+            position: fixed; top: 20px; right: 20px; z-index: 9999;
+            background: #ff6b6b; color: white; padding: 12px 20px;
+            border-radius: 8px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: slideInRight 0.3s ease;
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
 </head>
 <body class="experimental-ui">
     <div class="app-wrapper personality-theme" id="app-root">
@@ -28,7 +51,7 @@
                     <button class="pill-button outline" onclick="testRobotUpdate()">🔧 Test Update</button>
                     <button class="pill-button gradient-danger" onclick="resetGame()">🔄 Reset Game</button>
                     <button class="pill-button gradient-info" onclick="exportAnalytics()">📊 Export Data</button>
-                    <button class="pill-button gradient-success" onclick="showTournamentDashboard()">🏆 Tournament</button>
+                    <button class="pill-button gradient-success disabled-tournament" disabled onclick="showDisabledMessage('Tournament feature is temporarily disabled for maintenance')">🏆 Tournament</button>
                     <button class="pill-button outline" onclick="showDeveloperMetrics()">🔧 Developer Metrics</button>
                 </div>
             </header>
@@ -3138,6 +3161,21 @@
                     alert('❌ Error saving replay: ' + err.message);
                 });
             }
+        }
+        
+        // Disabled Tournament Message Function
+        function showDisabledMessage(message) {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.className = 'disabled-notification';
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
         }
         
         console.log('Main page script loaded successfully');
