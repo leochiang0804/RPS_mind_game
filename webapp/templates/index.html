@@ -27,6 +27,112 @@
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+
+        .endgame-summary {
+            display: none;
+            margin-top: 24px;
+            padding: 24px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(26, 32, 44, 0.95) 0%, rgba(17, 24, 39, 0.95) 100%);
+            border: 2px solid rgba(99, 102, 241, 0.4);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+            color: #e2e8f0;
+        }
+
+        .endgame-summary.visible {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .endgame-summary h2 {
+            margin: 0 0 8px;
+            font-size: 1.6em;
+            color: #a5b4ff;
+        }
+
+        .endgame-summary .summary-subtitle {
+            margin: 0 0 16px;
+            color: rgba(226, 232, 240, 0.75);
+        }
+
+        .endgame-summary .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .endgame-summary .summary-card {
+            background: rgba(79, 70, 229, 0.12);
+            border: 1px solid rgba(129, 140, 248, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .endgame-summary .summary-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #c7d2fe;
+        }
+
+        .endgame-summary .summary-label {
+            font-size: 0.9em;
+            color: rgba(226, 232, 240, 0.75);
+            margin-top: 6px;
+        }
+
+        .endgame-summary .summary-section {
+            margin-top: 20px;
+        }
+
+        .endgame-summary .summary-section h3 {
+            margin: 0 0 12px;
+            font-size: 1.1em;
+            color: #c7d2fe;
+        }
+
+        .endgame-summary .summary-text {
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid rgba(129, 140, 248, 0.2);
+            border-radius: 10px;
+            padding: 14px;
+            line-height: 1.6;
+        }
+
+        .endgame-summary .summary-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .endgame-summary .summary-winner {
+            margin-top: 8px;
+            font-weight: 600;
+            color: #fbbf24;
+        }
+
+        .conversation-callout {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(74, 222, 128, 0.12);
+            border: 1px solid rgba(74, 222, 128, 0.35);
+            color: #bbf7d0;
+            font-weight: 600;
+            display: none;
+        }
+
+        .conversation-callout.visible {
+            display: block;
+            animation: fadeIn 0.25s ease;
+        }
     </style>
 </head>
 <body class="experimental-ui">
@@ -276,14 +382,15 @@
                                                 <div id="robot-speech">"Ready for battle? Let's see what you've got!"</div>
                                                 <span class="speech-tail"></span>
                                             </div>
-                                            <div class="conversation-meta">
-                                                <span id="robot-mood">😎 Confident</span>
-                                            </div>
+                                        <div class="conversation-meta">
+                                            <span id="robot-mood">😎 Confident</span>
                                         </div>
+                                        <div id="player-performance-callout" class="conversation-callout" aria-live="polite"></div>
                                     </div>
                                 </div>
                             </div>
-                            <div id="move-display-window" class="move-display">
+                        </div>
+                        <div id="move-display-window" class="move-display">
                                 <div id="human-move-display" class="move-display-card">
                                     <h3 class="move-title">You</h3>
                                     <div class="move-visual">
@@ -305,6 +412,7 @@
                             <div id="result" class="result-banner">
                                 Press buttons or use A, W, D keys to play!
                             </div>
+                            <div id="endgame-summary-panel" class="endgame-summary" aria-live="polite"></div>
                             <div class="move-pad">
                                 <button type="button" id="move-paper" class="move-btn" onclick="submitMove('paper')">Paper (P)</button>
                                 <button type="button" id="move-stone" class="move-btn" onclick="submitMove('stone')">Rock (R)</button>
@@ -576,6 +684,7 @@
 
         let currentGameLimit = null; // Will be set from dropdown on page load
         let isGameFrozen = false;
+        let endgameSummaryShown = false;
         let defaultResultMessage = '';
         
         // Initialize charts when DOM is ready
@@ -710,6 +819,12 @@
                 if (resultElement && defaultResultMessage) {
                     resultElement.textContent = defaultResultMessage;
                 }
+                const summaryPanel = document.getElementById('endgame-summary-panel');
+                if (summaryPanel) {
+                    summaryPanel.classList.remove('visible');
+                    summaryPanel.innerHTML = '';
+                }
+                endgameSummaryShown = false;
             }
 
             if (lastChartData) {
@@ -719,111 +834,36 @@
             }
         }
 
-        let endgameModalShown = false;
         function freezeGame(data, insights) {
             if (isGameFrozen) return;
             isGameFrozen = true;
             setMoveButtonsDisabled(true);
             renderPostGameSummary(insights);
+            presentGameSummaryModal(insights);
         }
 
         function renderPostGameSummary(insights) {
+            if (!insights) return;
             const resultElement = document.getElementById('result');
             if (!resultElement) return;
+            const humanWins = insights.humanWins ?? 0;
+            const robotWins = insights.robotWins ?? 0;
+            const ties = insights.ties ?? 0;
+            const overallWinRate = (insights.humanWinRate ?? 0).toFixed(1);
+            const recentWinRate = (insights.recentHumanWinRate ?? 0).toFixed(1);
+            const longestHumanStreak = insights.longestHumanStreak ?? 0;
+            const longestRobotStreak = insights.longestRobotStreak ?? 0;
+            const commonMove = insights.mostCommonMove ?? '—';
+            const commonMovePct = (insights.mostCommonMovePercent ?? 0).toFixed(1);
+            const recommendation = insights.recommendation || 'Keep experimenting with new patterns to maintain unpredictability.';
             const summaryLines = [
-                'Final score: You ' + insights.humanWins + ' - Robot ' + insights.robotWins + ' (ties ' + insights.ties + ').',
-                'Overall win rate: ' + insights.humanWinRate.toFixed(1) + '% (last 10 rounds: ' + insights.recentHumanWinRate.toFixed(1) + '%).',
-                'Longest streaks — You: ' + insights.longestHumanStreak + ' | Robot: ' + insights.longestRobotStreak + '.',
-                'Most common move: ' + insights.mostCommonMove + ' (' + insights.mostCommonMovePercent.toFixed(1) + '%).',
-                insights.recommendation
+                `Final score: You ${humanWins} - Robot ${robotWins} (ties ${ties}).`,
+                `Overall win rate: ${overallWinRate}% (last 10 rounds: ${recentWinRate}%).`,
+                `Longest streaks — You: ${longestHumanStreak} | Robot: ${longestRobotStreak}.`,
+                `Most common move: ${commonMove} (${commonMovePct}%).`,
+                recommendation
             ];
             resultElement.innerHTML = '<h3>Match Complete</h3><p>' + summaryLines.join('<br>') + '</p>';
-        }
-
-        function showGameSummaryModal(insights) {
-            if (endgameModalShown) return;
-            endgameModalShown = true;
-            // Create modal overlay
-            const overlay = document.createElement('div');
-            overlay.style.cssText = `
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px);
-                display: flex; justify-content: center; align-items: center;
-                z-index: 10000; animation: fadeIn 0.3s ease;
-            `;
-            
-            // Create modal content
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-                border: 2px solid rgba(99, 102, 241, 0.4);
-                border-radius: 16px; padding: 30px; max-width: 600px; width: 90%;
-                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-                animation: slideIn 0.4s ease;
-            `;
-            
-            // Game completion message
-            const gameLengthText = Number.isFinite(currentGameLimit) ? `${currentGameLimit}-move` : 'unlimited';
-            
-            modal.innerHTML = `
-                <div style="text-align: center; margin-bottom: 25px;">
-                    <h2 style="color: #6366f1; margin: 0 0 10px 0; font-size: 1.8em;">🎯 Game Complete!</h2>
-                    <p style="color: #a5b4ff; margin: 0; opacity: 0.8;">Your ${gameLengthText} match has ended</p>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px;">
-                    <div style="background: rgba(20, 32, 70, 0.6); padding: 15px; border-radius: 8px; text-align: center;">
-                        <div style="color: #34d399; font-size: 1.4em; font-weight: bold;">${insights.humanWins}</div>
-                        <div style="color: #ccd6ff; font-size: 0.9em;">Your Wins</div>
-                    </div>
-                    <div style="background: rgba(20, 32, 70, 0.6); padding: 15px; border-radius: 8px; text-align: center;">
-                        <div style="color: #f87171; font-size: 1.4em; font-weight: bold;">${insights.robotWins}</div>
-                        <div style="color: #ccd6ff; font-size: 0.9em;">Robot Wins</div>
-                    </div>
-                    <div style="background: rgba(20, 32, 70, 0.6); padding: 15px; border-radius: 8px; text-align: center;">
-                        <div style="color: #a5b4ff; font-size: 1.4em; font-weight: bold;">${insights.ties || 0}</div>
-                        <div style="color: #ccd6ff; font-size: 0.9em;">Ties</div>
-                    </div>
-                </div>
-                
-                <div style="background: rgba(15, 23, 42, 0.8); padding: 20px; border-radius: 10px; margin-bottom: 25px;">
-                    <h3 style="color: #e2e8f0; margin: 0 0 15px 0; font-size: 1.2em;">📊 Performance Summary</h3>
-                    <div style="color: #ccd6ff; line-height: 1.6;">
-                        <div>🎯 <strong>Win Rate:</strong> ${insights.humanWinRate.toFixed(1)}% overall, ${insights.recentHumanWinRate.toFixed(1)}% recent</div>
-                        <div>🔥 <strong>Best Streak:</strong> ${insights.longestHumanStreak} wins in a row</div>
-                        <div>📈 <strong>Favorite Move:</strong> ${insights.mostCommonMove} (${insights.mostCommonMovePercent.toFixed(1)}%)</div>
-                        <div style="margin-top: 10px; padding: 10px; background: rgba(99, 102, 241, 0.1); border-left: 3px solid #6366f1;">
-                            💡 <strong>Insight:</strong> ${insights.recommendation}
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="display: flex; gap: 12px; justify-content: center;">
-                    <button onclick="this.closest('[style*=\"position: fixed\"]').remove(); resetGame();" 
-                            style="padding: 12px 24px; background: linear-gradient(135deg, #6366f1, #8b5cf6); 
-                                   color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                        🔄 Play Again
-                    </button>
-                    <button onclick="this.closest('[style*=\"position: fixed\"]').remove();" 
-                            style="padding: 12px 24px; background: rgba(255, 255, 255, 0.1); 
-                                   color: #ccd6ff; border: 1px solid rgba(255, 255, 255, 0.2); 
-                                   border-radius: 8px; cursor: pointer; font-weight: 600;">
-                        📊 View Analytics
-                    </button>
-                </div>
-            `;
-            
-            overlay.appendChild(modal);
-            document.body.appendChild(overlay);
-            
-            // Add animations
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes slideIn { from { transform: translateY(-20px) scale(0.95); opacity: 0; } 
-                                     to { transform: translateY(0) scale(1); opacity: 1; } }
-            `;
-            document.head.appendChild(style);
         }
 
         function determineWinner(humanMove, robotMove) {
@@ -1185,18 +1225,20 @@
         function updateUI(data) {
             if (isGameFrozen) return;
             console.log('Updating UI with:', data);
-            
+
             // Safely get the last human move
             const lastHumanMove = data.human_history && data.human_history.length > 0 
                 ? data.human_history[data.human_history.length-1] 
                 : 'unknown';
-            
+
             // Safely get the robot move
             const robotMove = data.robot_move || 'unknown';
-            
+
             // Safely get the result
             const result = data.result ? String(data.result) : 'unknown';
-            
+
+            const insights = deriveGameInsights(data);
+
             // Update result
             document.getElementById('result').innerHTML = 
                 '<h3>Round ' + (data.round || 0) + ' Results</h3>' +
@@ -1228,19 +1270,17 @@
             if (data.round && data.round > 0 && data.round % 5 === 0) {
                 setTimeout(refreshCoachingTips, 500); // Small delay to ensure data is processed
             }
-            
+
             // Update analytics dashboard
-            updateAnalyticsDashboard(data);
-            
+            updateAnalyticsDashboard(data, insights);
+
             // Check if game should end based on game length limit
             if (Number.isFinite(currentGameLimit) && data.round >= currentGameLimit) {
-                const insights = deriveGameInsights(data);
                 setTimeout(() => {
                     freezeGame(data, insights);
-                    showGameSummaryModal(insights);
                 }, 1000); // Delay to allow move animation to complete
             }
-            
+
             // Update charts
             updateCharts(data);
             
@@ -1256,7 +1296,10 @@
                 updateRobotConversation(currentPersonality, conversationEventType, {
                     humanMove: lastHumanMove,
                     robotMove: robotMove,
-                    round: data.round
+                    round: data.round,
+                    humanWinRate: insights?.humanWinRate,
+                    robotWinRate: insights?.robotWinRate,
+                    totalRounds: insights?.totalRounds
                 });
             }, 800); // Delay to let move display finish
         }
@@ -1518,15 +1561,38 @@
             const speechElement = document.getElementById('robot-speech');
             const moodElement = document.getElementById('robot-mood');
             const avatarElement = document.getElementById('conversation-avatar');
-            
+            const calloutElement = document.getElementById('player-performance-callout');
+
             const dialogue = generatePersonalityDialogue(personality, eventType, data);
-            
+
             // Update speech with typing effect
             typeMessage(speechElement, dialogue.message);
-            
+
             // Update mood and avatar
             moodElement.textContent = dialogue.mood;
             avatarElement.textContent = dialogue.avatar;
+
+            if (calloutElement) {
+                const humanWinRate = typeof data.humanWinRate === 'number' ? data.humanWinRate : null;
+                const robotWinRate = typeof data.robotWinRate === 'number' ? data.robotWinRate : null;
+                const totalRounds = typeof data.totalRounds === 'number' ? data.totalRounds : 0;
+
+                if (humanWinRate !== null && robotWinRate !== null && totalRounds > 0) {
+                    if (humanWinRate > robotWinRate + 0.5) {
+                        calloutElement.textContent = `🔥 You're ahead with a ${humanWinRate.toFixed(1)}% win rate!`;
+                        calloutElement.classList.add('visible');
+                    } else if (robotWinRate > humanWinRate + 0.5) {
+                        calloutElement.textContent = `⚠️ AI is leading at ${robotWinRate.toFixed(1)}% — time to adjust!`;
+                        calloutElement.classList.add('visible');
+                    } else {
+                        calloutElement.textContent = `🤝 It's a tight contest: ${humanWinRate.toFixed(1)}% vs ${robotWinRate.toFixed(1)}%.`;
+                        calloutElement.classList.add('visible');
+                    }
+                } else {
+                    calloutElement.classList.remove('visible');
+                    calloutElement.textContent = '';
+                }
+            }
         }
         
         function generatePersonalityDialogue(personality, eventType, data) {
@@ -1795,11 +1861,9 @@
 
             // Check if game has ended based on round limit
             if (currentGameLimit && data.round >= currentGameLimit) {
-                if (!isGameFrozen && !endgameModalShown) {
-                    isGameFrozen = true;
-                    endgameModalShown = true;
-                    console.log(`Game ended at round ${data.round}, limit was ${currentGameLimit}`);
-                    showGameSummaryModal(data);
+                if (!isGameFrozen && !endgameSummaryShown) {
+                    const summaryInsights = insights || deriveGameInsights(data);
+                    freezeGame(data, summaryInsights);
                 }
                 return; // Don't update analytics if game has ended
             }
@@ -1873,134 +1937,113 @@
                 const insights = deriveGameInsights(data);
                 updateOverviewPanel(insights);
                 updateAnalyticsDashboard(data, insights);
-                updateCharts(data, insights);
+                updateCharts(data);
             })
             .catch(err => console.log('Analytics refresh failed:', err));
         }
         
-        function showGameSummaryModal(data) {
-            const insights = deriveGameInsights(data);
-            
-            // Create modal HTML
-            const modalHTML = `
-                <div id="game-summary-modal" class="modal-overlay" style="display: flex;">
-                    <div class="modal-content game-summary-modal">
-                        <div class="modal-header">
-                            <h2>🏁 Game Complete!</h2>
-                            <span class="modal-subtitle">Your ${currentGameLimit}-round battle is finished</span>
-                        </div>
-                        <div class="modal-body">
-                            <div class="summary-section">
-                                <h3>📊 Final Performance</h3>
-                                <div class="performance-grid">
-                                    <div class="perf-card">
-                                        <div class="perf-value">${insights.humanWinRate.toFixed(1)}%</div>
-                                        <div class="perf-label">Your Win Rate</div>
-                                    </div>
-                                    <div class="perf-card">
-                                        <div class="perf-value">${insights.robotWinRate.toFixed(1)}%</div>
-                                        <div class="perf-label">AI Win Rate</div>
-                                    </div>
-                                    <div class="perf-card">
-                                        <div class="perf-value">${insights.longestHumanStreak || 0}</div>
-                                        <div class="perf-label">Best Streak</div>
-                                    </div>
-                                    <div class="perf-card">
-                                        <div class="perf-value">${insights.mostCommonMove}</div>
-                                        <div class="perf-label">Favorite Move</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="summary-section">
-                                <h3>🎯 Strategy Analysis</h3>
-                                <div class="strategy-insights">
-                                    <div class="insight-item">
-                                        <strong>Predictability:</strong> ${insights.moveVariance ? insights.moveVariance.toFixed(1) : '50.0'}% 
-                                        ${insights.moveVariance && insights.moveVariance > 60 ? '(High - Easy to predict)' : 
-                                          insights.moveVariance && insights.moveVariance > 40 ? '(Medium)' : '(Low - Unpredictable)'}
-                                    </div>
-                                    <div class="insight-item">
-                                        <strong>Adaptation Rate:</strong> ${insights.patternChanges ? insights.patternChanges.toFixed(1) : '33.0'}%
-                                        ${insights.patternChanges && insights.patternChanges > 60 ? '(Highly Adaptive)' : 
-                                          insights.patternChanges && insights.patternChanges > 40 ? '(Moderately Adaptive)' : '(Predictable Patterns)'}
-                                    </div>
-                                    <div class="insight-item">
-                                        <strong>AI Difficulty:</strong> ${currentDifficulty.toUpperCase()} 
-                                        (${insights.aiAccuracy ? insights.aiAccuracy.toFixed(1) : '50.0'}% accuracy)
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="summary-section">
-                                <h3>💡 Key Insights</h3>
-                                <div class="recommendation-box">
-                                    ${insights.recommendation}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button class="btn outline" onclick="closeGameSummaryModal()">📊 Review Analytics</button>
-                            <button class="btn primary" onclick="startNewGame()">🔄 New Game</button>
-                        </div>
+        function presentGameSummaryModal(payload) {
+            if (endgameSummaryShown) return;
+            endgameSummaryShown = true;
+
+            const panel = document.getElementById('endgame-summary-panel');
+            if (!panel) return;
+
+            const insights = (payload && payload.human_history) ? deriveGameInsights(payload) : payload;
+            const gameData = (payload && payload.human_history) ? payload : null;
+            const roundsPlayed = gameData ? gameData.round : (payload?.round ?? 0);
+            const matchLength = Number.isFinite(currentGameLimit) ? `${currentGameLimit} moves` : `${roundsPlayed} moves`;
+            const humanWins = insights?.humanWins ?? 0;
+            const robotWins = insights?.robotWins ?? 0;
+            const winnerMessage = humanWins === robotWins
+                ? '🤝 It ends in a draw — closely matched strategies.'
+                : humanWins > robotWins
+                    ? '🏆 Winner: You outplayed the AI this round!'
+                    : '🤖 Winner: The AI claimed this match. Time to regroup!';
+
+            panel.innerHTML = `
+                <h2>🏁 Game Complete</h2>
+                <p class="summary-subtitle">Session summary after ${matchLength}</p>
+                <div class="summary-winner">${winnerMessage}</div>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-value">${(insights?.humanWinRate ?? 0).toFixed(1)}%</div>
+                        <div class="summary-label">Your Win Rate</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">${(insights?.robotWinRate ?? 0).toFixed(1)}%</div>
+                        <div class="summary-label">AI Win Rate</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">${insights?.longestHumanStreak || 0}</div>
+                        <div class="summary-label">Best Streak</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value">${insights?.mostCommonMove || '—'}</div>
+                        <div class="summary-label">Favourite Move</div>
                     </div>
                 </div>
+                <div class="summary-section">
+                    <h3>🎯 Strategy Highlights</h3>
+                    <div class="summary-text">
+                        <p><strong>Predictability:</strong> ${(insights?.moveVariance ?? 50).toFixed(1)}% — ${(insights?.moveVariance ?? 50) > 60 ? 'High (easy to read)' : (insights?.moveVariance ?? 50) > 40 ? 'Moderate balance' : 'Low (unpredictable)'}</p>
+                        <p><strong>Adaptation Rate:</strong> ${(insights?.patternChanges ?? 33).toFixed(1)}% — ${(insights?.patternChanges ?? 33) > 60 ? 'Highly adaptive' : (insights?.patternChanges ?? 33) > 40 ? 'Moderately adaptive' : 'Stable patterns'}</p>
+                        <p><strong>AI Difficulty:</strong> ${(gameData?.difficulty || currentDifficulty || 'unknown').toUpperCase()} (${(insights?.aiAccuracy ?? 50).toFixed(1)}% prediction accuracy)</p>
+                    </div>
+                </div>
+                <div class="summary-section">
+                    <h3>💡 Key Insight</h3>
+                    <div class="summary-text">
+                        ${insights?.recommendation || 'Keep exploring varied move sequences to stay ahead of the AI.'}
+                    </div>
+                </div>
+                <div class="summary-actions">
+                    <button class="btn outline" data-action="analytics">📊 Review Analytics</button>
+                    <button class="btn outline" data-action="coach">🤖 Ask AI Coach</button>
+                    <button class="btn primary" data-action="new-game">🔄 New Game</button>
+                </div>
             `;
-            
-            // Add modal to page
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-            
-            // Add styles for the modal if not already present
-            if (!document.getElementById('game-modal-styles')) {
-                const styles = document.createElement('style');
-                styles.id = 'game-modal-styles';
-                styles.textContent = `
-                    .modal-overlay {
-                        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                        background: rgba(0,0,0,0.8); z-index: 10000;
-                        display: flex; align-items: center; justify-content: center;
-                        animation: fadeIn 0.3s ease;
-                    }
-                    .game-summary-modal {
-                        background: var(--card-bg, #1a1a1a); border-radius: 16px;
-                        max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;
-                        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-                    }
-                    .modal-header { text-align: center; padding: 30px 30px 20px; }
-                    .modal-header h2 { font-size: 2em; margin: 0; color: var(--accent-color, #00ff88); }
-                    .modal-subtitle { color: #888; font-size: 1.1em; }
-                    .modal-body { padding: 0 30px; }
-                    .modal-footer { padding: 20px 30px 30px; display: flex; gap: 15px; justify-content: center; }
-                    .summary-section { margin-bottom: 25px; }
-                    .summary-section h3 { color: var(--accent-color, #00ff88); margin-bottom: 15px; }
-                    .performance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; }
-                    .perf-card { text-align: center; background: var(--surface-color, #2a2a2a); padding: 15px; border-radius: 8px; }
-                    .perf-value { font-size: 1.8em; font-weight: bold; color: var(--accent-color, #00ff88); }
-                    .perf-label { color: #aaa; font-size: 0.9em; margin-top: 5px; }
-                    .strategy-insights { background: var(--surface-color, #2a2a2a); padding: 20px; border-radius: 8px; }
-                    .insight-item { margin-bottom: 10px; line-height: 1.5; color: #ddd; }
-                    .recommendation-box { background: var(--accent-color, #00ff88); color: black; padding: 20px; border-radius: 8px; font-weight: 500; }
-                    @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-                    @keyframes fadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.9); } }
-                    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-                    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
-                `;
-                document.head.appendChild(styles);
+
+            panel.classList.add('visible');
+            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            const analyticsBtn = panel.querySelector('[data-action="analytics"]');
+            if (analyticsBtn) {
+                analyticsBtn.addEventListener('click', () => {
+                    const analyticsTab = document.querySelector('.mode-tab[data-mode="analytics"]');
+                    analyticsTab?.click();
+                    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+            }
+
+            const coachBtn = panel.querySelector('[data-action="coach"]');
+            if (coachBtn) {
+                coachBtn.addEventListener('click', () => {
+                    window.open('/ai_coach_demo', '_blank');
+                });
+            }
+
+            const newGameBtn = panel.querySelector('[data-action="new-game"]');
+            if (newGameBtn) {
+                newGameBtn.addEventListener('click', () => {
+                    startNewGame();
+                });
             }
         }
-        
-        function closeGameSummaryModal() {
-            const modal = document.getElementById('game-summary-modal');
-            if (modal) {
-                modal.style.animation = 'fadeOut 0.3s ease';
-                setTimeout(() => modal.remove(), 300);
-            }
-        }
-        
+
         function startNewGame() {
-            // Reset game state
             isGameFrozen = false;
-            closeGameSummaryModal();
+            const panel = document.getElementById('endgame-summary-panel');
+            if (panel) {
+                panel.classList.remove('visible');
+                panel.innerHTML = '';
+            }
+            const calloutElement = document.getElementById('player-performance-callout');
+            if (calloutElement) {
+                calloutElement.classList.remove('visible');
+                calloutElement.textContent = '';
+            }
+            endgameSummaryShown = false;
             resetGame();
         }
         
