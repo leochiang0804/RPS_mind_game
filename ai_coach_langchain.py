@@ -936,7 +936,8 @@ Please write this as if you're having a thoughtful conversation with the player 
             'cognitive_patterns': psychological.get('cognitive_patterns', {}),
             
             # AI behavior analysis
-            'robot_strategy': ai_behavior.get('current_strategy', 'unknown'),
+            'robot_strategy': ai_behavior.get('ai_strategy', 'unknown'),
+            'human_strategy_label': ai_behavior.get('human_strategy_label', 'unknown'),
             'ai_confidence': ai_behavior.get('confidence_history', {}).get('enhanced', [0.5])[-1] if ai_behavior.get('confidence_history', {}).get('enhanced') else 0.5,
             'ai_adaptation': ai_behavior.get('ai_adaptation', {}),
             'prediction_patterns': ai_behavior.get('prediction_patterns', {}),
@@ -1312,7 +1313,7 @@ Performance: {core.get('win_rates', {}).get('human', 0.0):.1%} win rate
 Pattern Analysis: {patterns.get('pattern_type', 'unknown')} patterns detected
 Entropy: {patterns.get('entropy_calculation', 0.0):.3f}
 Predictability: {patterns.get('predictability_score', 0.0):.3f}
-AI Strategy: {ai_behavior.get('current_strategy', 'unknown')}
+AI Strategy: {ai_behavior.get('ai_strategy', 'unknown')}
 Decision Style: {psychological.get('decision_making_style', {})}
 """
         

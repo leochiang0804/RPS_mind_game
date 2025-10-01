@@ -1184,6 +1184,8 @@
             const coachingStyle = data.coaching_style || currentCoachingStyle;
             const confidence = data.metadata?.confidence_level || 'N/A';
             const dataPoints = data.metadata?.data_points_analyzed || data.game_state?.rounds_played || 0;
+            const aiDifficulty = data.ai_difficulty || data.session_summary?.ai_difficulty || 'Unknown';
+            const humanStrategy = data.human_strategy_label || data.session_summary?.human_strategy_label || 'Unknown';
             
             metadataContainer.innerHTML = `
                 <h4>⚡ Response Analytics</h4>
@@ -1211,6 +1213,14 @@
                     <div class="meta-item">
                         <div class="meta-value">${data.success ? 'SUCCESS' : 'FAILED'}</div>
                         <div class="meta-label">Status</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-value">${aiDifficulty.toUpperCase()}</div>
+                        <div class="meta-label">AI Difficulty</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-value">${humanStrategy.toUpperCase()}</div>
+                        <div class="meta-label">Human Strategy</div>
                     </div>
                 </div>
             `;

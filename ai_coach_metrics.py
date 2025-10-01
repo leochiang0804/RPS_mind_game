@@ -21,7 +21,28 @@ class AICoachMetricsAggregator:
         self.basic_coach = CoachTipsGenerator()
         self.change_detector = ChangePointDetector()
         self.session_start_time = time.time()
-        
+
+    # ------------------------------------------------------------------
+    # Helper accessors for consistent strategy labeling
+    def _get_ai_strategy(self, game_state: Dict[str, Any]) -> str:
+        """Return the active AI difficulty/strategy label."""
+        return (
+            game_state.get('ai_difficulty')
+            or game_state.get('ai_strategy')
+            or game_state.get('current_difficulty')
+            or game_state.get('difficulty')
+            or 'unknown'
+        )
+
+    def _get_human_strategy_label(self, game_state: Dict[str, Any]) -> str:
+        """Return the detected human strategy label."""
+        return (
+            game_state.get('human_strategy_label')
+            or game_state.get('human_strategy')
+            or game_state.get('current_strategy')
+            or 'unknown'
+        )
+
     def _format_metric(self, value: float, decimals: int = 4) -> float:
         """Format metric to consistent decimal places"""
         if isinstance(value, (int, float)) and not math.isnan(value) and not math.isinf(value):
@@ -120,10 +141,11 @@ class AICoachMetricsAggregator:
                 'robot_last_10': robot_history[-10:] if len(robot_history) >= 10 else robot_history,
             },
             'game_settings': {
-                'difficulty': game_state.get('current_difficulty', game_state.get('difficulty', 'unknown')),
-                'strategy_preference': game_state.get('current_strategy', game_state.get('strategy_preference', 'unknown')),
+                'difficulty': self._get_ai_strategy(game_state),
+                'strategy_preference': game_state.get('strategy_preference', 'unknown'),
                 'personality': game_state.get('personality', 'unknown'),
-                'multiplayer': game_state.get('multiplayer', False)
+                'multiplayer': game_state.get('multiplayer', False),
+                'human_strategy_label': self._get_human_strategy_label(game_state)
             },
             'win_rates': {
                 'human': self._calculate_win_rate(result_history, 'human'),
@@ -307,7 +329,9 @@ class AICoachMetricsAggregator:
             'model_accuracy': game_state.get('accuracy', {}),
             'prediction_history': game_state.get('model_predictions_history', {}),
             'confidence_history': game_state.get('model_confidence_history', {}),
-            'current_strategy': game_state.get('current_strategy', 'unknown'),
+            'ai_strategy': self._get_ai_strategy(game_state),
+            'current_strategy': self._get_ai_strategy(game_state),  # Legacy alias for compatibility
+            'human_strategy_label': self._get_human_strategy_label(game_state),
             'ai_adaptation': self._analyze_ai_adaptation(game_state),
             'prediction_patterns': self._analyze_prediction_patterns(game_state)
         }
@@ -1435,7 +1459,7 @@ class AICoachMetricsAggregator:
             )
         
         # Pattern 4: Adaptation to AI strategy changes
-        ai_strategy = game_state.get('current_strategy', 'unknown')
+        ai_strategy = self._get_ai_strategy(game_state)
         robot_moves = game_state.get('robot_moves', game_state.get('robot_history', []))
         
         if len(robot_moves) >= 8 and len(human_moves) >= 8:
@@ -1552,14 +1576,14 @@ class AICoachMetricsAggregator:
         
         return {
             'current_strategy': strategy_analysis,
-            'ai_opponent_strategy': game_state.get('current_strategy', 'unknown'),
+            'ai_opponent_strategy': self._get_ai_strategy(game_state),
             'strategy_match_score': self._calculate_strategy_match_score(game_state),
             'recommended_adjustments': self._suggest_strategy_adjustments(strategy_analysis, game_state)
         }
-    
+
     def _calculate_strategy_match_score(self, game_state: Dict[str, Any]) -> float:
         """Calculate how well human strategy matches against AI strategy"""
-        ai_strategy = game_state.get('current_strategy', 'unknown')
+        ai_strategy = self._get_ai_strategy(game_state)
         human_moves = game_state.get('human_moves', game_state.get('human_history', []))
         results = game_state.get('results', game_state.get('result_history', []))
         
@@ -1600,7 +1624,7 @@ class AICoachMetricsAggregator:
         if strategy_analysis.get('pattern_consistency', 0) > 0.7:
             suggestions.append("Your patterns are too consistent - add more randomness")
         
-        ai_strategy = game_state.get('current_strategy', 'unknown')
+        ai_strategy = self._get_ai_strategy(game_state)
         if ai_strategy == 'frequency':
             suggestions.append("AI is using frequency analysis - vary your move distribution")
         elif ai_strategy == 'markov':
@@ -1744,7 +1768,7 @@ class AICoachMetricsAggregator:
         """Generate specific adaptation suggestions"""
         suggestions = []
         
-        ai_strategy = game_state.get('current_strategy', 'unknown')
+        ai_strategy = self._get_ai_strategy(game_state)
         human_moves = game_state.get('human_moves', game_state.get('human_history', []))
         results = game_state.get('results', game_state.get('result_history', []))
         
@@ -1827,7 +1851,7 @@ class AICoachMetricsAggregator:
                 focus_areas.append("Nash Equilibrium - Study optimal mixed strategies")
         
         # Focus area 4: AI-specific strategies
-        ai_strategy = game_state.get('current_strategy', 'unknown')
+        ai_strategy = self._get_ai_strategy(game_state)
         if ai_strategy != 'unknown' and ai_strategy != 'random':
             focus_areas.append(f"Counter-AI Strategies - Learn to beat {ai_strategy} algorithms")
         
@@ -1854,7 +1878,7 @@ class AICoachMetricsAggregator:
         human_moves = game_state.get('human_moves', game_state.get('human_history', []))
         robot_moves = game_state.get('robot_moves', game_state.get('robot_history', []))
         results = game_state.get('results', game_state.get('result_history', []))
-        current_ai = game_state.get('current_strategy', 'unknown')
+        current_ai = self._get_ai_strategy(game_state)
         
         if len(human_moves) < 3:
             return {'status': 'insufficient_data', 'rounds_needed': 3 - len(human_moves)}
@@ -1917,7 +1941,7 @@ class AICoachMetricsAggregator:
         """Calculate AI's prediction accuracy if available"""
         # This would require access to AI predictions vs actual human moves
         # For now, estimate based on AI strategy and human predictability
-        current_ai = game_state.get('current_strategy', 'unknown')
+        current_ai = self._get_ai_strategy(game_state)
         human_moves = game_state.get('human_moves', game_state.get('human_history', []))
         
         if len(human_moves) < 5:
@@ -1940,7 +1964,7 @@ class AICoachMetricsAggregator:
     
     def _calculate_ai_adaptation_speed(self, game_state: Dict[str, Any]) -> str:
         """Calculate how quickly AI adapts to human patterns"""
-        current_ai = game_state.get('current_strategy', 'unknown')
+        current_ai = self._get_ai_strategy(game_state)
         
         adaptation_speeds = {
             'random': 'None (no adaptation)',
@@ -2315,11 +2339,12 @@ class AICoachMetricsAggregator:
         realtime_metrics = {}
         
         # Core game state (always available)
+        current_ai = self._get_ai_strategy(game_state)
         realtime_metrics['current_state'] = {
             'total_rounds': len(human_moves),
             'current_streak': self._calculate_current_streak(results),
             'recent_performance': self._calculate_win_rates(results[-5:] if len(results) >= 5 else results),
-            'current_ai': game_state.get('current_strategy', 'unknown')
+            'current_ai': current_ai
         }
         
         # Quick move analysis (last 3-5 moves)
@@ -2335,7 +2360,6 @@ class AICoachMetricsAggregator:
         realtime_metrics['immediate_advice'] = self._generate_immediate_advice(game_state)
         
         # Performance against current AI (fast calculation)
-        current_ai = game_state.get('current_strategy', 'unknown')
         realtime_metrics['vs_current_ai'] = {
             'ai_type': current_ai,
             'difficulty': self._get_difficulty_level(current_ai),

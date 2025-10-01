@@ -99,13 +99,15 @@ game_state = {
     'round_history': [],  # Each entry: {'round': n, 'human': move, 'robot': move}
     'round': 0,
     'stats': {'human_win': 0, 'robot_win': 0, 'tie': 0},
-    'difficulty': 'enhanced',  # Default to enhanced mode
+    'difficulty': 'enhanced',  # Default to enhanced mode (legacy)
+    'ai_difficulty': 'enhanced',  # Explicit AI difficulty label
     'strategy_preference': 'balanced',  # Default strategy preference
     'personality': 'neutral',  # Default personality
     'multiplayer': False,
     'change_points': [],  # Store detected strategy changes
     'current_replay': None,  # Current game replay session
-    'current_strategy': 'warming up',  # Current strategy label
+    'current_strategy': 'warming up',  # Human strategy label (legacy field)
+    'human_strategy_label': 'warming up',  # Explicit human strategy label for analytics
     'accuracy': {
         'random': None,
         'frequency': None,
@@ -184,6 +186,7 @@ def play():
     multiplayer = data.get('multiplayer', game_state['multiplayer'])
     
     game_state['difficulty'] = difficulty
+    game_state['ai_difficulty'] = difficulty
     game_state['multiplayer'] = multiplayer
     game_state['strategy_preference'] = strategy_preference
     game_state['personality'] = personality
@@ -450,7 +453,8 @@ def play():
             change_points = change_detector.get_all_change_points()
             current_strategy = change_detector.get_current_strategy_label()
             game_state['change_points'] = change_points
-            game_state['current_strategy'] = current_strategy
+            game_state['human_strategy_label'] = current_strategy
+            game_state['current_strategy'] = current_strategy  # Legacy support for existing UI
         
         if result == 'human':
             game_state['stats']['human_win'] += 1
@@ -527,10 +531,13 @@ def play():
     session['robot_moves'] = game_state['robot_history']
     session['results'] = game_state['result_history']
     session['difficulty'] = game_state['difficulty']
+    session['ai_difficulty'] = game_state.get('ai_difficulty', game_state['difficulty'])
     session['current_strategy'] = game_state.get('current_strategy', 'unknown')
+    session['human_strategy_label'] = game_state.get('human_strategy_label', game_state.get('current_strategy', 'unknown'))
     session['round_count'] = game_state['round']
     session['strategy_preference'] = game_state.get('strategy_preference', 'balanced')
     session['personality'] = game_state.get('personality', 'neutral')
+    session['multiplayer'] = game_state.get('multiplayer', False)
     session['accuracy'] = game_state['accuracy']
     session['confidence'] = confidence
     session['change_points'] = game_state.get('change_points', [])
@@ -550,6 +557,7 @@ def play():
         'robot_move': robot_move,
         'result': results,
         'difficulty': game_state['difficulty'],
+        'ai_difficulty': game_state.get('ai_difficulty', game_state['difficulty']),
         'strategy_preference': game_state.get('strategy_preference', 'balanced'),
         'personality': game_state.get('personality', 'neutral'),
         'multiplayer': game_state['multiplayer'],
@@ -557,6 +565,7 @@ def play():
         'confidence': confidence,
         'change_points': game_state.get('change_points', []),
         'current_strategy': game_state.get('current_strategy', 'unknown'),
+        'human_strategy_label': game_state.get('human_strategy_label', game_state.get('current_strategy', 'unknown')),
         'model_predictions_history': game_state['model_predictions_history'],
         'model_confidence_history': game_state['model_confidence_history'],
         'correct_predictions': game_state['correct_predictions'],
@@ -661,7 +670,9 @@ def stats():
         'robot_history': game_state['robot_history'],
         'result_history': game_state['result_history'],
         'round': game_state['round'],
-        'accuracy': game_state['accuracy']
+        'accuracy': game_state['accuracy'],
+        'ai_difficulty': game_state.get('ai_difficulty', game_state.get('difficulty', 'enhanced')),
+        'human_strategy_label': game_state.get('human_strategy_label', game_state.get('current_strategy', 'unknown'))
     })
 
 @app.route('/history', methods=['GET'])
@@ -676,7 +687,9 @@ def history():
         'round': game_state['round'],
         'accuracy': game_state['accuracy'],
         'change_points': game_state.get('change_points', []),
-        'current_strategy': game_state.get('current_strategy', 'unknown')
+        'current_strategy': game_state.get('current_strategy', 'unknown'),
+        'human_strategy_label': game_state.get('human_strategy_label', game_state.get('current_strategy', 'unknown')),
+        'ai_difficulty': game_state.get('ai_difficulty', game_state.get('difficulty', 'enhanced'))
     })
 
 @app.route('/reset', methods=['POST', 'GET'])
@@ -687,9 +700,11 @@ def reset():
     game_state['round'] = 0
     game_state['stats'] = {'human_win': 0, 'robot_win': 0, 'tie': 0}
     game_state['difficulty'] = 'enhanced'  # Default to enhanced
+    game_state['ai_difficulty'] = 'enhanced'
     game_state['multiplayer'] = False
     game_state['change_points'] = []
     game_state['current_strategy'] = 'unknown'
+    game_state['human_strategy_label'] = 'unknown'
     
     # Reset change detector
     change_detector.reset()
@@ -1059,13 +1074,15 @@ def ai_coach_realtime():
         
         # Always prioritize session data if available (real game state)
         if 'human_moves' in session and 'robot_moves' in session:
+            human_strategy_label = session.get('human_strategy_label', session.get('current_strategy', 'unknown'))
+            ai_difficulty = session.get('ai_difficulty', session.get('difficulty', 'medium'))
             game_data = {
                 'human_moves': session['human_moves'],
                 'robot_moves': session['robot_moves'],
                 'results': session.get('results', []),
-                'current_difficulty': session.get('difficulty', 'medium'),
                 'round': len(session.get('human_moves', [])),
-                'current_strategy': session.get('current_strategy', 'unknown'),
+                'current_strategy': human_strategy_label,
+                'human_strategy_label': human_strategy_label,
                 'strategy_preference': session.get('strategy_preference', 'balanced'),
                 'personality': session.get('personality', 'neutral'),
                 'accuracy': session.get('accuracy', {}),
@@ -1075,7 +1092,10 @@ def ai_coach_realtime():
                 'total_predictions': session.get('total_predictions', {}),
                 'change_points': session.get('change_points', []),
                 'confidence': session.get('confidence', 0.5),
-                'multiplayer': session.get('multiplayer', False)
+                'multiplayer': session.get('multiplayer', False),
+                'ai_difficulty': ai_difficulty,
+                'current_difficulty': ai_difficulty,
+                'difficulty': ai_difficulty
             }
         elif data.get('human_moves'):
             # Use provided game data
@@ -1088,7 +1108,13 @@ def ai_coach_realtime():
                 'results': [],
                 'round': 0,
                 'current_difficulty': 'medium',
-                'current_strategy': 'unknown'
+                'ai_difficulty': 'medium',
+                'difficulty': 'medium',
+                'current_strategy': 'unknown',
+                'human_strategy_label': 'unknown',
+                'strategy_preference': 'balanced',
+                'personality': 'neutral',
+                'multiplayer': False
             }
         
         # Get comprehensive metrics
@@ -1117,7 +1143,9 @@ def ai_coach_realtime():
                 'ai_mode': enhanced_coach.mode
             },
             'llm_type': llm_type,
-            'coaching_style': coaching_style
+            'coaching_style': coaching_style,
+            'ai_difficulty': game_data.get('ai_difficulty', game_state.get('ai_difficulty', 'unknown')),
+            'human_strategy_label': game_data.get('human_strategy_label', game_state.get('human_strategy_label', 'unknown'))
         }
         
         # Add enhanced metrics if requested
@@ -1193,13 +1221,18 @@ def ai_coach_comprehensive():
         
         # Always prioritize session data if available (real game state)
         if 'human_moves' in session and 'robot_moves' in session:
+            human_strategy_label = session.get('human_strategy_label', session.get('current_strategy', 'unknown'))
+            ai_difficulty = session.get('ai_difficulty', session.get('difficulty', 'medium'))
             game_data = {
                 'human_moves': session['human_moves'],
                 'robot_moves': session['robot_moves'],
                 'results': session.get('results', []),
-                'current_difficulty': session.get('difficulty', 'medium'),
                 'round': len(session.get('human_moves', [])),
-                'current_strategy': session.get('current_strategy', 'unknown'),
+                'current_strategy': human_strategy_label,
+                'human_strategy_label': human_strategy_label,
+                'ai_difficulty': ai_difficulty,
+                'current_difficulty': ai_difficulty,
+                'difficulty': ai_difficulty,
                 # FIX: Add the missing AI behavior session data
                 'accuracy': session.get('accuracy', {}),
                 'model_predictions_history': session.get('model_predictions_history', {}),
@@ -1209,7 +1242,8 @@ def ai_coach_comprehensive():
                 'change_points': session.get('change_points', []),
                 'strategy_preference': session.get('strategy_preference', 'balanced'),
                 'personality': session.get('personality', 'neutral'),
-                'confidence': session.get('confidence', 0.5)
+                'confidence': session.get('confidence', 0.5),
+                'multiplayer': session.get('multiplayer', False)
             }
         elif data.get('human_moves'):
             # Use provided game data
@@ -1222,7 +1256,13 @@ def ai_coach_comprehensive():
                 'results': [],
                 'round': 0,
                 'current_difficulty': 'medium',
-                'current_strategy': 'unknown'
+                'ai_difficulty': 'medium',
+                'difficulty': 'medium',
+                'current_strategy': 'unknown',
+                'human_strategy_label': 'unknown',
+                'strategy_preference': 'balanced',
+                'personality': 'neutral',
+                'multiplayer': False
             }
         
         # Get comprehensive metrics
@@ -1246,10 +1286,14 @@ def ai_coach_comprehensive():
                 'final_win_rate': comprehensive_metrics.get('core_game', {}).get('win_rates', {}).get('human', 0.0),
                 'dominant_pattern': comprehensive_metrics.get('patterns', {}).get('pattern_type', 'unknown'),
                 'performance_trend': comprehensive_metrics.get('performance', {}).get('recent_performance', {}).get('trend', 'stable'),
-                'ai_mode': enhanced_coach.mode
+                'ai_mode': enhanced_coach.mode,
+                'ai_difficulty': game_data.get('ai_difficulty', game_state.get('ai_difficulty', 'unknown')),
+                'human_strategy_label': game_data.get('human_strategy_label', game_state.get('human_strategy_label', 'unknown'))
             },
             'llm_type': llm_type,
-            'coaching_style': coaching_style
+            'coaching_style': coaching_style,
+            'ai_difficulty': game_data.get('ai_difficulty', game_state.get('ai_difficulty', 'unknown')),
+            'human_strategy_label': game_data.get('human_strategy_label', game_state.get('human_strategy_label', 'unknown'))
         })
         
     except Exception as e:
@@ -1278,13 +1322,15 @@ def ai_coach_metrics():
         # Get current game state - prioritize session data
         game_data = {}
         if 'human_moves' in session and 'robot_moves' in session:
+            human_strategy_label = session.get('human_strategy_label', session.get('current_strategy', 'unknown'))
+            ai_difficulty = session.get('ai_difficulty', session.get('difficulty', 'medium'))
             game_data = {
                 'human_moves': session['human_moves'],
                 'robot_moves': session['robot_moves'],
                 'results': session.get('results', []),
-                'current_difficulty': session.get('difficulty', 'medium'),
                 'round': len(session.get('human_moves', [])),
-                'current_strategy': session.get('current_strategy', 'unknown'),
+                'current_strategy': human_strategy_label,
+                'human_strategy_label': human_strategy_label,
                 'strategy_preference': session.get('strategy_preference', 'balanced'),
                 'personality': session.get('personality', 'neutral'),
                 'accuracy': session.get('accuracy', {}),
@@ -1294,7 +1340,10 @@ def ai_coach_metrics():
                 'total_predictions': session.get('total_predictions', {}),
                 'change_points': session.get('change_points', []),
                 'confidence': session.get('confidence', 0.5),
-                'multiplayer': session.get('multiplayer', False)
+                'multiplayer': session.get('multiplayer', False),
+                'ai_difficulty': ai_difficulty,
+                'current_difficulty': ai_difficulty,
+                'difficulty': ai_difficulty
             }
         else:
             # No session data available - return empty state info
@@ -1304,7 +1353,13 @@ def ai_coach_metrics():
                 'results': [],
                 'round': 0,
                 'current_difficulty': 'medium',
-                'current_strategy': 'unknown'
+                'ai_difficulty': 'medium',
+                'difficulty': 'medium',
+                'current_strategy': 'unknown',
+                'human_strategy_label': 'unknown',
+                'strategy_preference': 'balanced',
+                'personality': 'neutral',
+                'multiplayer': False
             }
         
         # Get comprehensive metrics
