@@ -11,6 +11,9 @@ from optimized_strategies import ToWinStrategy, NotToLoseStrategy
 from personality_engine import get_personality_engine
 from replay_system import GameReplay, get_replay_manager, get_replay_analyzer
 
+# Centralized Data Management - All AI coach endpoints use this for consistent data building
+from game_context import build_game_context
+
 # Import Developer Console
 try:
     from developer_console import console, track_move, track_inference, get_developer_report, get_chart
@@ -1072,50 +1075,19 @@ def ai_coach_realtime():
                 # Continue with current LLM type
                 llm_type = current_llm_type
         
-        # Always prioritize session data if available (real game state)
-        if 'human_moves' in session and 'robot_moves' in session:
-            human_strategy_label = session.get('human_strategy_label', session.get('current_strategy', 'unknown'))
-            ai_difficulty = session.get('ai_difficulty', session.get('difficulty', 'medium'))
-            game_data = {
-                'human_moves': session['human_moves'],
-                'robot_moves': session['robot_moves'],
-                'results': session.get('results', []),
-                'round': len(session.get('human_moves', [])),
-                'current_strategy': human_strategy_label,
-                'human_strategy_label': human_strategy_label,
-                'strategy_preference': session.get('strategy_preference', 'balanced'),
-                'personality': session.get('personality', 'neutral'),
-                'accuracy': session.get('accuracy', {}),
-                'model_predictions_history': session.get('model_predictions_history', {}),
-                'model_confidence_history': session.get('model_confidence_history', {}),
-                'correct_predictions': session.get('correct_predictions', {}),
-                'total_predictions': session.get('total_predictions', {}),
-                'change_points': session.get('change_points', []),
-                'confidence': session.get('confidence', 0.5),
-                'multiplayer': session.get('multiplayer', False),
-                'ai_difficulty': ai_difficulty,
-                'current_difficulty': ai_difficulty,
-                'difficulty': ai_difficulty
-            }
-        elif data.get('human_moves'):
-            # Use provided game data
-            game_data = data
-        else:
-            # No session data and no meaningful request data - use empty state
-            game_data = {
-                'human_moves': [],
-                'robot_moves': [],
-                'results': [],
-                'round': 0,
-                'current_difficulty': 'medium',
-                'ai_difficulty': 'medium',
-                'difficulty': 'medium',
-                'current_strategy': 'unknown',
-                'human_strategy_label': 'unknown',
-                'strategy_preference': 'balanced',
-                'personality': 'neutral',
-                'multiplayer': False
-            }
+        # Build unified game context using centralized builder
+        
+        # Prepare context options
+        context_overrides = {}
+        if data.get('human_moves'):
+            # Use provided game data as overrides
+            context_overrides = data
+            
+        game_data = build_game_context(
+            session=dict(session),  # Convert Flask session to dict
+            overrides=context_overrides,
+            context_type='ai_coaching'
+        )
         
         # Get comprehensive metrics
         comprehensive_metrics = metrics_aggregator.aggregate_comprehensive_metrics(game_data)
@@ -1194,6 +1166,9 @@ def ai_coach_comprehensive():
         return jsonify({'error': 'AI Coach not available'}), 503
     
     try:
+        # Import centralized game context builder
+        from game_context import build_game_context
+        
         # Get comprehensive metrics from current game state
         metrics_aggregator = get_metrics_aggregator()
         enhanced_coach = get_enhanced_coach()
@@ -1219,51 +1194,18 @@ def ai_coach_comprehensive():
                 # Continue with current LLM type
                 llm_type = current_llm_type
         
-        # Always prioritize session data if available (real game state)
-        if 'human_moves' in session and 'robot_moves' in session:
-            human_strategy_label = session.get('human_strategy_label', session.get('current_strategy', 'unknown'))
-            ai_difficulty = session.get('ai_difficulty', session.get('difficulty', 'medium'))
-            game_data = {
-                'human_moves': session['human_moves'],
-                'robot_moves': session['robot_moves'],
-                'results': session.get('results', []),
-                'round': len(session.get('human_moves', [])),
-                'current_strategy': human_strategy_label,
-                'human_strategy_label': human_strategy_label,
-                'ai_difficulty': ai_difficulty,
-                'current_difficulty': ai_difficulty,
-                'difficulty': ai_difficulty,
-                # FIX: Add the missing AI behavior session data
-                'accuracy': session.get('accuracy', {}),
-                'model_predictions_history': session.get('model_predictions_history', {}),
-                'model_confidence_history': session.get('model_confidence_history', {}),
-                'correct_predictions': session.get('correct_predictions', {}),
-                'total_predictions': session.get('total_predictions', {}),
-                'change_points': session.get('change_points', []),
-                'strategy_preference': session.get('strategy_preference', 'balanced'),
-                'personality': session.get('personality', 'neutral'),
-                'confidence': session.get('confidence', 0.5),
-                'multiplayer': session.get('multiplayer', False)
-            }
-        elif data.get('human_moves'):
-            # Use provided game data
-            game_data = data
-        else:
-            # No session data and no meaningful request data - use empty state
-            game_data = {
-                'human_moves': [],
-                'robot_moves': [],
-                'results': [],
-                'round': 0,
-                'current_difficulty': 'medium',
-                'ai_difficulty': 'medium',
-                'difficulty': 'medium',
-                'current_strategy': 'unknown',
-                'human_strategy_label': 'unknown',
-                'strategy_preference': 'balanced',
-                'personality': 'neutral',
-                'multiplayer': False
-            }
+        # 🎯 CENTRALIZED DATA CONSTRUCTION: Use the new game context builder
+        # This replaces all the scattered data construction logic above
+        overrides = None
+        if data.get('human_moves'):
+            # If request contains game data, use it as overrides
+            overrides = data
+            
+        game_data = build_game_context(
+            session=session, 
+            overrides=overrides, 
+            context_type='comprehensive'
+        )
         
         # Get comprehensive metrics
         comprehensive_metrics = metrics_aggregator.aggregate_comprehensive_metrics(game_data)
@@ -1319,48 +1261,13 @@ def ai_coach_metrics():
     try:
         metrics_aggregator = get_metrics_aggregator()
         
-        # Get current game state - prioritize session data
-        game_data = {}
-        if 'human_moves' in session and 'robot_moves' in session:
-            human_strategy_label = session.get('human_strategy_label', session.get('current_strategy', 'unknown'))
-            ai_difficulty = session.get('ai_difficulty', session.get('difficulty', 'medium'))
-            game_data = {
-                'human_moves': session['human_moves'],
-                'robot_moves': session['robot_moves'],
-                'results': session.get('results', []),
-                'round': len(session.get('human_moves', [])),
-                'current_strategy': human_strategy_label,
-                'human_strategy_label': human_strategy_label,
-                'strategy_preference': session.get('strategy_preference', 'balanced'),
-                'personality': session.get('personality', 'neutral'),
-                'accuracy': session.get('accuracy', {}),
-                'model_predictions_history': session.get('model_predictions_history', {}),
-                'model_confidence_history': session.get('model_confidence_history', {}),
-                'correct_predictions': session.get('correct_predictions', {}),
-                'total_predictions': session.get('total_predictions', {}),
-                'change_points': session.get('change_points', []),
-                'confidence': session.get('confidence', 0.5),
-                'multiplayer': session.get('multiplayer', False),
-                'ai_difficulty': ai_difficulty,
-                'current_difficulty': ai_difficulty,
-                'difficulty': ai_difficulty
-            }
-        else:
-            # No session data available - return empty state info
-            game_data = {
-                'human_moves': [],
-                'robot_moves': [],
-                'results': [],
-                'round': 0,
-                'current_difficulty': 'medium',
-                'ai_difficulty': 'medium',
-                'difficulty': 'medium',
-                'current_strategy': 'unknown',
-                'human_strategy_label': 'unknown',
-                'strategy_preference': 'balanced',
-                'personality': 'neutral',
-                'multiplayer': False
-            }
+        # Build unified game context using centralized builder
+        
+        game_data = build_game_context(
+            session=dict(session),  # Convert Flask session to dict
+            overrides={},
+            context_type='ai_coaching'
+        )
         
         # Get comprehensive metrics
         metrics = metrics_aggregator.aggregate_comprehensive_metrics(game_data)
