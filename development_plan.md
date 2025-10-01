@@ -17,393 +17,406 @@
 - **Web Interface:** Modern HTML5/CSS3/JavaScript with Chart.js visualizations
 
 **🎯 KEY ACHIEVEMENTS**
-- **Phase 4 Complete:** Visual & Character System fully implemented
+- ------------------------------------------------------------------------
+
+## Advanced oLLM Coaching Architecture
+
+### Technical Implementation Roadmap
+
+#### Stage 1: Teacher Model Data Generation (Week 1-2)
+```python
+# Generate comprehensive coaching dataset using powerful teacher model
+class CoachingDataGenerator:
+    def __init__(self):
+        self.teacher_model = OpenLLM.load("llama-2-70b-chat")  # or GPT-4 via API
+        self.game_scenarios = self.generate_comprehensive_scenarios()
+    
+    def generate_coaching_examples(self):
+        for scenario in self.game_scenarios:
+            # Rich context with all available metrics
+            context = {
+                'game_metrics': self.extract_all_metrics(scenario),
+                'player_psychology': self.analyze_psychology(scenario),
+                'ai_behavior': self.analyze_ai_patterns(scenario),
+                'meta_context': self.get_meta_information(scenario)
+            }
+            
+            # Teacher generates multiple coaching perspectives
+            coaching_advice = self.teacher_model.generate_multiple_perspectives(
+                context, num_perspectives=5
+            )
+            
+            yield (context, coaching_advice)
+```
+
+#### Stage 2: Specialized Student Model Architecture (Week 2-3)
+```python
+# Custom transformer architecture optimized for coaching
+class CoachingTransformer:
+    def __init__(self):
+        self.config = TransformerConfig(
+            hidden_size=768,
+            num_attention_heads=12,
+            num_hidden_layers=6,  # Reduced from typical 12-24
+            vocab_size=32000,
+            max_position_embeddings=1024
+        )
+        
+        # Specialized embedding layers
+        self.metrics_embedder = MetricsEmbeddingLayer()
+        self.psychology_embedder = PsychologyEmbeddingLayer()
+        self.game_state_embedder = GameStateEmbeddingLayer()
+        
+        # Multi-modal fusion
+        self.fusion_layer = MultiModalFusionLayer()
+        
+    def forward(self, game_metrics, psychology_state, game_history, text_input):
+        # Embed different input modalities
+        metrics_emb = self.metrics_embedder(game_metrics)
+        psych_emb = self.psychology_embedder(psychology_state)
+        history_emb = self.game_state_embedder(game_history)
+        text_emb = self.text_embedder(text_input)
+        
+        # Fuse modalities
+        fused_repr = self.fusion_layer([metrics_emb, psych_emb, history_emb, text_emb])
+        
+        # Generate coaching advice
+        return self.generate_coaching_advice(fused_repr)
+```
+
+#### Stage 3: Advanced Knowledge Distillation (Week 3-4)
+```python
+class AdvancedKnowledgeDistillation:
+    def __init__(self, teacher_model, student_model):
+        self.teacher = teacher_model
+        self.student = student_model
+        
+        # Multi-objective loss function
+        self.coaching_quality_loss = CoachingQualityLoss()
+        self.metrics_alignment_loss = MetricsAlignmentLoss()
+        self.response_relevance_loss = ResponseRelevanceLoss()
+        
+    def distill_with_game_awareness(self, training_data):
+        for batch in training_data:
+            # Teacher generates rich coaching advice
+            teacher_output = self.teacher.generate_with_reasoning(batch.context)
+            
+            # Student attempts to match teacher
+            student_output = self.student.generate(batch.context)
+            
+            # Multi-faceted loss calculation
+            quality_loss = self.coaching_quality_loss(
+                teacher_output.advice, student_output.advice, batch.ground_truth
+            )
+            
+            metrics_loss = self.metrics_alignment_loss(
+                teacher_output.metrics_interpretation,
+                student_output.metrics_interpretation,
+                batch.actual_metrics
+            )
+            
+            relevance_loss = self.response_relevance_loss(
+                student_output.advice, batch.game_context
+            )
+            
+            total_loss = quality_loss + 0.3 * metrics_loss + 0.2 * relevance_loss
+            
+            # Backpropagate and update student
+            self.optimize_student(total_loss)
+```
+
+#### Stage 4: Real-time Integration Architecture (Week 4-5)
+```python
+class RealTimeCoachingEngine:
+    def __init__(self):
+        self.distilled_model = self.load_optimized_model()
+        self.metrics_processor = RealTimeMetricsProcessor()
+        self.response_cache = IntelligentCache()
+        self.context_builder = DynamicContextBuilder()
+        
+    async def generate_coaching_advice(self, current_game_state):
+        # Extract rich metrics in real-time
+        advanced_metrics = await self.metrics_processor.compute_all_metrics(
+            current_game_state
+        )
+        
+        # Build comprehensive context
+        context = await self.context_builder.build_context(
+            game_state=current_game_state,
+            metrics=advanced_metrics,
+            player_history=self.get_player_history(),
+            ai_behavior=self.analyze_current_ai_state()
+        )
+        
+        # Check intelligent cache first
+        cached_advice = self.response_cache.get_similar_context(context)
+        if cached_advice and cached_advice.confidence > 0.8:
+            return cached_advice.advice
+        
+        # Generate new advice using distilled model
+        advice = await self.distilled_model.generate_async(context)
+        
+        # Cache for future similar contexts
+        self.response_cache.store(context, advice)
+        
+        return advice
+```
+
+#### Stage 5: Continuous Learning & Optimization (Week 5-6)
+```python
+class ContinuousLearningSystem:
+    def __init__(self):
+        self.feedback_tracker = CoachingFeedbackTracker()
+        self.model_adapter = OnlineModelAdapter()
+        self.performance_monitor = PerformanceMonitor()
+        
+    def process_coaching_effectiveness(self, coaching_session):
+        # Track multiple effectiveness metrics
+        effectiveness_metrics = {
+            'player_improvement': self.measure_skill_improvement(coaching_session),
+            'advice_follow_rate': self.measure_advice_adoption(coaching_session),
+            'engagement_level': self.measure_player_engagement(coaching_session),
+            'accuracy_vs_metrics': self.measure_prediction_accuracy(coaching_session)
+        }
+        
+        # Update model based on real-world performance
+        if effectiveness_metrics['overall_score'] > 0.7:
+            self.model_adapter.reinforce_successful_patterns(coaching_session)
+        else:
+            self.model_adapter.adjust_for_poor_performance(coaching_session)
+        
+        # Continuously optimize inference performance
+        self.performance_monitor.optimize_inference_speed()
+```
+
+### Resource Optimization Strategy
+
+#### Memory & Compute Efficiency
+```python
+# Aggressive optimization pipeline
+class ModelOptimizer:
+    def optimize_for_production(self, trained_model):
+        # Stage 1: Pruning
+        pruned_model = self.structured_pruning(trained_model, sparsity=0.4)
+        
+        # Stage 2: Quantization
+        quantized_model = self.dynamic_quantization(pruned_model, target_dtype='int8')
+        
+        # Stage 3: Knowledge Compression
+        compressed_model = self.knowledge_compression(quantized_model)
+        
+        # Stage 4: ONNX Optimization
+        onnx_model = self.convert_to_onnx(compressed_model)
+        optimized_onnx = self.optimize_onnx_graph(onnx_model)
+        
+        return optimized_onnx
+    
+    def target_specifications(self):
+        return {
+            'model_size': '< 100MB',
+            'inference_time': '< 50ms',
+            'memory_usage': '< 200MB RAM',
+            'accuracy_retention': '> 90% of teacher model'
+        }
+```
+
+### Integration with Existing Game Metrics
+
+The oLLM coaching system will have access to all current game analytics:
+
+```python
+class GameMetricsIntegration:
+    def __init__(self):
+        self.current_metrics = {
+            # From existing analytics system
+            'entropy_analysis': self.calculate_move_entropy(),
+            'pattern_detection': self.detect_move_patterns(), 
+            'ai_confidence': self.get_ai_confidence_scores(),
+            'win_rate_trends': self.analyze_win_trends(),
+            'strategy_adaptation': self.measure_adaptation_rate(),
+            'change_point_detection': self.detect_strategy_changes(),
+            
+            # Enhanced psychological metrics
+            'move_timing_analysis': self.analyze_response_times(),
+            'pressure_indicators': self.detect_tilt_signals(),
+            'learning_curve': self.model_skill_progression(),
+            'meta_patterns': self.analyze_long_term_patterns()
+        }
+    
+    def provide_context_to_llm(self, current_game_state):
+        return {
+            'quantitative_metrics': self.current_metrics,
+            'qualitative_context': self.derive_psychological_context(),
+            'ai_behavior_analysis': self.analyze_current_ai_behavior(),
+            'game_meta_information': self.get_game_context()
+        }
+```
+
+This approach ensures the coaching LLM has unprecedented access to game intelligence while maintaining the small footprint you specified.
+
+*Last Updated: Advanced oLLM Coaching Architecture Added - Knowledge Distillation with Game-Aware Training*
 - **LSTM Integration:** Neural network strategy with real-time prediction
 - **Personality Engine:** 6 distinct AI personalities with unique dialogue
 - **Professional UI/UX:** Polished interface with animations and visual feedback
 
 ------------------------------------------------------------------------
 
-## 2) Architecture & Current Tech Stack
-
-**Implemented Stack**
-- **Backend:** Flask (Python), scikit-learn, TensorFlow/Keras (LSTM)
-- **Frontend:** HTML5, CSS3, JavaScript, Chart.js for visualizations
-- **AI/ML:** Enhanced ML models, LSTM neural networks, Markov chains
-- **Data Persistence:** JSON-based storage, game history tracking
-- **Character System:** Dynamic avatar generation, personality mapping
-- **Analytics:** Real-time metrics, confidence tracking, performance analysis
-
-**Performance Metrics (Achieved)**
-- **Inference:** < 50ms per prediction (well under 5ms target)
-- **Model Size:** Optimized models under 300KB budget
-- **Real-time Updates:** Sub-second response times for all interactions
-- **Battle Arena:** Smooth animations under 200ms timing
-
-------------------------------------------------------------------------
-
-## 3) Current Project Structure (Implemented)
-
-    Paper_Scissor_Stone/
-    ├─ webapp/
-    │  ├─ app.py                    # Main Flask application
-    │  ├─ templates/
-    │  │  └─ index.html            # Enhanced web interface with character system
-    │  └─ static/                  # Game assets (rock/paper/scissors images)
-    ├─ ml_model_enhanced.py        # Consolidated ML models (Enhanced + LSTM)
-    ├─ strategy.py                 # AI strategy implementations
-    ├─ lstm_web_integration.py     # LSTM neural network integration
-    ├─ change_point_detector.py    # Strategy change detection
-    ├─ coach_tips.py              # Intelligent coaching system
-    ├─ tournament_system.py       # Tournament and ELO management
-    ├─ stats_manager.py          # Statistics and analytics
-    ├─ visualizer.py             # Data visualization tools
-    ├─ data_store.py            # Game data persistence
-    ├─ main.py                  # CLI version
-    └─ requirements.txt         # Python dependencies
-
-------------------------------------------------------------------------
-
-## 4) Implemented AI & Character Systems
-
-### 4.1 AI Strategies (Fully Implemented)
-
-**Available Strategies:**
-- **Random:** Baseline unpredictable strategy
-- **Frequency:** Analyzes opponent move distribution
-- **Pattern:** Detects short-term sequences
-- **Markov:** Statistical prediction with memory
-- **Minimax:** Game theory optimal play
-- **LSTM:** Neural network with deep pattern recognition
-
-### 4.2 Personality System (6 Unique Characters)
-
-**Implemented Personalities:**
-1. **💀 The Berserker** - Ultra aggressive, bloodthirsty dialogue
-2. **🛡️ The Guardian** - Defensive expert with honor-focused responses
-3. **🦎 The Chameleon** - Adaptive strategy with evolving dialogue
-4. **🎓 The Professor** - Analytical approach with scientific responses
-5. **🃏 The Wildcard** - Unpredictable chaos with random elements
-6. **🪞 The Mirror** - Mimicking strategy with reflection-based dialogue
-
-**Character Features:**
-- **Dynamic Names:** Procedurally generated (e.g., "Master Destroyer", "Junior Scholar")
-- **Visual Avatars:** Personality-specific emojis and difficulty shading
-- **Strategy Symbols:** Icons representing current AI approach
-- **Contextual Dialogue:** Different responses for wins, losses, ties, game start
-- **Mood System:** Real-time emotional state indicators
-
-### 4.3 Battle Arena System (Fully Implemented)
-
-**Visual Features:**
-- **Move Display:** Rock/paper/scissors image visualization
-- **Winner Highlighting:** Dynamic borders and glowing effects
-- **Animated Sequences:** Timed reveals for dramatic gameplay
-- **Result Persistence:** Outcomes stay visible until next move
-- **Professional Styling:** Gradient backgrounds and smooth transitions
-
-------------------------------------------------------------------------
-
-## 5) Web Application (Current Implementation)
-
-### 5.1 User Interface (Completed)
-
-**Main Interface Components:**
-- **Robot Character Display:** Avatar showing difficulty, strategy, personality
-- **Conversation Box:** Real-time dialogue with speech bubbles and typing animation
-- **Battle Arena:** Professional move display with winner highlighting
-- **Control Panel:** Difficulty, strategy, and personality selection
-- **Analytics Dashboard:** Charts, metrics, and performance tracking
-- **Tournament System:** Player management and competitive matches
-
-### 5.2 Advanced Features (Implemented)
-
-**Analytics & Visualization:**
-- **Real-time Charts:** Move distribution, win rates, strategy timelines
-- **Model Comparison:** Performance metrics for all AI strategies
-- **Confidence Tracking:** Prediction confidence visualization
-- **Export Capabilities:** JSON data export for analysis
-- **Coaching System:** Intelligent tips and strategy recommendations
-
-**User Experience:**
-- **Keyboard Controls:** P/R/S hotkeys for quick gameplay
-- **Visual Feedback:** Immediate response to all user actions
-- **Progressive Enhancement:** Features unlock as gameplay progresses
-- **Accessibility:** Clear labeling and high-contrast options
-
-------------------------------------------------------------------------
-
-## 6) Performance & Quality Metrics (Achieved)
-
-### 6.1 AI Performance
-
-**Prediction Accuracy:**
-- **LSTM Model:** 65-75% accuracy on pattern recognition
-- **Markov Chains:** 55-65% accuracy with adaptive learning
-- **Enhanced ML:** 60-70% accuracy with confidence scoring
-- **Change Detection:** Real-time strategy shift identification
-
-### 6.2 System Performance
-
-**Technical Metrics:**
-- **Response Time:** < 100ms for all user interactions
-- **Model Loading:** < 500ms for LSTM initialization
-- **Memory Usage:** Optimized for continuous gameplay
-- **Bundle Size:** Under 300KB target achieved
-
-### 6.3 User Experience Metrics
-
-**Interface Quality:**
-- **Visual Polish:** Professional animations and styling
-- **Engagement:** Interactive character system increases retention
-- **Educational Value:** Analytics provide learning opportunities
-- **Accessibility:** Clear feedback and intuitive controls
-
-------------------------------------------------------------------------
-
-## 7) Development Milestones (Completed)
-
-### ✅ Phase 1: Core Foundation
-- ML strategy implementations
-- Basic web interface
-- Pattern recognition algorithms
-- Change-point detection
-
-### ✅ Phase 2: Intelligence & Analytics
-- Coaching system implementation
-- Advanced analytics dashboard
-- Chart.js visualizations
-- Performance metrics tracking
-
-### ✅ Phase 3: Advanced Features
-- Tournament system with ELO ratings
-- Model comparison dashboard
-- LSTM neural network integration
-- Enhanced user interface
-
-### ✅ Phase 4: Visual & Character System
-- Robot character visualization
-- Personality-based dialogue system
-- Enhanced battle arena
-- Professional UI/UX polish
-
-------------------------------------------------------------------------
-
-## 8) Future Enhancement Roadmap (Phase 5+)
-
-### 🔮 Planned Improvements
-
-**Advanced Character System:**
-- Voice synthesis for robot dialogue
-- 3D character models and animations
-- Custom personality training
-- Advanced facial expressions
-
-**Multiplayer Features:**
-- Real-time multiplayer matches
-- Global leaderboards
-- Team tournaments
-- Character customization
-
-**Technical Enhancements:**
-- Mobile-responsive design
-- Progressive Web App (PWA)
-- Cloud deployment with user accounts
-- Advanced neural network architectures
-
-**Educational Features:**
-- Interactive AI tutorials
-- Strategy explanation modules
-- Pattern recognition workshops
-- Educational dashboard for classrooms
-
-------------------------------------------------------------------------
-
-## 9) Implementation Achievements
-
-### 🏆 Key Successes
-
-**Technical Excellence:**
-- Clean, maintainable codebase with proper separation of concerns
-- Efficient ML model integration without performance impact
-- Professional-grade UI/UX with smooth animations
-- Comprehensive analytics and visualization system
-
-**User Experience:**
-- Engaging character system that enhances gameplay
-- Intuitive interface requiring minimal learning curve
-- Educational value through pattern recognition and analytics
-- Multiple difficulty levels accommodating all skill levels
-
-**AI Innovation:**
-- Successfully integrated LSTM neural networks for advanced prediction
-- Created unique personality system with contextual dialogue
-- Implemented real-time strategy adaptation and change detection
-- Achieved high prediction accuracy while maintaining fairness
-
-------------------------------------------------------------------------
-
-## 10) Educational & Research Value
-
-### 📚 Learning Outcomes
-
-**AI & Machine Learning:**
-- Demonstrates practical neural network applications
-- Shows pattern recognition in action
-- Illustrates adaptive learning systems
-- Provides hands-on experience with AI behavior
-
-**Game Design:**
-- Character development and personality systems
-- User interface design principles
-- Real-time feedback and engagement
-- Balance between challenge and accessibility
-
-**Data Science:**
-- Real-time analytics and visualization
-- Statistical analysis of gameplay patterns
-- Performance metrics and optimization
-- Data export for further analysis
-
-------------------------------------------------------------------------
-
-## 11) Technical Documentation
-
-### 🔧 System Requirements
-
-**Server Environment:**
-- Python 3.8+ with Flask framework
-- TensorFlow/Keras for LSTM models
-- scikit-learn for traditional ML
-- Chart.js for client-side visualizations
-
-**Browser Support:**
-- Modern browsers with JavaScript ES6+
-- HTML5 Canvas support for visualizations
-- Local storage for game persistence
-- WebSocket support for future multiplayer
-
-### 💾 Data Management
-
-**Game Data:**
-- JSON-based persistence for game history
-- Real-time strategy tracking
-- Player statistics and ELO ratings
-- Analytics data export capabilities
-
-------------------------------------------------------------------------
-
-## 12) Project Legacy & Impact
-
-### 🎯 Achievements Summary
-
-This project successfully demonstrates:
-- **Advanced AI Integration:** Multiple ML strategies working together
-- **Character-Driven Design:** Personality system enhancing user engagement
-- **Educational Value:** Teaching AI concepts through interactive gameplay
-- **Technical Excellence:** Professional-grade implementation with clean architecture
-- **Innovation:** Unique combination of game design and AI technology
-
-The final implementation represents a complete, polished gaming experience that successfully combines entertainment, education, and technical innovation in the field of artificial intelligence and game development.
-
-------------------------------------------------------------------------
-
-## 13) Character System Sub-Project Plan
-
-> **Goal:** Add a real-time, modular character design and display system for both human and robot players, supporting customization and dynamic avatar rendering.
-
-### Phase 1: Requirements & Asset Preparation
-
-1. **Define Customization Options**
-   - List all base character types (e.g., male, female, non-binary, robot, etc.).
-   - List all outfit categories (tops, bottoms, shoes, accessories).
-   - List all gear types (weapons, shields, hats, etc.).
-   - List robot character personalities and how they map to visuals.
-
-2. **Design/Collect Art Assets**
-   - Create or source layered PNG/SVG assets for each character part.
-   - Ensure all assets are visually compatible and sized for your UI.
-   - Organize assets in a clear folder structure (e.g., `/static/avatars/`).
-
----
-
-### Phase 2: Frontend UI Implementation
-
-3. **Character Customization UI**
-   - Add a “Character Creator” modal or panel (shown before game starts).
-   - UI elements for:
-     - Selecting base character
-     - Choosing outfit/gear (dropdowns, color pickers, etc.)
-     - Live preview area (canvas or stacked images)
-   - Store player selections in JS variables or localStorage.
-
-4. **Robot Character Generation**
-   - Map AI difficulty, strategy, and personality to robot avatar parts.
-   - Auto-generate robot character based on player’s AI settings.
-
----
-
-### Phase 3: Game Integration
-
-5. **Combat Panel Character Display**
-   - Update the combat panel to show:
-     - Human character on the left (facing right)
-     - Robot character on the right (facing left)
-   - Render avatars using selected assets (canvas, SVG, or stacked `<img>`).
-
-6. **Robot Chat Bubble Integration**
-   - Position robot chat bubble near the robot avatar.
-   - Ensure chat bubble content is derived from robot personality.
-
----
-
-### Phase 4: Persistence & Advanced Features
-
-7. **(Optional) Backend Integration**
-   - Save/load player character selections to backend (Flask, DB, or JSON).
-   - Store character data with replays or user profiles.
-
-8. **(Optional) Animation & Effects**
-   - Add simple animations (idle, win/lose, gear equip).
-   - Add sound effects for gear/outfit changes.
-
----
-
-### Phase 5: Testing & Polish
-
-9. **Testing**
-   - Test UI on different devices and browsers.
-   - Ensure all combinations of outfits/gears render correctly.
-   - Test robot avatar mapping for all AI settings.
-
-10. **Polish & Documentation**
-    - Refine UI/UX for ease of use.
-    - Document asset structure and customization logic.
-    - Write usage instructions for future contributors.
-
----
-
-### Milestones & Deliverables
-
-- **M1:** Asset library and requirements doc
-- **M2:** Character Creator UI (with live preview)
-- **M3:** Robot avatar auto-generation logic
-- **M4:** Combat panel with both avatars and chat bubble
-- **M5:** (Optional) Persistence and animation
-- **M6:** Testing, polish, and documentation
-
----
-
-### Tips for Working with AI
-
-- Ask for code scaffolds for the Character Creator modal/panel.
-- Request help with image layering (canvas/SVG/CSS).
-- Get sample code for mapping AI settings to robot avatars.
-- Ask for best practices on asset management and UI state.
-
----
-
-*Last Updated: Phase 4 Complete - Visual & Character System Implementation, Character System Sub-Project Plan Added*
+## 2. Coach Feature Development
+
+### Phase 1: oLLM-Based Knowledge Distillation Pipeline
+
+**Advanced LLM Integration Strategy:**
+- **Teacher Model Selection**: Use a large, powerful model (GPT-4, Claude, or Llama-2-70B) as the teacher
+- **Knowledge Distillation Process**:
+  ```python
+  # Teacher model generates comprehensive coaching examples
+  teacher_model = OpenLLM.load("llama-2-70b-chat")
+  
+  # Generate training data from game metrics
+  for game_state in comprehensive_game_scenarios:
+      metrics = {
+          'player_entropy': calculate_entropy(moves),
+          'pattern_strength': detect_patterns(moves),
+          'ai_confidence': model_confidence_scores,
+          'win_rate_trend': calculate_trend(win_history),
+          'strategy_adaptation': measure_adaptation(ai_moves),
+          'psychological_indicators': analyze_psychology(move_timing)
+      }
+      
+      # Teacher generates nuanced coaching advice
+      coaching_advice = teacher_model.generate(
+          prompt=f"Based on these metrics {metrics}, provide expert coaching advice",
+          context="You are an expert RPS coach with deep understanding of psychology and game theory"
+      )
+  ```
+
+- **Student Model Architecture**:
+  - Target: 50-150M parameters (DistilGPT-2, TinyLlama, or custom transformer)
+  - Specialized for coaching domain with game-specific embeddings
+  - Multi-modal input processing (metrics + game state + player psychology)
+
+### Phase 2: Advanced Prompt Engineering & Context Injection
+
+**Sophisticated Prompt Architecture:**
+```python
+class CoachingPromptEngine:
+    def __init__(self):
+        self.base_template = """
+        EXPERT RPS COACH ANALYSIS
+        
+        Game Context:
+        - Round: {round}/{total_rounds}
+        - Player Psychology: {psychology_profile}
+        - AI Strategy: {current_ai_strategy}
+        
+        Performance Metrics:
+        - Entropy Score: {entropy} (randomness level)
+        - Pattern Strength: {pattern_strength}
+        - Adaptation Rate: {adaptation_rate}
+        - Confidence: {ai_confidence}
+        - Win Rate Trend: {win_trend}
+        
+        Recent Move Sequence: {recent_moves}
+        Strategy Change Points: {change_points}
+        
+        Provide specific, actionable coaching advice in 2-3 sentences.
+        Focus on: {coaching_focus}
+        """
+    
+    def generate_context_aware_prompt(self, game_metrics, coaching_focus):
+        # Dynamic prompt adjustment based on game state
+        # Include historical context and player-specific patterns
+```
+
+**Context-Aware Coaching:**
+- **Player Profiling**: Build psychological profiles based on move timing, patterns, adaptation speed
+- **Dynamic Context**: Real-time game state, AI strategy changes, momentum shifts
+- **Personalization**: Adapt coaching style to player skill level and learning preferences
+
+### Phase 3: Multi-Layered Knowledge Integration
+
+**Hybrid Intelligence Architecture:**
+```python
+class HybridCoachingSystem:
+    def __init__(self):
+        self.distilled_llm = load_distilled_model("coaching-specialist-150M")
+        self.rules_engine = ExpertSystemRules()
+        self.metrics_analyzer = AdvancedMetricsProcessor()
+        
+    def generate_coaching_advice(self, game_state):
+        # Layer 1: Expert rules for common scenarios
+        rule_based_advice = self.rules_engine.analyze(game_state)
+        
+        # Layer 2: Advanced metrics analysis
+        deep_metrics = self.metrics_analyzer.compute_advanced_features(game_state)
+        
+        # Layer 3: LLM for nuanced, context-aware advice
+        llm_context = self.build_rich_context(game_state, deep_metrics)
+        llm_advice = self.distilled_llm.generate(llm_context)
+        
+        # Layer 4: Confidence-weighted combination
+        return self.combine_advice_sources(rule_based_advice, llm_advice, deep_metrics)
+```
+
+**Advanced Metrics Integration:**
+- **Entropy Analysis**: Move randomness, predictability scoring
+- **Pattern Recognition**: Multi-level pattern detection (2-gram, 3-gram, conditional patterns)
+- **Psychology Modeling**: Stress indicators, confidence levels, tilt detection
+- **Meta-Game Analysis**: Long-term learning curves, skill progression
+- **Opponent Modeling**: AI strategy effectiveness, adaptation patterns
+
+### Phase 4: Model Optimization & Deployment
+
+**Aggressive Model Compression:**
+```python
+# Knowledge distillation with metric-aware training
+class MetricAwareDistillation:
+    def distill_knowledge(self, teacher_model, student_model, game_metrics_dataset):
+        # Train student to match teacher's coaching quality
+        # Special loss function that weights game-relevant advice higher
+        
+        for batch in game_metrics_dataset:
+            teacher_output = teacher_model.generate(batch.context)
+            student_output = student_model.generate(batch.context)
+            
+            # Custom loss: accuracy + coaching_relevance + metrics_alignment
+            loss = coaching_quality_loss(teacher_output, student_output, batch.metrics)
+            
+        # Post-training optimizations
+        quantized_model = quantize_int8(student_model)
+        pruned_model = prune_weights(quantized_model, sparsity=0.3)
+        return optimized_model
+```
+
+**Deployment Optimizations:**
+- **ONNX Runtime**: Optimized inference engine
+- **Model Caching**: Intelligent response caching based on game state similarity
+- **Batch Processing**: Efficient batch inference for multiple coaching requests
+- **Edge Deployment**: On-device inference for ultra-low latency
+
+### Phase 5: Continuous Learning & Improvement
+
+**Feedback Loop Integration:**
+```python
+class AdaptiveCoachingSystem:
+    def __init__(self):
+        self.feedback_collector = CoachingFeedbackCollector()
+        self.model_updater = OnlineLearningModule()
+        
+    def process_coaching_feedback(self, advice_given, player_response, outcome):
+        # Track coaching effectiveness
+        effectiveness_score = self.measure_coaching_impact(
+            advice_given, player_response, outcome
+        )
+        
+        # Update model weights based on real-world effectiveness
+        self.model_updater.update_from_feedback(
+            advice_given, effectiveness_score
+        )
+        
+        # Refine prompt engineering based on successful patterns
+        self.update_prompt_templates(advice_given, effectiveness_score)
+```
 
 
 

@@ -1,6 +1,6 @@
 # 🎮 Paper-Scissor-Stone: Advanced AI Mind Game
 
-An intelligent Rock-Paper-Scissors game featuring advanced machine learning strategies, real-time analytics, visual character system, personality-based AI dialogue, and comprehensive battle arena interface. This project demonstrates sophisticated pattern recognition, character visualization, conversational AI, and immersive gaming experiences.
+An intelligent Rock-Paper-Scissors game featuring advanced machine learning strategies, real-time analytics, visual character system, personality-based AI dialogue, and **revolutionary AI Coach Demo with LangChain integration**. This project demonstrates sophisticated pattern recognition, character visualization, conversational AI, and immersive gaming experiences with cutting-edge coaching capabilities.
 
 ## 🚀 Current Features
 
@@ -21,20 +21,29 @@ An intelligent Rock-Paper-Scissors game featuring advanced machine learning stra
 - **3.4 AI Personality Modes**: 6 unique personalities with distinct behavioral patterns ✅
 - **3.5 Visual Battle Arena**: Dynamic move display with winner highlighting and animations ✅
 
-### ✅ **Phase 4: Visual & Character System (NEW - COMPLETED)**
+### ✅ **Phase 4: Visual & Character System (COMPLETED)**
 - **4.1 Robot Character Visualization**: Dynamic character avatars combining difficulty, strategy, and personality
 - **4.2 Personality-Based Dialogue System**: Real-time conversation with typing animations and mood indicators
 - **4.3 Enhanced Battle Arena**: Rock/Paper/Scissors image display with winner highlighting
 - **4.4 Dynamic Character Names**: Procedurally generated robot names based on personality and difficulty
 - **4.5 Strategy Symbol System**: Visual indicators showing current AI strategy with symbolic representations
 
+### ✅ **Phase 5: AI Coach Demo System (NEW - COMPLETED)**
+- **5.1 LangChain AI Coach**: Advanced AI coaching powered by LangChain with real LLM integration
+- **5.2 MockLLM Support**: Intelligent mock AI for offline development and testing
+- **5.3 LLM Backend Toggle**: Seamless switching between Mock and Real LLM backends
+- **5.4 Enhanced Coach Integration**: Dual-mode system with automatic AI coaching when available
+- **5.5 AI Metrics Aggregator**: 35+ comprehensive coaching metrics with real-time analysis
+
 ## 🎯 Key Technologies
 
 - **Backend**: Flask, Python, scikit-learn, NumPy, TensorFlow/Keras (LSTM)
 - **Frontend**: HTML5, CSS3, JavaScript, Chart.js, Dynamic Character System
 - **AI/ML**: Markov Chains, Frequency Analysis, Enhanced ML, LSTM Neural Networks
+- **LangChain Integration**: LangChain framework with Ollama LLM support (llama3.2:3b)
+- **AI Coaching**: MockLLM for development, Real LLM for production coaching
 - **Visual System**: Dynamic character avatars, personality-based dialogue, animated UI
-- **Analytics**: Change-point detection, entropy calculations, pattern recognition
+- **Analytics**: Change-point detection, entropy calculations, pattern recognition, 35+ AI metrics
 - **Tournament**: ELO rating system, persistent data storage, match management
 
 ## 🤖 AI Personality System
@@ -118,13 +127,21 @@ The game features **105 unique robot combinations** using a sophisticated 3-laye
 - Performance tracking and strategy recommendations
 - Immersive battle arena with move visualizations
 
-### 2. **Tournament Mode**
+### 2. **AI Coach Demo (NEW)**
+- **LangChain-Powered Coaching**: Advanced AI coaching using LangChain framework
+- **LLM Backend Toggle**: Switch between MockLLM (offline) and Real LLM (Ollama llama3.2:3b)
+- **Enhanced Coach System**: Dual-mode coaching (basic/ai) with automatic switching
+- **35+ AI Metrics**: Comprehensive analysis including pattern recognition, psychological assessment
+- **Real-time Coaching**: Dynamic tips based on live gameplay analysis
+- **Multiple Coaching Styles**: Different coaching approaches for Mock vs Real LLM
+
+### 3. **Tournament Mode**
 - Create players with ELO ratings
 - Competitive match system (best-of-5)
 - Live leaderboards and statistics
 - Match history and player profiles
 
-### 3. **Analytics Mode**
+### 4. **Analytics Mode**
 - Model prediction tracking charts
 - Strategy performance comparison
 - Confidence trend analysis
@@ -181,6 +198,10 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
+# For AI Coach Demo with Real LLM (Optional)
+# Install Ollama: https://ollama.com/
+# Pull the model: ollama pull llama3.2:3b
+
 # Run the web application
 python webapp/app.py
 ```
@@ -189,19 +210,25 @@ python webapp/app.py
 - **P**: Play Paper
 - **R**: Play Rock  
 - **S**: Play Scissor
+- **🤖 AI Coach Demo**: Access advanced LangChain-powered coaching
+- **🔄 LLM Toggle**: Switch between Mock and Real LLM backends
 - **🏆 Tournament**: Access tournament system
 - **📊 Export Data**: Download analytics data
 - **🔄 Reset Game**: Start fresh session
 - **🤖 Personality**: Select robot personality for different gameplay experience
 
 ### Web Interface
-1. Open http://127.0.0.1:5000 in your browser
+1. Open http://127.0.0.1:5050 in your browser
 2. Select AI difficulty level and personality
 3. Watch your robot opponent appear with visual character details
 4. Use keyboard keys (P/R/S) or click buttons to play
-5. Enjoy the battle arena with move visualizations and robot dialogue
-6. View real-time analytics and coaching tips
-7. Access tournament mode for competitive play
+5. Access **AI Coach Demo** for advanced coaching features:
+   - Toggle between MockLLM and Real LLM backends
+   - Experience different coaching styles and analysis depth
+   - View 35+ comprehensive AI metrics and strategic insights
+6. Enjoy the battle arena with move visualizations and robot dialogue
+7. View real-time analytics and coaching tips
+8. Access tournament mode for competitive play
 
 ## 🧠 AI Strategy Details
 
@@ -227,12 +254,18 @@ python webapp/app.py
 ```
 Paper_Scissor_Stone/
 ├── webapp/
-│   ├── app.py              # Main Flask application with enhanced features
+│   ├── app.py              # Main Flask application with AI Coach Demo
 │   ├── templates/
-│   │   └── index.html      # Main web interface with character system
+│   │   ├── index.html      # Main web interface with character system
+│   │   ├── developer_console.html # AI Coach Demo interface
+│   │   ├── performance_dashboard.html # Performance analytics
+│   │   └── replay_*.html   # Replay system interfaces
 │   └── static/             # Game assets (rock/paper/scissors images)
 ├── strategy.py             # ML strategy implementations with LSTM
 ├── ml_model_enhanced.py    # Consolidated ML models (Enhanced + LSTM)
+├── ai_coach_langchain.py   # LangChain AI Coach with MockLLM and Real LLM
+├── enhanced_coach.py       # Dual-mode coaching system (basic/ai)
+├── ai_coach_metrics.py     # 35+ AI coaching metrics aggregator
 ├── change_point_detector.py # Strategy change detection
 ├── coach_tips.py          # Intelligent coaching system
 ├── tournament_system.py   # Tournament and ELO management  
@@ -241,18 +274,14 @@ Paper_Scissor_Stone/
 ├── lstm_web_integration.py # LSTM neural network integration
 ├── personality_engine.py  # AI personality system with 7 unique personalities
 ├── optimized_strategies.py # To Win vs Not to Lose strategy implementations
-├── robot_distinctiveness_simulator.py # Comprehensive robot behavior testing
-├── robot_behavior_analysis.py # Detailed component behavior breakdown
-├── combination_similarity_analysis.py # Redundancy identification tool
-├── optimal_move_sequences.py # Human winning sequence generator
 ├── data_store.py         # Game data persistence
 ├── main.py              # CLI version
-└── requirements.txt     # Python dependencies
+└── requirements.txt     # Python dependencies (comprehensive)
 ```
 
 ## 🎯 Development Roadmap
 
-### Current Status: **Phase 4 - Visual & Character System (COMPLETED)**
+### Current Status: **Phase 5 - AI Coach Demo System (COMPLETED)**
 - ✅ Visual Charts Integration (3.1)
 - ✅ ML Model Comparison Dashboard (3.2) 
 - ✅ Tournament System (3.3)
@@ -262,15 +291,21 @@ Paper_Scissor_Stone/
 - ✅ Conversation System (4.2) - Real-time personality-based dialogue
 - ✅ Enhanced UI/UX (4.3) - Professional battle interface with animations
 - ✅ LSTM Integration (4.4) - Neural network strategy with performance tracking
+- ✅ LangChain AI Coach (5.1) - Advanced AI coaching with real LLM integration
+- ✅ MockLLM Support (5.2) - Intelligent offline coaching capabilities
+- ✅ LLM Backend Toggle (5.3) - Seamless switching between Mock and Real LLM
+- ✅ Enhanced Coach Integration (5.4) - Dual-mode system with automatic AI switching
+- ✅ AI Metrics Aggregator (5.5) - 35+ comprehensive coaching metrics
 
-### Future Enhancements (Phase 5)
-- Advanced tournament brackets with elimination rounds
-- Multiplayer real-time matches with character customization
-- AI personality customization and training
-- Mobile-responsive design optimization
-- Cloud deployment with user accounts
-- Voice synthesis for robot dialogue
-- Advanced character animations and 3D models
+### Future Enhancements (Phase 6)
+- Advanced LLM model support (GPT, Claude, Gemini integration)
+- Voice synthesis for AI coach dialogue
+- Real-time coaching during tournament matches
+- Multiplayer coaching sessions with shared AI insights
+- Advanced tournament brackets with AI coaching integration
+- Mobile-responsive AI Coach interface
+- Cloud deployment with persistent coaching history
+- Custom LLM training for personalized coaching styles
 
 ## 📈 Performance Metrics
 
@@ -302,13 +337,21 @@ The system tracks comprehensive performance metrics:
 
 ## 🚀 Latest Updates (Current Release)
 
-### New in this Version:
+### New in this Version - AI Coach Demo System:
+- **🤖 LangChain AI Coach**: Revolutionary coaching system powered by LangChain framework
+- **🔄 LLM Backend Toggle**: Seamless switching between MockLLM and Real LLM (Ollama llama3.2:3b)
+- **🧠 Enhanced Coach Integration**: Dual-mode system with automatic AI coaching activation
+- **📊 35+ AI Metrics**: Comprehensive analysis including pattern recognition, psychological assessment, strategic evaluation
+- **💡 Multiple Coaching Styles**: Different coaching approaches and analysis depth for Mock vs Real LLM
+- **⚡ Real-time Analysis**: Live coaching tips based on dynamic gameplay patterns
+- **🎯 Developer Console**: Advanced interface for AI coaching demonstration and testing
+
+### Previous Major Features:
 - **🤖 Robot Character Visualization**: Complete character system with visual avatars
 - **💬 Personality Dialogue System**: Real-time conversation with 6 unique personalities
 - **⚔️ Enhanced Battle Arena**: Professional move display with winner highlighting
 - **🧠 LSTM Neural Network**: Advanced AI strategy using deep learning
 - **🎨 Visual Polish**: Improved UI/UX with animations and professional styling
-- **🔧 Code Consolidation**: Streamlined codebase with enhanced maintainability
 
 ## 🤝 Contributing
 
