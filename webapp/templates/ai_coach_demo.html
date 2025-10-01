@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Coach Demo - Enhanced Features</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --accent-color: #FF9800;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --error-color: #dc3545;
+            --dark-bg: #2d3748;
+            --light-bg: #f8f9fa;
+            --card-bg: white;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #e9ecef;
+            --tips-bg: #fff3cd;
+            --tips-border: #ffc107;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1600px;  /* Increased from 1200px */
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #45a049 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.2em;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1.2fr 2.8fr;  /* Adjusted ratio for better space utilization */
+            gap: 40px;  /* Increased gap for better separation */
+        }
+        
+        .sidebar {
+            background: var(--light-bg);
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            height: fit-content;
+        }
+        
+        .main-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .control-section {
+            margin-bottom: 25px;
+        }
+        
+        .control-section h3 {
+            margin: 0 0 15px 0;
+            color: var(--text-primary);
+            font-size: 1.2em;
+        }
+        
+        .toggle-group {
+            margin: 15px 0;
+        }
+        
+        .toggle-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .select-group {
+            margin: 15px 0;
+        }
+        
+        .select-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .demo-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .demo-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .demo-button:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+        
+        .demo-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .demo-button.secondary {
+            background: var(--secondary-color);
+        }
+        
+        .demo-button.secondary:hover {
+            background: #1976D2;
+        }
+        
+        .status-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 15px;
+        }
+        
+        .status-card h4 {
+            margin: 0 0 8px 0;
+            color: var(--text-primary);
+            font-size: 1em;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-ready { background-color: var(--success-color); }
+        .status-warning { background-color: var(--warning-color); }
+        .status-error { background-color: var(--error-color); }
+        
+        .output-section {
+            background: var(--light-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid var(--border-color);
+        }
+        
+        .output-section h2 {
+            margin: 0 0 15px 0;
+            color: var(--text-primary);
+            font-size: 1.5em;
+        }
+        
+        .tips-display {
+            background: var(--tips-bg);
+            border: 2px solid var(--tips-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            min-height: 120px;  /* Increased from 100px */
+        }
+        
+        .full-response-display {
+            background: #f8f9fa;
+            border: 2px solid #6c757d;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            min-height: 200px;  /* Increased from 150px */
+        }
+        
+        .natural-language-display {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8ff 100%);
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            min-height: 200px;  /* Increased from 150px */
+        }
+        
+        .natural-language-display h4 {
+            margin: 0 0 15px 0;
+            color: #155724;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .llm-natural-language-display {
+            background: linear-gradient(135deg, #fff3cd 0%, #f8f9fa 100%);
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            min-height: 200px;
+        }
+        
+        .llm-natural-language-display h4 {
+            margin: 0 0 15px 0;
+            color: #856404;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .llm-natural-content {
+            background: white;
+            border: 1px solid #e6cc80;
+            border-radius: 6px;
+            padding: 15px;
+            line-height: 1.6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        
+        .llm-response .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255, 193, 7, 0.1);
+            border-radius: 4px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .llm-badge {
+            background: #ffc107;
+            color: #856404;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .analysis-highlight {
+            background: rgba(255, 193, 7, 0.1);
+            padding: 8px 12px;
+            margin: 8px 0;
+            border-left: 3px solid #ffc107;
+            border-radius: 4px;
+        }
+        
+        .natural-content {
+            background: white;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #155724;
+        }
+        
+        .full-response-display h4 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            font-size: 1.1em;
+        }
+        
+        .response-content {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .analysis-point {
+            background: #e8f5e8;
+            border-left: 4px solid #28a745;
+            padding: 8px 12px;
+            margin: 8px 0;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        
+        .natural-reasoning p {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        
+        .personality-response {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .response-header {
+            font-weight: bold;
+            color: #1976D2;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .tips-display h4 {
+            margin: 0 0 15px 0;
+            color: #856404;
+            font-size: 1.1em;
+        }
+        
+        .tip-item {
+            background: white;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border-left: 4px solid var(--tips-border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .tip-section {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 15px 0 5px 0;
+            border-radius: 6px;
+            font-weight: bold;
+            color: #495057;
+            border-left: 4px solid #007bff;
+        }
+        
+        .metrics-display {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .metrics-display h4 {
+            margin: 0 0 15px 0;
+            color: #63b3ed;
+        }
+        
+        .metrics-section {
+            margin-bottom: 20px;
+        }
+        
+        .metrics-section h5 {
+            color: #90cdf4;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .metric-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            border-radius: 4px;
+            border-left: 2px solid #4299e1;
+        }
+        
+        .metric-label {
+            font-weight: bold;
+            color: #90cdf4;
+            font-size: 11px;
+        }
+        
+        .metric-value {
+            color: #e2e8f0;
+            font-size: 12px;
+        }
+        
+        .response-meta {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .response-meta h4 {
+            margin: 0 0 10px 0;
+            color: #6366f1;
+        }
+        
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        
+        .meta-item {
+            text-align: center;
+        }
+        
+        .meta-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #6366f1;
+        }
+        
+        .meta-label {
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .json-output {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+        }
+        
+        .loading {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .navigation {
+            text-align: center;
+            padding: 20px;
+            background: var(--light-bg);
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .nav-button {
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            display: inline-block;
+            margin: 0 8px;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-button:hover {
+            background: #5a6268;
+            text-decoration: none;
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .connection-banner {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #0c5460;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            font-style: italic;
+        }
+        
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        
+        /* Advanced Analytics Styling */
+        .advanced-analytics {
+            background: rgba(255, 235, 170, 0.1);
+            border-left: 4px solid #ffc107;
+            margin-left: 10px;
+            padding-left: 15px;
+        }
+        
+        .advanced-analytics-separator {
+            background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%);
+            color: white;
+            padding: 12px 15px;
+            margin: 20px 0 15px 0;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+        }
+        
+        .analytics-toggle-hint {
+            background: rgba(108, 117, 125, 0.1);
+            border: 1px dashed #6c757d;
+            color: #6c757d;
+            padding: 12px 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+            text-align: center;
+            font-style: italic;
+        }
+        
+        .analytics-toggle-hint:hover {
+            background: rgba(108, 117, 125, 0.2);
+            cursor: pointer;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .demo-controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .meta-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Coach Demo - Enhanced Features</h1>
+            <p>Comprehensive AI coaching system with 65+ metrics and dual LLM support</p>
+        </div>
+        
+        <div class="content">
+            <!-- Sidebar Controls -->
+            <div class="sidebar">
+                <div class="control-section">
+                    <h3>🧠 LLM Configuration</h3>
+                    
+                    <div class="toggle-group">
+                        <label>LLM Backend:</label>
+                        <div class="toggle-label">
+                            <span>MockLLM</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="llm-toggle" onchange="toggleLLMBackend()">
+                                <span class="slider"></span>
+                            </label>
+                            <span>Real LLM</span>
+                        </div>
+                    </div>
+                    
+                    <div class="select-group">
+                        <label for="coaching-style">Coaching Style:</label>
+                        <select id="coaching-style" onchange="updateCoachingStyle()">
+                            <option value="easy">🎯 Easy to Understand</option>
+                            <option value="scientific">🔬 Scientific & Detailed</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3>📊 Analytics Options</h3>
+                    
+                    <div class="toggle-label">
+                        <input type="checkbox" id="show-comprehensive-metrics" checked onchange="toggleMetricsDisplay()">
+                        <span>Show Comprehensive Metrics</span>
+                    </div>
+                    
+                    <div class="toggle-label">
+                        <input type="checkbox" id="show-response-metadata" checked onchange="toggleResponseMetadata()">
+                        <span>Show Response Metadata</span>
+                    </div>
+                    
+                    <div class="toggle-label">
+                        <input type="checkbox" id="show-advanced-analytics" checked onchange="toggleAdvancedAnalytics()">
+                        <span>Advanced Analytics</span>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3>🎮 Demo Controls</h3>
+                    <div class="demo-controls">
+                        <button class="demo-button" onclick="testRealtimeCoaching()">
+                            ⚡ Real-time Tips
+                        </button>
+                        <button class="demo-button" onclick="testComprehensiveAnalysis()">
+                            📋 Full Analysis
+                        </button>
+                        <button class="demo-button secondary" onclick="testMetricsDisplay()">
+                            📊 View Metrics
+                        </button>
+                        <button class="demo-button secondary" onclick="clearOutput()">
+                            🗑️ Clear
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3>📊 System Status</h3>
+                    <div class="status-card">
+                        <h4><span class="status-indicator status-ready"></span>AI Coach</h4>
+                        <p id="ai-coach-status">Loading...</p>
+                    </div>
+                    <div class="status-card">
+                        <h4><span class="status-indicator status-ready"></span>Current Mode</h4>
+                        <p id="coaching-mode-status">MockLLM | Easy Style</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Output Panel -->
+            <div class="main-panel">
+                <div class="connection-banner">
+                    <strong>📡 AI Coach Demo:</strong> This showcases the enhanced AI coaching system.<br>
+                    <strong>For real data:</strong> Play games on the main page first, then return here!
+                </div>
+                
+                <div class="output-section">
+                    <h2>💡 Coaching Tips</h2>
+                    <div class="tips-display" id="tips-display">
+                        <h4>🎯 AI Coaching Tips</h4>
+                        <div class="empty-state">
+                            Click "Real-time Tips" to get AI coaching advice based on your gameplay!
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="output-section" id="llm-natural-language-section" style="display: none;">
+                    <h2>🧠 LLM Natural Language Response</h2>
+                    <div class="llm-natural-language-display" id="llm-natural-language-display">
+                        <h4>🤖 Real LLM Natural Language Analysis</h4>
+                        <div class="llm-natural-content" id="llm-natural-content">
+                            <div class="empty-state">
+                                Natural language analysis from real LLM will appear here.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="output-section" id="metrics-section" style="display: none;">
+                    <h2>📊 Comprehensive Metrics</h2>
+                    <div class="metrics-display" id="metrics-display">
+                        <h4>📊 65+ Comprehensive Metrics</h4>
+                        <div class="empty-state">
+                            Metrics will appear here when you test the system.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="output-section" id="metadata-section" style="display: none;">
+                    <h2>⚡ Response Metadata</h2>
+                    <div class="response-meta" id="response-metadata">
+                        <h4>Response Analytics</h4>
+                        <div class="empty-state">
+                            Response metadata will appear here.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="output-section" id="json-section" style="display: none;">
+                    <h2>🔍 Raw Response Data</h2>
+                    <div class="json-output" id="json-output">
+                        Raw JSON data will appear here when you test the system.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="navigation">
+            <a href="/" class="nav-button">🎮 Back to Game</a>
+            <a href="/stats" class="nav-button">📊 Stats Dashboard</a>
+            <a href="/performance" class="nav-button">⚡ Performance Monitor</a>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentLLMType = 'mock';
+        let currentCoachingStyle = 'easy';
+        let showComprehensiveMetrics = true;
+        let showResponseMetadata = true;
+        let showAdvancedAnalytics = true;  // Default to enabled since checkbox is checked
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSystemStatus();
+            updateModeDisplay();
+        });
+        
+        async function loadSystemStatus() {
+            try {
+                const response = await fetch('/ai_coach/status');
+                const data = await response.json();
+                
+                const statusElement = document.getElementById('ai-coach-status');
+                if (data.available) {
+                    statusElement.textContent = `✅ Available | Features: ${Object.keys(data.features).length}`;
+                } else {
+                    statusElement.textContent = '❌ Not Available';
+                }
+                
+            } catch (error) {
+                console.error('Failed to load status:', error);
+                document.getElementById('ai-coach-status').textContent = '⚠️ Connection Error';
+            }
+        }
+        
+        function updateModeDisplay() {
+            const llmText = currentLLMType === 'mock' ? 'MockLLM' : 'Real LLM';
+            const styleText = currentCoachingStyle === 'easy' ? 'Easy' : 'Scientific';
+            document.getElementById('coaching-mode-status').textContent = `${llmText} | ${styleText} Style`;
+        }
+        
+        function toggleLLMBackend() {
+            const toggle = document.getElementById('llm-toggle');
+            currentLLMType = toggle.checked ? 'real' : 'mock';
+            updateModeDisplay();
+            addLogMessage(`🔄 Switched to ${currentLLMType.toUpperCase()} LLM`);
+        }
+        
+        function updateCoachingStyle() {
+            const select = document.getElementById('coaching-style');
+            currentCoachingStyle = select.value;
+            updateModeDisplay();
+            addLogMessage(`🎭 Style changed to: ${currentCoachingStyle.toUpperCase()}`);
+        }
+        
+        function toggleMetricsDisplay() {
+            showComprehensiveMetrics = document.getElementById('show-comprehensive-metrics').checked;
+            const section = document.getElementById('metrics-section');
+            section.style.display = showComprehensiveMetrics ? 'block' : 'none';
+        }
+        
+        function toggleResponseMetadata() {
+            showResponseMetadata = document.getElementById('show-response-metadata').checked;
+            const section = document.getElementById('metadata-section');
+            section.style.display = showResponseMetadata ? 'block' : 'none';
+        }
+        
+        function toggleAdvancedAnalytics() {
+            showAdvancedAnalytics = document.getElementById('show-advanced-analytics').checked;
+            addLogMessage(`🔬 Advanced analytics: ${showAdvancedAnalytics ? 'ENABLED' : 'DISABLED'}`);
+            
+            // If we have existing analysis or metrics, refresh the display
+            const tipsDisplay = document.getElementById('tips-display');
+            const metricsDisplay = document.getElementById('metrics-display');
+            
+            if (tipsDisplay && tipsDisplay.innerHTML.includes('Comprehensive Analysis')) {
+                addLogMessage('🔄 Refreshing analysis display...');
+            }
+            
+            if (metricsDisplay && metricsDisplay.innerHTML.includes('Comprehensive Metrics')) {
+                addLogMessage('📊 Refreshing metrics display...');
+            }
+        }
+        
+        async function testRealtimeCoaching() {
+            const startTime = Date.now();
+            
+            try {
+                addLogMessage('🎯 Getting real-time coaching advice...');
+                
+                const requestData = {
+                    llm_type: currentLLMType,
+                    coaching_style: currentCoachingStyle,
+                    include_metrics: showComprehensiveMetrics,
+                    include_metadata: showResponseMetadata
+                };
+                
+                const response = await fetch('/ai_coach/realtime', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                const responseTime = Date.now() - startTime;
+                
+                if (data.success) {
+                    addLogMessage(`✅ Real-time advice received in ${responseTime}ms`);
+                    
+                    // Display natural language analysis if in Real LLM mode
+                    if (currentLLMType === 'real' && (data.natural_language_full || data.raw_response)) {
+                        displayLLMNaturalLanguage(data.natural_language_full || data.raw_response, data.coaching_personality || 'AI Coach');
+                    }
+                    
+                    // Display coaching tips
+                    displayCoachingTips(data.advice || {});
+                    
+                    // Show response metadata if enabled
+                    if (showResponseMetadata) {
+                        displayResponseMetadata(data, responseTime);
+                    }
+                    
+                    // Show comprehensive metrics if enabled
+                    if (showComprehensiveMetrics && data.metrics_summary) {
+                        displayMetrics(data.metrics_summary);
+                    }
+                    
+                    // Show raw JSON
+                    displayRawJSON(data);
+                    
+                } else {
+                    addLogMessage(`❌ Failed: ${data.error}`);
+                    
+                    // Show fallback advice if available
+                    if (data.fallback_advice) {
+                        displayCoachingTips(data.fallback_advice);
+                    }
+                }
+                
+            } catch (error) {
+                const responseTime = Date.now() - startTime;
+                addLogMessage(`❌ Error in ${responseTime}ms: ${error.message}`);
+            }
+        }
+        
+        async function testComprehensiveAnalysis() {
+            const startTime = Date.now();
+            
+            try {
+                addLogMessage('📋 Getting comprehensive analysis...');
+                
+                const requestData = {
+                    llm_type: currentLLMType,
+                    coaching_style: currentCoachingStyle,
+                    include_metrics: showComprehensiveMetrics,
+                    include_metadata: showResponseMetadata
+                };
+                
+                const response = await fetch('/ai_coach/comprehensive', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                const responseTime = Date.now() - startTime;
+                
+                if (data.success) {
+                    addLogMessage(`✅ Comprehensive analysis received in ${responseTime}ms`);
+                    
+                    // Display natural language analysis if in Real LLM mode
+                    if (currentLLMType === 'real' && (data.natural_language_full || data.analysis?.natural_language_full)) {
+                        displayLLMNaturalLanguage(data.natural_language_full || data.analysis?.natural_language_full, data.coaching_personality || 'AI Coach');
+                    }
+                    
+                    // Display analysis
+                    displayComprehensiveAnalysis(data.analysis || {});
+                    
+                    // Show response metadata if enabled
+                    if (showResponseMetadata) {
+                        displayResponseMetadata(data, responseTime);
+                    }
+                    
+                    // Show raw JSON
+                    displayRawJSON(data);
+                    
+                } else {
+                    addLogMessage(`❌ Failed: ${data.error}`);
+                }
+                
+            } catch (error) {
+                const responseTime = Date.now() - startTime;
+                addLogMessage(`❌ Error in ${responseTime}ms: ${error.message}`);
+            }
+        }
+        
+        async function testMetricsDisplay() {
+            try {
+                addLogMessage('📊 Getting comprehensive metrics...');
+                
+                const response = await fetch('/ai_coach/metrics');
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLogMessage('✅ Metrics data received');
+                    displayMetrics(data.metrics || {});
+                    displayRawJSON(data);
+                } else {
+                    addLogMessage(`❌ Metrics failed: ${data.error}`);
+                }
+                
+            } catch (error) {
+                addLogMessage(`❌ Metrics error: ${error.message}`);
+            }
+        }
+        
+        function displayLLMNaturalLanguage(naturalLanguageContent, personality) {
+            const section = document.getElementById('llm-natural-language-section');
+            const contentContainer = document.getElementById('llm-natural-content');
+            
+            // Only show if in Real LLM mode
+            if (currentLLMType !== 'real') {
+                section.style.display = 'none';
+                return;
+            }
+            
+            section.style.display = 'block';
+            
+            if (!naturalLanguageContent || naturalLanguageContent.trim() === '') {
+                contentContainer.innerHTML = '<div class="empty-state">No natural language content available from real LLM</div>';
+                return;
+            }
+            
+            // Clean and format the natural language content
+            let cleanedContent = naturalLanguageContent;
+            
+            // If it's JSON, try to extract meaningful content
+            if (cleanedContent.includes('{') && cleanedContent.includes('}')) {
+                try {
+                    const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        const parsed = JSON.parse(jsonMatch[0]);
+                        // Extract the most relevant field
+                        cleanedContent = parsed.psychological_patterns || 
+                                      parsed.strategic_evolution || 
+                                      parsed.decision_analysis || 
+                                      parsed.natural_language_full ||
+                                      jsonMatch[0];
+                    }
+                } catch (e) {
+                    // If parsing fails, just use the original content
+                }
+            }
+            
+            // Format the content nicely
+            const formattedContent = cleanedContent
+                .split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .map(line => {
+                    if (line.includes('**') && line.includes('**')) {
+                        return line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    }
+                    if (line.includes('🎯') || line.includes('📈') || line.includes('🧠')) {
+                        return `<div class="analysis-highlight">${line}</div>`;
+                    }
+                    return `<p>${line}</p>`;
+                })
+                .join('');
+            
+            const naturalHtml = `
+                <div class="llm-response">
+                    <div class="response-header">
+                        <span>🤖 ${personality} - Real LLM Analysis</span>
+                        <span class="timestamp">${new Date().toLocaleTimeString()}</span>
+                        <span class="llm-badge">Real LLM</span>
+                    </div>
+                    <div class="natural-reasoning">
+                        ${formattedContent || '<div class="empty-state">Processing LLM response...</div>'}
+                    </div>
+                </div>
+            `;
+            
+            contentContainer.innerHTML = naturalHtml;
+        }
+        
+        function displayCoachingTips(advice) {
+            const tipsContainer = document.getElementById('tips-display');
+            
+            if (!advice || !advice.tips || advice.tips.length === 0) {
+                tipsContainer.innerHTML = `
+                    <h4>🎯 AI Coaching Tips</h4>
+                    <div class="empty-state">
+                        No tips available. This usually means:<br>
+                        • No game session detected<br>
+                        • Play some games first for personalized tips!
+                    </div>
+                `;
+                return;
+            }
+            
+            const tipsHtml = advice.tips.map((tip, index) => `
+                <div class="tip-item">
+                    <strong>Tip ${index + 1}:</strong> ${tip}
+                </div>
+            `).join('');
+            
+            tipsContainer.innerHTML = `
+                <h4>🎯 ${currentCoachingStyle.toUpperCase()} Coaching Tips</h4>
+                ${tipsHtml}
+            `;
+        }
+        
+        function displayComprehensiveAnalysis(analysis) {
+            const tipsContainer = document.getElementById('tips-display');
+            
+            let analysisHtml = '<h4>📋 Comprehensive Analysis</h4>';
+            
+            // Basic Analysis Section (always shown)
+            let basicSections = [];
+            let advancedSections = [];
+            
+            // Check if this is a fallback analysis structure
+            if (analysis.psychological_patterns) {
+                basicSections.push(`<div class="tip-item"><strong>🧠 Psychology:</strong> ${analysis.psychological_patterns}</div>`);
+            }
+            
+            if (analysis.strategic_evolution) {
+                basicSections.push(`<div class="tip-item"><strong>📈 Strategy Evolution:</strong> ${analysis.strategic_evolution}</div>`);
+            }
+            
+            if (analysis.learning_recommendations) {
+                basicSections.push(`<div class="tip-item"><strong>🎯 Learning Focus:</strong> ${analysis.learning_recommendations}</div>`);
+            }
+            
+            if (analysis.educational_summary) {
+                basicSections.push(`<div class="tip-item"><strong>📝 Summary:</strong> ${analysis.educational_summary}</div>`);
+            }
+            
+            // Check if this is a regular coaching advice structure
+            if (analysis.tips && analysis.tips.length > 0) {
+                basicSections.push('<div class="tip-section"><strong>� Key Recommendations:</strong></div>');
+                analysis.tips.forEach((tip, index) => {
+                    basicSections.push(`<div class="tip-item"><strong>Tip ${index + 1}:</strong> ${tip}</div>`);
+                });
+            }
+            
+            // Advanced Analytics Sections (only shown when enabled)
+            if (analysis.insights) {
+                if (analysis.insights.ai_insights) {
+                    advancedSections.push('<div class="tip-section"><strong>🤖 AI Deep Insights:</strong></div>');
+                    Object.entries(analysis.insights.ai_insights).forEach(([key, value]) => {
+                        if (typeof value === 'string' && value.length > 0) {
+                            advancedSections.push(`<div class="tip-item advanced-analytics"><strong>${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> ${value}</div>`);
+                        }
+                    });
+                }
+                
+                if (analysis.insights.basic_insights) {
+                    advancedSections.push('<div class="tip-section"><strong>🔍 Pattern Analysis:</strong></div>');
+                    Object.entries(analysis.insights.basic_insights).forEach(([key, value]) => {
+                        if (typeof value === 'string' && value.length > 0) {
+                            advancedSections.push(`<div class="tip-item advanced-analytics"><strong>${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> ${value}</div>`);
+                        }
+                    });
+                }
+            }
+            
+            if (analysis.educational_content) {
+                advancedSections.push('<div class="tip-section"><strong>📚 Advanced Educational Content:</strong></div>');
+                Object.entries(analysis.educational_content).forEach(([key, value]) => {
+                    if (typeof value === 'string' && value.length > 0) {
+                        advancedSections.push(`<div class="tip-item advanced-analytics"><strong>${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> ${value}</div>`);
+                    }
+                });
+            }
+            
+            if (analysis.behavioral_analysis) {
+                advancedSections.push('<div class="tip-section"><strong>🧠 Advanced Behavioral Analysis:</strong></div>');
+                Object.entries(analysis.behavioral_analysis).forEach(([key, value]) => {
+                    if (typeof value === 'string' && value.length > 0) {
+                        advancedSections.push(`<div class="tip-item advanced-analytics"><strong>${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> ${value}</div>`);
+                    }
+                });
+            }
+            
+            // Build the HTML output
+            analysisHtml += basicSections.join('');
+            
+            // Add advanced sections if enabled
+            if (showAdvancedAnalytics && advancedSections.length > 0) {
+                analysisHtml += '<div class="advanced-analytics-separator"><strong>🔬 Advanced Analytics</strong></div>';
+                analysisHtml += advancedSections.join('');
+            } else if (advancedSections.length > 0) {
+                analysisHtml += '<div class="analytics-toggle-hint">� Enable "Advanced Analytics" to see deeper insights and patterns</div>';
+            }
+            
+            // If we still have no content, show empty state
+            if (basicSections.length === 0 && advancedSections.length === 0) {
+                analysisHtml += '<div class="empty-state">No comprehensive analysis data available. Try playing some games first!</div>';
+            }
+            
+            tipsContainer.innerHTML = analysisHtml;
+        }
+        
+        function displayResponseMetadata(data, responseTime) {
+            const metadataContainer = document.getElementById('response-metadata');
+            const section = document.getElementById('metadata-section');
+            section.style.display = 'block';
+            
+            const llmType = data.llm_type || currentLLMType;
+            const coachingStyle = data.coaching_style || currentCoachingStyle;
+            const confidence = data.metadata?.confidence_level || 'N/A';
+            const dataPoints = data.metadata?.data_points_analyzed || data.game_state?.rounds_played || 0;
+            
+            metadataContainer.innerHTML = `
+                <h4>⚡ Response Analytics</h4>
+                <div class="meta-grid">
+                    <div class="meta-item">
+                        <div class="meta-value">${llmType.toUpperCase()}</div>
+                        <div class="meta-label">LLM Type</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-value">${responseTime}ms</div>
+                        <div class="meta-label">Response Time</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-value">${confidence}</div>
+                        <div class="meta-label">Confidence</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-value">${dataPoints}</div>
+                        <div class="meta-label">Data Points</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-value">${coachingStyle.toUpperCase()}</div>
+                        <div class="meta-label">Style</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-value">${data.success ? 'SUCCESS' : 'FAILED'}</div>
+                        <div class="meta-label">Status</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function displayMetrics(metrics) {
+            const metricsContainer = document.getElementById('metrics-display');
+            const section = document.getElementById('metrics-section');
+            section.style.display = 'block';
+            
+            if (!metrics || Object.keys(metrics).length === 0) {
+                metricsContainer.innerHTML = `
+                    <h4>📊 Comprehensive Metrics</h4>
+                    <div class="empty-state">No metrics data available. Play some games first!</div>
+                `;
+                return;
+            }
+            
+            let metricsHtml = '<h4>📊 Comprehensive Metrics (65+ Data Points)</h4>';
+            
+            // Define basic and advanced metric categories
+            const basicCategories = [
+                { key: 'core_game', title: '🎯 Core Game Metrics' },
+                { key: 'patterns', title: '📈 Pattern Analysis' },
+                { key: 'performance', title: '⭐ Performance Metrics' }
+            ];
+            
+            const advancedCategories = [
+                { key: 'advanced', title: '🔬 Advanced Analytics' },
+                { key: 'psychological', title: '🧠 Psychological Profile' },
+                { key: 'ai_behavior', title: '🤖 AI Behavior' },
+                { key: 'temporal', title: '⏱️ Temporal Analysis' },
+                { key: 'strategic', title: '🎲 Strategic Assessment' }
+            ];
+            
+            // Process basic categories (always shown)
+            basicCategories.forEach(category => {
+                const categoryData = metrics[category.key];
+                if (categoryData && Object.keys(categoryData).length > 0) {
+                    metricsHtml += `<div class="metrics-section"><h5>${category.title}</h5><div class="metrics-grid">`;
+                    
+                    Object.entries(categoryData).forEach(([key, value]) => {
+                        // Format numeric values to 3-4 decimal places
+                        let displayValue;
+                        if (typeof value === 'number') {
+                            displayValue = Number.isInteger(value) ? value.toString() : value.toFixed(3);
+                        } else if (typeof value === 'object') {
+                            // Handle empty objects with better messaging for AI behavior metrics
+                            if (Object.keys(value).length === 0) {
+                                if (key === 'confidence_history' || key === 'model_accuracy' || key === 'prediction_history') {
+                                    displayValue = 'Insufficient data - play more rounds';
+                                } else {
+                                    displayValue = 'Empty';
+                                }
+                            } else {
+                                displayValue = JSON.stringify(value);
+                            }
+                        } else {
+                            displayValue = String(value);
+                        }
+                        
+                        metricsHtml += `
+                            <div class="metric-item">
+                                <div class="metric-label">${key.replace(/_/g, ' ').toUpperCase()}</div>
+                                <div class="metric-value">${displayValue}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    metricsHtml += '</div></div>';
+                }
+            });
+            
+            // Process advanced categories (only if enabled)
+            let advancedMetricsHtml = '';
+            advancedCategories.forEach(category => {
+                const categoryData = metrics[category.key];
+                if (categoryData && Object.keys(categoryData).length > 0) {
+                    advancedMetricsHtml += `<div class="metrics-section advanced-analytics"><h5>${category.title}</h5><div class="metrics-grid">`;
+                    
+                    Object.entries(categoryData).forEach(([key, value]) => {
+                        // Format numeric values to 3-4 decimal places
+                        let displayValue;
+                        if (typeof value === 'number') {
+                            displayValue = Number.isInteger(value) ? value.toString() : value.toFixed(3);
+                        } else if (typeof value === 'object') {
+                            // Handle empty objects with better messaging for AI behavior metrics
+                            if (Object.keys(value).length === 0) {
+                                if (key === 'confidence_history' || key === 'model_accuracy' || key === 'prediction_history') {
+                                    displayValue = 'Insufficient data - play more rounds';
+                                } else {
+                                    displayValue = 'Empty';
+                                }
+                            } else {
+                                displayValue = JSON.stringify(value);
+                            }
+                        } else {
+                            displayValue = String(value);
+                        }
+                        
+                        advancedMetricsHtml += `
+                            <div class="metric-item">
+                                <div class="metric-label">${key.replace(/_/g, ' ').toUpperCase()}</div>
+                                <div class="metric-value">${displayValue}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    advancedMetricsHtml += '</div></div>';
+                }
+            });
+            
+            // Add advanced metrics if enabled
+            if (showAdvancedAnalytics && advancedMetricsHtml) {
+                metricsHtml += '<div class="advanced-analytics-separator"><strong>🔬 Advanced Metrics</strong></div>';
+                metricsHtml += advancedMetricsHtml;
+            } else if (advancedMetricsHtml) {
+                metricsHtml += '<div class="analytics-toggle-hint">💡 Enable "Advanced Analytics" to see psychological profiling, temporal analysis, and strategic assessment</div>';
+            }
+            
+            metricsContainer.innerHTML = metricsHtml;
+        }
+        
+        function displayRawJSON(data) {
+            const jsonContainer = document.getElementById('json-output');
+            const section = document.getElementById('json-section');
+            section.style.display = 'block';
+            
+            jsonContainer.textContent = JSON.stringify(data, null, 2);
+        }
+        
+        function clearOutput() {
+            // Clear tips
+            document.getElementById('tips-display').innerHTML = `
+                <h4>🎯 AI Coaching Tips</h4>
+                <div class="empty-state">
+                    Click "Real-time Tips" to get AI coaching advice!
+                </div>
+            `;
+            
+            // Clear full response
+            document.getElementById('response-content').innerHTML = `
+                <div class="empty-state">
+                    Full response will appear here when you test the system.
+                </div>
+            `;
+            
+            // Hide optional sections
+            document.getElementById('full-response-section').style.display = 'none';
+            document.getElementById('metrics-section').style.display = 'none';
+            document.getElementById('metadata-section').style.display = 'none';
+            document.getElementById('json-section').style.display = 'none';
+            
+            addLogMessage('🗑️ Output cleared');
+        }
+        
+        function addLogMessage(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            console.log(`[${timestamp}] ${message}`);
+        }
+    </script>
+</body>
+</html>
