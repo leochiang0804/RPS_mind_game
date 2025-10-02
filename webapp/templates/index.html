@@ -521,10 +521,6 @@
                                             <h4>Score Differential</h4>
                                             <canvas id="scoreDifferentialChart"></canvas>
                                         </div>
-                                        <div class="chart-card">
-                                            <h4>Model Performance Metrics</h4>
-                                            <canvas id="modelAccuracyChart"></canvas>
-                                        </div>
                                     </div>
                                     <div class="chart-card">
                                         <h4>Model Confidence Trends</h4>
@@ -541,18 +537,22 @@
                                             </label>
                                             <label class="prediction-option">
                                                 <input type="checkbox" data-dataset-index="2">
-                                                Frequency Prediction
+                                                Random Prediction
                                             </label>
                                             <label class="prediction-option">
                                                 <input type="checkbox" data-dataset-index="3">
-                                                Markov Prediction
+                                                Frequency Prediction
                                             </label>
                                             <label class="prediction-option">
                                                 <input type="checkbox" data-dataset-index="4">
-                                                Enhanced Prediction
+                                                Markov Prediction
                                             </label>
                                             <label class="prediction-option">
                                                 <input type="checkbox" data-dataset-index="5">
+                                                Enhanced Prediction
+                                            </label>
+                                            <label class="prediction-option">
+                                                <input type="checkbox" data-dataset-index="6">
                                                 LSTM Prediction
                                             </label>
                                             <label class="prediction-option">
@@ -569,8 +569,19 @@
                                         <span class="panel-subtitle">Key metrics from the analytical models.</span>
                                     </div>
                                     <div class="metric-board">
-                                        <h5 class="metric-title">📊 Model Performance Metrics</h5>
+                                        <h5 class="metric-title">🎯 AI Strategy Accuracy</h5>
+                                        <p style="color: #e2e8f0; font-size: 13px; margin: 5px 0 15px 0; line-height: 1.4;">
+                                            Shows how often each AI model correctly predicts your next move. Higher percentages mean the AI is learning your patterns better.
+                                        </p>
                                         <div id="modelMetricsTable" class="metric-grid"></div>
+                                        <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 6px; border-left: 3px solid #64748b;">
+                                            <div style="color: #e2e8f0; font-size: 12px; line-height: 1.4;">
+                                                <strong>Status Levels:</strong><br>
+                                                🟢 Excellent (>50%): AI has learned your patterns well<br>
+                                                🟡 Good (33-50%): AI is moderately successful at predictions<br>
+                                                🔴 Needs Improvement (<33%): AI struggles to predict your moves
+                                            </div>
+                                        </div>
                                         <div class="recommended-strategy" id="recommendedStrategy">Analyzing performance...</div>
                                     </div>
                                 </section>
@@ -2270,6 +2281,17 @@
                                     hidden: true
                                 },
                                 {
+                                    label: 'Random Prediction',
+                                    data: [],
+                                    borderColor: '#FFCE56',
+                                    backgroundColor: 'rgba(255, 206, 86, 0.1)',
+                                    fill: false,
+                                    tension: 0.1,
+                                    borderDash: [5, 5],
+                                    pointRadius: 2,
+                                    hidden: true
+                                },
+                                {
                                     label: 'Frequency Prediction',
                                     data: [],
                                     borderColor: '#4BC0C0',
@@ -2373,87 +2395,6 @@
                                     },
                                     grid: {
                                         color: 'rgba(248,250,252,0.12)'
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-                
-                // Model Performance Metrics Chart
-                const accuracyCtx = document.getElementById('modelAccuracyChart');
-                if (accuracyCtx) {
-                    modelAccuracyChart = new Chart(accuracyCtx, {
-                        type: 'radar',
-                        data: {
-                            labels: ['Prediction Accuracy', 'Confidence Level', 'Consistency', 'Adaptability', 'Success Rate'],
-                            datasets: [
-                                {
-                                    label: 'Random',
-                                    data: [33, 33, 50, 25, 33],
-                                    borderColor: 'rgba(255, 206, 86, 1)',
-                                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                                    borderWidth: 2
-                                },
-                                {
-                                    label: 'Frequency',
-                                    data: [45, 60, 70, 40, 45],
-                                    borderColor: 'rgba(75, 192, 192, 1)',
-                                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                    borderWidth: 2
-                                },
-                                {
-                                    label: 'Markov',
-                                    data: [55, 70, 65, 60, 55],
-                                    borderColor: 'rgba(153, 102, 255, 1)',
-                                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                                    borderWidth: 2
-                                },
-                                {
-                                    label: 'Enhanced',
-                                    data: [65, 80, 75, 80, 65],
-                                    borderColor: 'rgba(255, 159, 64, 1)',
-                                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                                    borderWidth: 2
-                                },
-                                {
-                                    label: 'LSTM',
-                                    data: [75, 85, 80, 90, 75],
-                                    borderColor: 'rgba(54, 162, 235, 1)',
-                                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                                    borderWidth: 2
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { 
-                                    display: true,
-                                    position: 'bottom',
-                                    labels: {
-                                        color: '#f8fafc',
-                                        font: { weight: 'bold', size: 13 }
-                                    }
-                                }
-                            },
-                            scales: {
-                                r: {
-                                    beginAtZero: true,
-                                    max: 100,
-                                    pointLabels: {
-                                        color: '#f8fafc',
-                                        font: { weight: 'bold', size: 13 }
-                                    },
-                                    angleLines: {
-                                        color: 'rgba(248,250,252,0.12)'
-                                    },
-                                    grid: {
-                                        color: 'rgba(248,250,252,0.12)'
-                                    },
-                                    ticks: {
-                                        display: false
                                     }
                                 }
                             }
@@ -2737,86 +2678,13 @@
                     
                     modelPredictionChart.data.labels = displayLabels;
                     const lstmPreds = pad((modelPreds.lstm || []).map(moveToNumber));
-                    const datasets = [humanData, robotData, frequencyPreds, markovPreds, enhancedPreds, lstmPreds];
+                    const datasets = [humanData, robotData, randomPreds, frequencyPreds, markovPreds, enhancedPreds, lstmPreds];
                     datasets.forEach((dataset, idx) => {
                         modelPredictionChart.data.datasets[idx].data = sliceData(dataset);
                     });
 
                     highlightMatches();
                     modelPredictionChart.update('none');
-                }
-                
-                // Update Model Performance Metrics Chart
-                if (modelAccuracyChart && data.accuracy) {
-                    // Calculate real performance metrics for each model based on actual data
-                    const models = ['random', 'frequency', 'markov', 'enhanced', 'lstm'];
-                    const humanHistory = data.human_history || [];
-                    const modelPreds = data.model_predictions_history || {};
-                    const totalPredictions = data.total_predictions || {};
-                    const correctPredictions = data.correct_predictions || {};
-                    
-                    models.forEach((model, index) => {
-                        // 1. Prediction Accuracy - real accuracy from backend
-                        const accuracy = data.accuracy[model] || 0;
-                        
-                        // 2. Confidence Level - based on model type and performance
-                        let confidence = 33;
-                        if (model === 'enhanced' && data.confidence) {
-                            confidence = data.confidence * 100;
-                        } else if (model === 'lstm') {
-                            confidence = Math.min(90, 60 + (accuracy * 0.3));
-                        } else if (model === 'markov') {
-                            confidence = Math.min(80, 40 + (accuracy * 0.4));
-                        } else if (model === 'frequency') {
-                            confidence = Math.min(70, 30 + (accuracy * 0.5));
-                        }
-                        
-                        // 3. Consistency - variance in recent predictions
-                        let consistency = 50;
-                        const predictions = modelPreds[model] || [];
-                        if (predictions.length >= 10) {
-                            const recent = predictions.slice(-10);
-                            // Convert predictions to numbers for variance calculation
-                            const numericRecent = recent.map(pred => {
-                                if (typeof pred === 'string') {
-                                    const move = pred.toLowerCase();
-                                    if (move === 'paper') return 2;
-                                    if (move === 'stone' || move === 'rock') return 1;
-                                    if (move === 'scissor') return 0;
-                                    return 1; // default to stone
-                                }
-                                return pred || 1;
-                            }).filter(val => val !== null && val !== undefined);
-                            
-                            if (numericRecent.length > 0) {
-                                const variance = calculateVariance(numericRecent);
-                                consistency = Math.max(20, Math.min(100, 100 - (variance * 30)));
-                            }
-                        }
-                        
-                        // 4. Adaptability - based on model sophistication
-                        const adaptability = {
-                            'random': 10,
-                            'frequency': 35,
-                            'markov': 65,
-                            'enhanced': 85,
-                            'lstm': 95
-                        }[model] || 33;
-                        
-                        // 5. Success Rate - win rate when this model is active
-                        const successRate = accuracy;
-                        
-                        if (modelAccuracyChart.data.datasets[index]) {
-                            modelAccuracyChart.data.datasets[index].data = [
-                                Math.round(accuracy), 
-                                Math.round(confidence), 
-                                Math.round(consistency), 
-                                adaptability, 
-                                Math.round(successRate)
-                            ];
-                        }
-                    });
-                    modelAccuracyChart.update('none');
                 }
                 
                 // Helper function to calculate variance
@@ -2876,21 +2744,18 @@
                 { name: 'Frequency', key: 'frequency', color: '#4BC0C0' },
                 { name: 'Markov', key: 'markov', color: '#9966FF' },
                 { name: 'Enhanced', key: 'enhanced', color: '#FF9F40' },
-                { name: 'LSTM Neural', key: 'lstm', color: '#36A2EB' }
+                { name: 'LSTM Neural', key: 'lstm', color: '#6A5ACD' }
             ];
             
             metricsContainer.innerHTML = models.map(model => {
                 const accuracy = data.accuracy[model.key] || 0;
-                const correct = data.correct_predictions?.[model.key] || 0;
-                const total = data.total_predictions?.[model.key] || 0;
                 
                 return `
                     <div style="background: linear-gradient(135deg, ${model.color}20, ${model.color}10); border-left: 4px solid ${model.color}; padding: 15px; border-radius: 8px;">
-                        <h6 style="margin: 0 0 8px 0; color: #333; font-weight: bold;">${model.name} Strategy</h6>
+                        <h6 style="margin: 0 0 8px 0; color: #f8fafc; font-weight: bold;">${model.name} Strategy</h6>
                         <div style="font-size: 24px; font-weight: bold; color: ${model.color}; margin-bottom: 5px;">${accuracy.toFixed(1)}%</div>
-                        <div style="color: #666; font-size: 12px;">
-                            Predictions: ${correct}/${total}<br>
-                            Status: ${accuracy > 60 ? '🟢 Excellent' : accuracy > 40 ? '🟡 Good' : '🔴 Needs Improvement'}
+                        <div style="color: #e2e8f0; font-size: 13px; font-weight: 500;">
+                            Status: ${accuracy > 50 ? '🟢 Excellent' : accuracy >= 33 ? '🟡 Good' : '🔴 Needs Improvement'}
                         </div>
                     </div>
                 `;
@@ -2912,6 +2777,7 @@
                 'frequency': 'Frequency Analysis',
                 'markov': 'Markov Chain',
                 'enhanced': 'Enhanced ML',
+                'lstm': 'LSTM Neural',
                 'to_win': 'To Win (Aggressive)',
                 'not_to_lose': 'Not to Lose (Defensive)'
             };
