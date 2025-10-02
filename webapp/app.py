@@ -575,10 +575,53 @@ def play():
         'total_predictions': game_state['total_predictions']
     })
 
-@app.route('/coaching', methods=['GET'])
+@app.route('/coaching', methods=['GET', 'POST'])
 def get_coaching_tips():
     """Get intelligent coaching tips based on current game state"""
-    # Generate coaching tips
+    
+    # Handle LLM type from POST request
+    llm_type = 'mock'  # Default
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        llm_type = data.get('llm_type', 'mock')
+        
+        # Update enhanced coach LLM type if available
+        if AI_COACH_AVAILABLE:
+            enhanced_coach = get_enhanced_coach()
+            current_llm = enhanced_coach.get_llm_type()
+            if llm_type != current_llm:
+                switch_result = enhanced_coach.set_llm_type(llm_type)
+                if not switch_result.get('success', False):
+                    print(f"⚠️ Failed to switch to {llm_type}: {switch_result.get('error', 'Unknown error')}")
+                    llm_type = current_llm  # Fallback to current
+    
+    # Use enhanced coach if available (for all LLM types)
+    if AI_COACH_AVAILABLE:
+        enhanced_coach = get_enhanced_coach()
+        
+        # Build comprehensive game context (same as AI Coach Demo)
+        game_data = build_game_context(
+            session=dict(session),  # Convert Flask session to dict
+            overrides={},  # No overrides for main page
+            context_type='ai_coaching'
+        )
+        
+        # Generate enhanced coaching advice
+        advice = enhanced_coach.generate_coaching_advice(game_data, 'real_time')
+        
+        return jsonify({
+            'coaching_tips': advice.get('tips', []),
+            'experiments': advice.get('experiments', []),
+            'insights': advice.get('insights', {}),
+            'round': game_state['round'],
+            'current_strategy': game_state.get('current_strategy', 'unknown'),
+            'llm_type': llm_type,
+            'enhanced_analysis': advice.get('educational_content', {}),
+            'behavioral_insights': advice.get('behavioral_analysis', {}),
+            'confidence': advice.get('confidence_level', 0.0)
+        })
+    
+    # Fallback to basic coaching
     tips_data = coach.generate_tips(
         human_history=game_state['human_history'],
         robot_history=game_state['robot_history'],
@@ -592,7 +635,8 @@ def get_coaching_tips():
         'experiments': tips_data['experiments'],
         'insights': tips_data['insights'],
         'round': game_state['round'],
-        'current_strategy': game_state.get('current_strategy', 'unknown')
+        'current_strategy': game_state.get('current_strategy', 'unknown'),
+        'llm_type': 'basic'
     })
 
 @app.route('/analytics/export', methods=['GET'])

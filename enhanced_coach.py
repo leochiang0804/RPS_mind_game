@@ -155,15 +155,15 @@ class EnhancedCoachSystem:
         Set the LLM type for AI coaching
         
         Args:
-            llm_type: 'mock' for fast MockLLM, 'real' for actual LLM models
+            llm_type: 'mock' for fast MockLLM, 'real' for actual LLM models, 'trained' for our trained model
             
         Returns:
             Status dictionary
         """
-        if llm_type not in ['mock', 'real']:
+        if llm_type not in ['mock', 'real', 'trained']:
             return {
                 'success': False,
-                'error': f'Invalid LLM type: {llm_type}. Must be "mock" or "real"',
+                'error': f'Invalid LLM type: {llm_type}. Must be "mock", "real", or "trained"',
                 'current_llm_type': self.get_llm_type()
             }
         

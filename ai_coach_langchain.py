@@ -23,6 +23,15 @@ except ImportError:
     LANGCHAIN_AVAILABLE = False
     # Mock classes for fallback
     class LLM: pass
+
+# Trained model import with graceful fallback
+try:
+    from trained_coach_wrapper import TrainedCoachWrapper
+    TRAINED_MODEL_AVAILABLE = True
+except ImportError:
+    print("ℹ️ Trained model not available.")
+    TRAINED_MODEL_AVAILABLE = False
+    TrainedCoachWrapper = None
     class PromptTemplate: pass
     class LLMChain: pass
     class ConversationBufferWindowMemory: pass
@@ -538,6 +547,7 @@ class LangChainAICoach:
         self.coaching_style = 'easy'  # Default to easy style
         
         self.llm = self._initialize_llm()
+        self.trained_coach = None  # Will be initialized if trained model is selected
         self.output_parser = CoachingOutputParser()
         self.memory = self._initialize_memory()
         
@@ -786,15 +796,15 @@ Please write this as if you're having a thoughtful conversation with the player 
         Set the LLM type for coaching
         
         Args:
-            llm_type: 'mock' for fast MockLLM, 'real' for actual LLM models
+            llm_type: 'mock' for fast MockLLM, 'real' for actual LLM models, 'trained' for our trained model
             
         Returns:
             Status dictionary
         """
-        if llm_type not in ['mock', 'real']:
+        if llm_type not in ['mock', 'real', 'trained']:
             return {
                 'success': False,
-                'error': f'Invalid LLM type: {llm_type}. Must be "mock" or "real"',
+                'error': f'Invalid LLM type: {llm_type}. Must be "mock", "real", or "trained"',
                 'current_llm_type': self.get_llm_type()
             }
         
@@ -807,6 +817,8 @@ Please write this as if you're having a thoughtful conversation with the player 
                 mock_llm = MockLLM()
                 mock_llm.set_coaching_style(self.coaching_style)
                 self.llm = mock_llm
+                # Clear trained model when switching away from it
+                self.trained_coach = None
                 
             elif llm_type == 'real':
                 # Try to switch to real LLM
@@ -814,16 +826,41 @@ Please write this as if you're having a thoughtful conversation with the player 
                 real_llm = self._try_real_llm()
                 if real_llm is not None:
                     self.llm = real_llm
+                    # Clear trained model when switching away from it
+                    self.trained_coach = None
                 else:
                     return {
                         'success': False,
                         'error': 'Real LLM not available. Remaining on current LLM.',
                         'current_llm_type': old_type
                     }
+                    
+            elif llm_type == 'trained':
+                # Switch to our trained model
+                print("🔄 Switching to trained RPS coaching model")
+                if TRAINED_MODEL_AVAILABLE:
+                    trained_coach = TrainedCoachWrapper()
+                    trained_coach.set_coaching_style(self.coaching_style)
+                    if trained_coach.is_available():
+                        self.trained_coach = trained_coach
+                        self.llm = trained_coach  # Use trained coach as LLM replacement
+                    else:
+                        return {
+                            'success': False,
+                            'error': 'Trained model failed to load. Remaining on current LLM.',
+                            'current_llm_type': old_type
+                        }
+                else:
+                    return {
+                        'success': False,
+                        'error': 'Trained model not available. Install model training dependencies.',
+                        'current_llm_type': old_type
+                    }
             
-            # Update chains with new LLM
-            self.real_time_chain = self._create_real_time_chain()
-            self.comprehensive_chain = self._create_comprehensive_chain()
+            # Update chains with new LLM (except for trained model which has its own interface)
+            if llm_type != 'trained':
+                self.real_time_chain = self._create_real_time_chain()
+                self.comprehensive_chain = self._create_comprehensive_chain()
             
             return {
                 'success': True,
@@ -841,7 +878,9 @@ Please write this as if you're having a thoughtful conversation with the player 
     
     def get_llm_type(self) -> str:
         """Get current LLM type"""
-        if isinstance(self.llm, MockLLM):
+        if hasattr(self, 'trained_coach') and self.trained_coach is not None:
+            return 'trained'
+        elif isinstance(self.llm, MockLLM):
             return 'mock'
         else:
             return 'real'
@@ -961,10 +1000,44 @@ Please write this as if you're having a thoughtful conversation with the player 
         print(f"📊 FEEDING {len(full_context)} METRICS TO LLM")
         
         # Choose strategy based on LLM type
-        if isinstance(self.llm, MockLLM):
+        if hasattr(self, 'trained_coach') and self.trained_coach is not None:
+            return self._generate_trained_model_advice(metrics)  # Use original metrics for trained model
+        elif isinstance(self.llm, MockLLM):
             return self._generate_mockllm_advice(full_context)
         else:
             return self._generate_real_llm_advice(full_context)
+    
+    def _generate_trained_model_advice(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate advice using our trained RPS coaching model"""
+        print("🤖 Using Trained RPS Coaching Model")
+        
+        if self.trained_coach is None:
+            return {
+                'error': 'Trained model not available',
+                'tips': ['Trained model not loaded'],
+                'insights': {},
+                'confidence_level': 0.0,
+                'response_type': 'error'
+            }
+        
+        try:
+            # Use the trained coach's generate_coaching_advice method
+            advice = self.trained_coach.generate_coaching_advice(
+                comprehensive_metrics=metrics,
+                coaching_type='real_time'
+            )
+            
+            return advice
+            
+        except Exception as e:
+            print(f"❌ Trained model error: {e}")
+            return {
+                'error': f'Trained model failed: {str(e)}',
+                'tips': ['Try switching to a different LLM type'],
+                'insights': {},
+                'confidence_level': 0.0,
+                'response_type': 'error'
+            }
     
     def _generate_mockllm_advice(self, full_context: Dict[str, Any]) -> Dict[str, Any]:
         """Generate advice using MockLLM with JSON format"""

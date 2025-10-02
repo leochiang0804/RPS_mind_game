@@ -637,16 +637,13 @@
                 <div class="control-section">
                     <h3>🧠 LLM Configuration</h3>
                     
-                    <div class="toggle-group">
-                        <label>LLM Backend:</label>
-                        <div class="toggle-label">
-                            <span>MockLLM</span>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="llm-toggle" onchange="toggleLLMBackend()">
-                                <span class="slider"></span>
-                            </label>
-                            <span>Real LLM</span>
-                        </div>
+                    <div class="select-group">
+                        <label for="llm-type">LLM Backend:</label>
+                        <select id="llm-type" onchange="updateLLMType()">
+                            <option value="mock">🎯 MockLLM (Fast)</option>
+                            <option value="trained">🤖 Trained Model (1.7ms)</option>
+                            <option value="real">🌐 Real LLM (Ollama)</option>
+                        </select>
                     </div>
                     
                     <div class="select-group">
@@ -806,14 +803,20 @@
         }
         
         function updateModeDisplay() {
-            const llmText = currentLLMType === 'mock' ? 'MockLLM' : 'Real LLM';
+            let llmText;
+            switch(currentLLMType) {
+                case 'mock': llmText = 'MockLLM'; break;
+                case 'trained': llmText = 'Trained Model'; break;
+                case 'real': llmText = 'Real LLM'; break;
+                default: llmText = 'Unknown'; break;
+            }
             const styleText = currentCoachingStyle === 'easy' ? 'Easy' : 'Scientific';
             document.getElementById('coaching-mode-status').textContent = `${llmText} | ${styleText} Style`;
         }
         
-        function toggleLLMBackend() {
-            const toggle = document.getElementById('llm-toggle');
-            currentLLMType = toggle.checked ? 'real' : 'mock';
+        function updateLLMType() {
+            const select = document.getElementById('llm-type');
+            currentLLMType = select.value;
             updateModeDisplay();
             addLogMessage(`🔄 Switched to ${currentLLMType.toUpperCase()} LLM`);
         }
@@ -858,7 +861,50 @@
             const startTime = Date.now();
             
             try {
-                addLogMessage('🎯 Getting real-time coaching advice...');
+                // Show loading indicator based on LLM type
+                let loadingMessage;
+                switch(currentLLMType) {
+                    case 'mock':
+                        loadingMessage = '🎯 MockLLM generating advice... (Fast)';
+                        break;
+                    case 'trained':
+                        loadingMessage = '🤖 Our trained model analyzing gameplay... (~17ms)';
+                        break;
+                    case 'real':
+                        loadingMessage = '🌐 Real LLM processing request... (This may take 30+ seconds)';
+                        break;
+                    default:
+                        loadingMessage = '🔄 Generating coaching advice...';
+                }
+                
+                // Show loading in tips display
+                const tipsDisplay = document.getElementById('tips-display');
+                tipsDisplay.innerHTML = `
+                    <h4>🎯 AI Coaching Tips</h4>
+                    <div style="
+                        display: flex; 
+                        align-items: center; 
+                        gap: 10px; 
+                        padding: 20px; 
+                        background: linear-gradient(90deg, #f0f9ff, #e0f2fe); 
+                        border-left: 4px solid #0284c7;
+                        border-radius: 8px;
+                        color: #0369a1;
+                        font-weight: 500;
+                    ">
+                        <div class="loading" style="
+                            width: 20px; 
+                            height: 20px; 
+                            border: 2px solid #0284c7; 
+                            border-top: 2px solid transparent; 
+                            border-radius: 50%; 
+                            animation: spin 1s linear infinite;
+                        "></div>
+                        ${loadingMessage}
+                    </div>
+                `;
+                
+                addLogMessage(`🎯 Getting real-time coaching advice using ${currentLLMType.toUpperCase()}...`);
                 
                 const requestData = {
                     llm_type: currentLLMType,
@@ -877,10 +923,10 @@
                 const responseTime = Date.now() - startTime;
                 
                 if (data.success) {
-                    addLogMessage(`✅ Real-time advice received in ${responseTime}ms`);
+                    addLogMessage(`✅ ${currentLLMType.toUpperCase()} advice received in ${responseTime}ms`);
                     
-                    // Display natural language analysis if in Real LLM mode
-                    if (currentLLMType === 'real' && (data.natural_language_full || data.raw_response)) {
+                    // Display natural language analysis if in Real LLM mode OR if trained model provides natural language
+                    if ((currentLLMType === 'real' || currentLLMType === 'trained') && (data.natural_language_full || data.raw_response)) {
                         displayLLMNaturalLanguage(data.natural_language_full || data.raw_response, data.coaching_personality || 'AI Coach');
                     }
                     
@@ -919,7 +965,50 @@
             const startTime = Date.now();
             
             try {
-                addLogMessage('📋 Getting comprehensive analysis...');
+                // Show loading indicator based on LLM type
+                let loadingMessage;
+                switch(currentLLMType) {
+                    case 'mock':
+                        loadingMessage = '🎯 MockLLM performing comprehensive analysis... (Fast)';
+                        break;
+                    case 'trained':
+                        loadingMessage = '🤖 Our trained model conducting deep analysis... (~17ms)';
+                        break;
+                    case 'real':
+                        loadingMessage = '🌐 Real LLM conducting comprehensive analysis... (This may take 30+ seconds)';
+                        break;
+                    default:
+                        loadingMessage = '🔄 Conducting comprehensive analysis...';
+                }
+                
+                // Show loading in tips display
+                const tipsDisplay = document.getElementById('tips-display');
+                tipsDisplay.innerHTML = `
+                    <h4>📋 Comprehensive Analysis</h4>
+                    <div style="
+                        display: flex; 
+                        align-items: center; 
+                        gap: 10px; 
+                        padding: 20px; 
+                        background: linear-gradient(90deg, #fdf2f8, #fce7f3); 
+                        border-left: 4px solid #ec4899;
+                        border-radius: 8px;
+                        color: #be185d;
+                        font-weight: 500;
+                    ">
+                        <div class="loading" style="
+                            width: 20px; 
+                            height: 20px; 
+                            border: 2px solid #ec4899; 
+                            border-top: 2px solid transparent; 
+                            border-radius: 50%; 
+                            animation: spin 1s linear infinite;
+                        "></div>
+                        ${loadingMessage}
+                    </div>
+                `;
+                
+                addLogMessage(`📋 Getting comprehensive analysis using ${currentLLMType.toUpperCase()}...`);
                 
                 const requestData = {
                     llm_type: currentLLMType,
@@ -938,10 +1027,10 @@
                 const responseTime = Date.now() - startTime;
                 
                 if (data.success) {
-                    addLogMessage(`✅ Comprehensive analysis received in ${responseTime}ms`);
+                    addLogMessage(`✅ ${currentLLMType.toUpperCase()} comprehensive analysis received in ${responseTime}ms`);
                     
-                    // Display natural language analysis if in Real LLM mode
-                    if (currentLLMType === 'real' && (data.natural_language_full || data.analysis?.natural_language_full)) {
+                    // Display natural language analysis if in Real LLM mode OR if trained model provides natural language
+                    if ((currentLLMType === 'real' || currentLLMType === 'trained') && (data.natural_language_full || data.analysis?.natural_language_full)) {
                         displayLLMNaturalLanguage(data.natural_language_full || data.analysis?.natural_language_full, data.coaching_personality || 'AI Coach');
                     }
                     
@@ -990,8 +1079,8 @@
             const section = document.getElementById('llm-natural-language-section');
             const contentContainer = document.getElementById('llm-natural-content');
             
-            // Only show if in Real LLM mode
-            if (currentLLMType !== 'real') {
+            // Only show if in Real LLM mode or trained model mode
+            if (currentLLMType !== 'real' && currentLLMType !== 'trained') {
                 section.style.display = 'none';
                 return;
             }
@@ -1043,9 +1132,9 @@
             const naturalHtml = `
                 <div class="llm-response">
                     <div class="response-header">
-                        <span>🤖 ${personality} - Real LLM Analysis</span>
+                        <span>🤖 ${personality} - ${currentLLMType === 'trained' ? 'Trained Model' : 'Real LLM'} Analysis</span>
                         <span class="timestamp">${new Date().toLocaleTimeString()}</span>
-                        <span class="llm-badge">Real LLM</span>
+                        <span class="llm-badge">${currentLLMType === 'trained' ? 'Trained' : 'Real LLM'}</span>
                     </div>
                     <div class="natural-reasoning">
                         ${formattedContent || '<div class="empty-state">Processing LLM response...</div>'}
@@ -1071,6 +1160,26 @@
                 return;
             }
             
+            // Determine which model generated the tips
+            let modelBadge;
+            switch(currentLLMType) {
+                case 'mock':
+                    modelBadge = '🎯 <span style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">MockLLM</span>';
+                    break;
+                case 'trained':
+                    modelBadge = '🤖 <span style="background: #f3e5f5; color: #7b1fa2; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Our Trained AI</span>';
+                    break;
+                case 'real':
+                    modelBadge = '🌐 <span style="background: #e8f5e8; color: #2e7d32; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Real LLM</span>';
+                    break;
+                default:
+                    modelBadge = '❓ <span style="background: #fafafa; color: #616161; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Unknown</span>';
+            }
+            
+            const modelHeader = `<div style="margin-bottom: 15px; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 6px; display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                Generated by: ${modelBadge}
+            </div>`;
+            
             const tipsHtml = advice.tips.map((tip, index) => `
                 <div class="tip-item">
                     <strong>Tip ${index + 1}:</strong> ${tip}
@@ -1079,6 +1188,7 @@
             
             tipsContainer.innerHTML = `
                 <h4>🎯 ${currentCoachingStyle.toUpperCase()} Coaching Tips</h4>
+                ${modelHeader}
                 ${tipsHtml}
             `;
         }
