@@ -640,9 +640,9 @@
                     <div class="select-group">
                         <label for="llm-type">LLM Backend:</label>
                         <select id="llm-type" onchange="updateLLMType()">
-                            <option value="mock">🎯 MockLLM (Fast)</option>
-                            <option value="trained">🤖 Trained Model (1.7ms)</option>
-                            <option value="real">🌐 Real LLM (Ollama)</option>
+                            <option value="mock">🎯 Basic</option>
+                            <option value="trained">🤖 Light-weight LLM</option>
+                            <option value="real">🌐 Advanced LLM</option>
                         </select>
                     </div>
                     
@@ -725,10 +725,10 @@
                 <div class="output-section" id="llm-natural-language-section" style="display: none;">
                     <h2>🧠 LLM Natural Language Response</h2>
                     <div class="llm-natural-language-display" id="llm-natural-language-display">
-                        <h4>🤖 Real LLM Natural Language Analysis</h4>
+                        <h4>🤖 Advanced LLM Natural Language Analysis</h4>
                         <div class="llm-natural-content" id="llm-natural-content">
                             <div class="empty-state">
-                                Natural language analysis from real LLM will appear here.
+                                Natural language analysis from Advanced LLM will appear here.
                             </div>
                         </div>
                     </div>
@@ -805,9 +805,9 @@
         function updateModeDisplay() {
             let llmText;
             switch(currentLLMType) {
-                case 'mock': llmText = 'MockLLM'; break;
-                case 'trained': llmText = 'Trained Model'; break;
-                case 'real': llmText = 'Real LLM'; break;
+                case 'mock': llmText = 'Basic'; break;
+                case 'trained': llmText = 'Light-weight LLM'; break;
+                case 'real': llmText = 'Advanced LLM'; break;
                 default: llmText = 'Unknown'; break;
             }
             const styleText = currentCoachingStyle === 'easy' ? 'Easy' : 'Scientific';
@@ -865,13 +865,13 @@
                 let loadingMessage;
                 switch(currentLLMType) {
                     case 'mock':
-                        loadingMessage = '🎯 MockLLM generating advice... (Fast)';
+                        loadingMessage = '🎯 Basic coaching generating advice...';
                         break;
                     case 'trained':
-                        loadingMessage = '🤖 Our trained model analyzing gameplay... (~17ms)';
+                        loadingMessage = '🤖 Light-weight LLM analyzing gameplay...';
                         break;
                     case 'real':
-                        loadingMessage = '🌐 Real LLM processing request... (This may take 30+ seconds)';
+                        loadingMessage = '🌐 Advanced LLM processing request... (This may take 30+ seconds)';
                         break;
                     default:
                         loadingMessage = '🔄 Generating coaching advice...';
@@ -969,13 +969,13 @@
                 let loadingMessage;
                 switch(currentLLMType) {
                     case 'mock':
-                        loadingMessage = '🎯 MockLLM performing comprehensive analysis... (Fast)';
+                        loadingMessage = '🎯 Basic coaching performing comprehensive analysis...';
                         break;
                     case 'trained':
-                        loadingMessage = '🤖 Our trained model conducting deep analysis... (~17ms)';
+                        loadingMessage = '🤖 Light-weight LLM conducting deep analysis...';
                         break;
                     case 'real':
-                        loadingMessage = '🌐 Real LLM conducting comprehensive analysis... (This may take 30+ seconds)';
+                        loadingMessage = '🌐 Advanced LLM conducting comprehensive analysis... (This may take 30+ seconds)';
                         break;
                     default:
                         loadingMessage = '🔄 Conducting comprehensive analysis...';
@@ -1088,7 +1088,7 @@
             section.style.display = 'block';
             
             if (!naturalLanguageContent || naturalLanguageContent.trim() === '') {
-                contentContainer.innerHTML = '<div class="empty-state">No natural language content available from real LLM</div>';
+                contentContainer.innerHTML = '<div class="empty-state">No natural language content available from Advanced LLM</div>';
                 return;
             }
             
@@ -1132,9 +1132,9 @@
             const naturalHtml = `
                 <div class="llm-response">
                     <div class="response-header">
-                        <span>🤖 ${personality} - ${currentLLMType === 'trained' ? 'Trained Model' : 'Real LLM'} Analysis</span>
+                        <span>🤖 ${personality} - ${currentLLMType === 'trained' ? 'Light-weight LLM' : 'Advanced LLM'} Analysis</span>
                         <span class="timestamp">${new Date().toLocaleTimeString()}</span>
-                        <span class="llm-badge">${currentLLMType === 'trained' ? 'Trained' : 'Real LLM'}</span>
+                        <span class="llm-badge">${currentLLMType === 'trained' ? 'Light-weight LLM' : 'Advanced LLM'}</span>
                     </div>
                     <div class="natural-reasoning">
                         ${formattedContent || '<div class="empty-state">Processing LLM response...</div>'}
@@ -1164,13 +1164,13 @@
             let modelBadge;
             switch(currentLLMType) {
                 case 'mock':
-                    modelBadge = '🎯 <span style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">MockLLM</span>';
+                    modelBadge = '🎯 <span style="background: #e3f2fd; color: #1976d2; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Basic</span>';
                     break;
                 case 'trained':
-                    modelBadge = '🤖 <span style="background: #f3e5f5; color: #7b1fa2; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Our Trained AI</span>';
+                    modelBadge = '🤖 <span style="background: #f3e5f5; color: #7b1fa2; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Light-weight LLM</span>';
                     break;
                 case 'real':
-                    modelBadge = '🌐 <span style="background: #e8f5e8; color: #2e7d32; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Real LLM</span>';
+                    modelBadge = '🌐 <span style="background: #e8f5e8; color: #2e7d32; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Advanced LLM</span>';
                     break;
                 default:
                     modelBadge = '❓ <span style="background: #fafafa; color: #616161; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Unknown</span>';

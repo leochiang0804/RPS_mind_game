@@ -13,7 +13,7 @@ from lstm_model import TinyLSTM
 class LSTMPredictor:
     """Web-compatible LSTM predictor"""
     
-    def __init__(self, model_path: str = "models/lstm_rps.pth", metadata_path: str = "models/lstm_rps_metadata.json"):
+    def __init__(self, model_path: str = "models/lstm/lstm_rps.pth", metadata_path: str = "models/lstm/lstm_rps_metadata.json"):
         self.model = None
         self.metadata = None
         self.model_path = model_path

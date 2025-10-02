@@ -597,23 +597,15 @@
                                                 <h4 class="panel-title">💡 Your Strategy Tips</h4>
                                                 <div style="display: flex; align-items: center; gap: 10px;">
                                                     <select id="llm-type-selector" onchange="updateLLMType()">
-                                                        <option value="mock">MockLLM (Fast)</option>
-                                                        <option value="trained">Trained Model (Our AI)</option>
-                                                        <option value="real">Real LLM (Advanced)</option>
+                                                        <option value="mock">Basic</option>
+                                                        <option value="trained">Light-weight LLM</option>
+                                                        <option value="real">Advanced LLM</option>
                                                     </select>
                                                     <button class="btn primary" onclick="refreshCoachingTips()">🔄 Get New Tips</button>
                                                 </div>
                                             </div>
                                             <div id="coaching-tips-list" class="coach-content">
                                                 <p>Play a few rounds to get personalized coaching tips!</p>
-                                            </div>
-                                        </div>
-                                        <div class="panel coach-card">
-                                            <div class="panel-heading">
-                                                <h4 class="panel-title">🧪 Experiments to Try</h4>
-                                            </div>
-                                            <div id="experiments-list" class="coach-content">
-                                                <p>Suggested strategies will appear here!</p>
                                             </div>
                                         </div>
                                     </div>
@@ -3059,13 +3051,13 @@
             let loadingMessage;
             switch(llmType) {
                 case 'mock':
-                    loadingMessage = '🎯 MockLLM generating tips... (Fast)';
+                    loadingMessage = '🎯 Basic coaching generating tips...';
                     break;
                 case 'trained':
-                    loadingMessage = '🤖 Our AI Model analyzing your gameplay... (~17ms)';
+                    loadingMessage = '🤖 Light-weight LLM analyzing your gameplay...';
                     break;
                 case 'real':
-                    loadingMessage = '🌐 Real LLM thinking deeply... (This may take 30+ seconds)';
+                    loadingMessage = '🌐 Advanced LLM thinking deeply... (This may take 30+ seconds)';
                     break;
                 default:
                     loadingMessage = '🔄 Generating coaching tips...';
@@ -3121,7 +3113,6 @@
         
         function updateCoachingTips(coachingData) {
             const tipsContainer = document.getElementById('coaching-tips-list');
-            const experimentsContainer = document.getElementById('experiments-list');
             const insightsContainer = document.getElementById('insights-content');
             const insightsSummary = document.getElementById('insights-summary');
             
@@ -3130,13 +3121,13 @@
             let modelBadge;
             switch(llmType) {
                 case 'mock':
-                    modelBadge = '🎯 <span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">MockLLM</span>';
+                    modelBadge = '🎯 <span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Basic</span>';
                     break;
                 case 'trained':
-                    modelBadge = '🤖 <span style="background: #f3e5f5; color: #7b1fa2; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Our AI</span>';
+                    modelBadge = '🤖 <span style="background: #f3e5f5; color: #7b1fa2; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Light-weight LLM</span>';
                     break;
                 case 'real':
-                    modelBadge = '🌐 <span style="background: #e8f5e8; color: #2e7d32; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Real LLM</span>';
+                    modelBadge = '🌐 <span style="background: #e8f5e8; color: #2e7d32; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Advanced LLM</span>';
                     break;
                 default:
                     modelBadge = '❓ <span style="background: #fafafa; color: #616161; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Unknown</span>';
@@ -3156,20 +3147,6 @@
                 tipsContainer.innerHTML = modelHeader + tipsHtml;
             } else {
                 tipsContainer.innerHTML = '<p style="color: #666; font-style: italic;">Keep playing to get personalized tips!</p>';
-            }
-            
-            // Update experiments
-            if (coachingData.experiments && coachingData.experiments.length > 0) {
-                const experimentsHtml = coachingData.experiments.map(exp => 
-                    `<div style="margin-bottom: 15px; padding: 12px; background: rgba(76,175,80,0.1); border-radius: 6px;">
-                        <strong style="color: #2e7d32;">${exp.name}</strong><br>
-                        <small style="color: #388e3c;">${exp.description}</small><br>
-                        <em style="font-size: 13px; color: #4caf50;">${exp.strategy}</em>
-                    </div>`
-                ).join('');
-                experimentsContainer.innerHTML = experimentsHtml;
-            } else {
-                experimentsContainer.innerHTML = '<p style="color: #666; font-style: italic;">Experiment suggestions coming soon!</p>';
             }
             
             // Update insights (optional)

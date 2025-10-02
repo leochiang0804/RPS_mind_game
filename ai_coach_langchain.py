@@ -258,34 +258,31 @@ class CoachingOutputParser(BaseOutputParser):
         )
 
 
-class MockLLM:
-    """Enhanced Mock LLM for testing when LangChain is not available - uses all advanced analytics"""
+class BasicCoach:
+    """Basic coaching algorithm that uses fewer metrics for more meaningful tips"""
     
     def __init__(self):
         self.coaching_style = 'easy'  # Default to easy style
     
     def set_coaching_style(self, style: str):
-        """Set coaching style for mock responses"""
+        """Set coaching style for basic coaching"""
         self.coaching_style = style
     
     def __call__(self, prompt: str) -> str:
-        """Generate sophisticated mock response based on prompt content and analytics"""
+        """Generate basic coaching response using simple rules"""
         
-        if 'real_time' in prompt.lower() or 'Round:' in prompt or 'COACHING REQUEST:' in prompt:
-            return self._generate_mock_realtime_advice(prompt)
-        elif 'comprehensive' in prompt.lower() or 'Total Rounds:' in prompt:
-            return self._generate_mock_comprehensive_analysis(prompt)
+        if 'comprehensive' in prompt.lower():
+            return self._generate_basic_comprehensive_analysis(prompt)
         else:
-            return self._generate_mock_general_advice(prompt)
+            return self._generate_basic_realtime_advice(prompt)
     
-    def _extract_metrics_from_prompt(self, prompt: str) -> dict:
-        """Extract key metrics from the prompt for intelligent mock responses"""
+    def _extract_key_metrics(self, prompt: str) -> dict:
+        """Extract only essential metrics for basic coaching"""
         metrics = {}
         
-        # Extract key values using simple parsing
         import re
         
-        # Extract current round (handles both "Round: 15/25" and "Current Round: 15" formats)
+        # Extract current round
         round_match = re.search(r'Round: (\d+)', prompt)
         metrics['round'] = int(round_match.group(1)) if round_match else 0
         
@@ -293,58 +290,89 @@ class MockLLM:
         win_rate_match = re.search(r'Win Rate: ([\d.]+)%', prompt)
         metrics['win_rate'] = float(win_rate_match.group(1)) / 100 if win_rate_match else 0.33
         
-        # Extract entropy (handles "Entropy: X.XXXX" format)
-        entropy_match = re.search(r'Entropy: ([\d.]+)', prompt)
-        metrics['entropy'] = float(entropy_match.group(1)) if entropy_match else 1.0
-        
-        # Extract predictability (handles "Predictability: X.XXXX" format)
+        # Extract predictability
         pred_match = re.search(r'Predictability: ([\d.]+)', prompt)
         metrics['predictability'] = float(pred_match.group(1)) if pred_match else 0.5
         
-        # Extract strategy
-        strategy_match = re.search(r'Robot Strategy: (\w+)', prompt)
-        metrics['robot_strategy'] = strategy_match.group(1) if strategy_match else 'unknown'
+        # Extract AI strategy
+        strategy_match = re.search(r'AI Strategy: (\w+)', prompt)
+        metrics['ai_strategy'] = strategy_match.group(1) if strategy_match else 'unknown'
         
-        # Extract decision complexity
-        complexity_match = re.search(r'Decision Complexity: ([\d.]+)', prompt)
-        metrics['complexity'] = float(complexity_match.group(1)) if complexity_match else 0.5
-        
-        # Extract consistency
-        consistency_match = re.search(r'Strategy Consistency: ([\d.]+)', prompt)
-        metrics['consistency'] = float(consistency_match.group(1)) if consistency_match else 0.5
-        
-        # Extract Nash distance
-        nash_match = re.search(r'Nash Distance: ([\d.]+)', prompt)
-        metrics['nash_distance'] = float(nash_match.group(1)) if nash_match else 0.33
-        
-        return metrics
-        
-        # Extract predictability
-        pred_match = re.search(r'Predictability Score: ([\d.]+)', prompt)
-        metrics['predictability'] = float(pred_match.group(1)) if pred_match else 0.5
-        
-        # Extract strategy
-        strategy_match = re.search(r'Robot Strategy: (\w+)', prompt)
-        metrics['robot_strategy'] = strategy_match.group(1) if strategy_match else 'unknown'
-        
-        # Extract decision complexity
-        complexity_match = re.search(r'Decision Complexity: ([\d.]+)', prompt)
-        metrics['complexity'] = float(complexity_match.group(1)) if complexity_match else 0.5
-        
-        # Extract consistency
-        consistency_match = re.search(r'Strategy Consistency: ([\d.]+)', prompt)
-        metrics['consistency'] = float(consistency_match.group(1)) if consistency_match else 0.5
-        
-        # Extract Nash distance
-        nash_match = re.search(r'Nash Equilibrium Distance: ([\d.]+)', prompt)
-        metrics['nash_distance'] = float(nash_match.group(1)) if nash_match else 0.33
+        # Extract recent moves
+        recent_moves_match = re.search(r'Recent Moves: \[(.*?)\]', prompt)
+        if recent_moves_match:
+            moves_str = recent_moves_match.group(1)
+            metrics['recent_moves'] = [move.strip().strip("'\"") for move in moves_str.split(',') if move.strip()]
+        else:
+            metrics['recent_moves'] = []
         
         return metrics
     
-    def _generate_mock_realtime_advice(self, prompt: str) -> str:
-        """Generate sophisticated mock real-time coaching advice using extracted analytics"""
+    def _generate_basic_realtime_advice(self, prompt: str) -> str:
+        """Generate basic real-time coaching advice using simple rules"""
         
-        metrics = self._extract_metrics_from_prompt(prompt)
+        metrics = self._extract_key_metrics(prompt)
+        
+        # Generate exactly 3 simple, actionable tips
+        tips = []
+        
+        # Tip 1: Predictability advice
+        if metrics['predictability'] > 0.7:
+            tips.append("🎯 You're being too predictable! Mix up your moves more randomly.")
+        elif metrics['predictability'] < 0.3:
+            tips.append("✨ Great randomness! Keep the AI guessing.")
+        else:
+            tips.append("👍 Good balance - try to stay unpredictable.")
+        
+        # Tip 2: Pattern advice based on recent moves
+        recent_moves = metrics.get('recent_moves', [])
+        if len(recent_moves) >= 2:
+            if recent_moves[-1] == recent_moves[-2]:
+                tips.append("⚠️ Avoid repeating the same move - AI will exploit this!")
+            elif len(set(recent_moves[-3:])) == 1 and len(recent_moves) >= 3:
+                tips.append("🔄 Break your repetition pattern immediately!")
+            else:
+                tips.append("🎲 Keep varying your moves to stay ahead.")
+        else:
+            tips.append("🎲 Focus on unpredictable move selection.")
+        
+        # Tip 3: AI strategy counter
+        ai_strategy = metrics.get('ai_strategy', 'unknown')
+        if ai_strategy == 'frequency':
+            tips.append("📊 AI tracks your habits - change your style suddenly!")
+        elif ai_strategy == 'cycler':
+            tips.append("🔄 AI uses cycles - break its pattern with randomness!")
+        elif ai_strategy == 'anti_cycle':
+            tips.append("↩️ AI counters cycles - try short sequences instead!")
+        else:
+            tips.append("🤖 Observe the AI's pattern and adapt your strategy!")
+        
+        # Return as JSON
+        import json
+        return json.dumps({
+            'tips': tips[:3],  # Ensure exactly 3 tips
+            'insights': {
+                'pattern_analysis': f"Predictability: {metrics['predictability']:.2f}",
+                'strategic_situation': f"Round {metrics['round']}: {ai_strategy} AI detected"
+            },
+            'educational_content': {
+                'focus_area': 'Basic Strategy',
+                'learning_point': 'Stay unpredictable and adapt to AI patterns'
+            },
+            'behavioral_analysis': {
+                'decision_style': 'Improving',
+                'improvement_areas': 'Pattern recognition and adaptation'
+            },
+            'confidence_level': 0.85,
+            'response_type': f'basic_{self.coaching_style}'
+        })
+    
+    def _generate_basic_comprehensive_analysis(self, prompt: str) -> str:
+        """Generate basic comprehensive analysis - still only 3 tips, no natural language"""
+        
+        # For Basic coaching, comprehensive analysis is just the same 3 tips
+        # No natural language output, no complex analysis
+        return self._generate_basic_realtime_advice(prompt)
         
         # Generate contextual tips based on actual metrics and style
         tips = []
@@ -444,98 +472,6 @@ class MockLLM:
         
         return response_json
     
-    def _generate_mock_comprehensive_analysis(self, prompt: str) -> str:
-        """Generate sophisticated mock comprehensive analysis using all advanced analytics"""
-        
-        metrics = self._extract_metrics_from_prompt(prompt)
-        
-        if self.coaching_style == 'easy':
-            # Easy-to-understand comprehensive analysis
-            psychological_patterns = f"""🧠 **Your Playing Style Analysis:**
-Your decision-making shows {'consistent patterns' if metrics['consistency'] > 0.6 else 'adaptive flexibility'}. 
-You've played {metrics['round']} rounds with {metrics['entropy']:.2f} randomness level 
-({'excellent variety!' if metrics['entropy'] > 1.2 else 'room to mix things up more'})."""
-
-            strategic_evolution = f"""📈 **How You've Improved:**
-Starting strategy: Mixed approach → Current: {'Pattern-aware' if metrics['complexity'] > 0.5 else 'Intuitive play'}
-Your win rate of {metrics['win_rate']:.1%} shows {'strong performance' if metrics['win_rate'] > 0.4 else 'room for improvement'}.
-The AI adapted its strategy to {metrics['robot_strategy']}, but you {'handled it well' if metrics['nash_distance'] < 0.35 else 'can learn to counter it better'}."""
-
-            decision_analysis = f"""🎯 **Your Decision Making:**
-Predictability: {metrics['predictability']:.2f} ({'Great!' if metrics['predictability'] < 0.5 else 'Work on this!'})
-Move balance: {'Well distributed' if metrics['nash_distance'] < 0.35 else 'Could be more balanced'}
-Timing: {'Thoughtful' if metrics['complexity'] > 0.4 else 'Quick and intuitive'}"""
-
-            learning_recommendations = f"""📚 **What to Focus on Next:**
-1. {'Keep up the great randomness!' if metrics['entropy'] > 1.2 else 'Practice mixing moves more randomly'}
-2. {'Maintain your unpredictability' if metrics['predictability'] < 0.5 else 'Work on breaking patterns faster'}
-3. {'You understand the AI well' if metrics['robot_strategy'] != 'unknown' else 'Watch for AI patterns'}"""
-
-            fascinating_discoveries = f"""🔍 **Cool Insights About Your Play:**
-• You have {'high' if metrics['complexity'] > 0.6 else 'moderate'} strategic awareness
-• Your consistency score ({metrics['consistency']:.2f}) suggests {'stable' if metrics['consistency'] > 0.6 else 'evolving'} decision-making
-• Distance from perfect play: {metrics['nash_distance']:.2f} (closer to 0 is better)"""
-
-            educational_summary = f"""🎓 **Key Lessons:**
-Rock-Paper-Scissors is about balancing randomness with strategy. Your entropy of {metrics['entropy']:.2f} 
-shows {'excellent' if metrics['entropy'] > 1.2 else 'developing'} randomization skills. 
-Keep practicing unpredictability while staying balanced!"""
-
-        else:
-            # Scientific comprehensive analysis
-            psychological_patterns = f"""🧠 **Cognitive Decision Analysis:**
-Decision complexity index: {metrics['complexity']:.4f} (cognitive load indicator)
-Consistency coefficient: {metrics['consistency']:.4f} (behavioral stability measure)
-Pattern awareness correlation: {(1-metrics['predictability']):.4f} (counter-exploitation effectiveness)
-Entropy coefficient: {metrics['entropy']:.4f}/{1.585:.3f} ({(metrics['entropy']/1.585)*100:.1f}% of theoretical maximum)"""
-
-            strategic_evolution = f"""📊 **Strategic Development Trajectory:**
-Initial state: Random baseline → Current: {metrics['robot_strategy']}-aware adaptation
-Performance metrics: {metrics['win_rate']:.4f} win rate (μ=0.333 for random play)
-Nash equilibrium deviation: {metrics['nash_distance']:.4f} (σ from uniform distribution)
-Strategic complexity evolution: {metrics['complexity']:.4f} (decision tree depth indicator)"""
-
-            decision_analysis = f"""⚖️ **Game Theory Analysis:**
-Information entropy: {metrics['entropy']:.4f} bits (Shannon entropy measure)
-Predictability coefficient: {metrics['predictability']:.4f} (inverse entropy correlation)
-Nash distance: {metrics['nash_distance']:.4f} (optimal mixed strategy deviation)
-Exploitability index: Estimated {metrics['predictability']*100:.1f}% (pattern exploitation vulnerability)"""
-
-            learning_recommendations = f"""🔬 **Optimization Recommendations:**
-1. Entropy target: Achieve >1.400 for near-optimal randomization
-2. Nash distance: Minimize to <0.200 for equilibrium approximation  
-3. Predictability: Maintain <0.300 for anti-exploitation defense
-4. Complexity: Balance cognitive load with strategic depth"""
-
-            fascinating_discoveries = f"""🔬 **Statistical Behavioral Analysis:**
-• Entropy-complexity correlation: {metrics['entropy']*metrics['complexity']:.4f} (strategic sophistication index)
-• Anti-pattern effectiveness: {(1-metrics['predictability'])*100:.1f}% (counter-prediction success rate)
-• Cognitive load distribution: {metrics['complexity']:.4f} (decision-making intensity measure)
-• Strategic adaptation rate: {metrics['consistency']:.4f} (behavioral flexibility coefficient)"""
-
-            educational_summary = f"""📖 **Information Theory Summary:**
-Your Shannon entropy of {metrics['entropy']:.4f} represents {(metrics['entropy']/1.585)*100:.1f}% of maximum possible randomness.
-Nash equilibrium analysis shows {metrics['nash_distance']:.4f} deviation from optimal mixed strategy.
-Predictability analysis indicates {metrics['predictability']*100:.1f}% pattern vulnerability.
-Cognitive complexity index suggests {'high-level' if metrics['complexity'] > 0.6 else 'developing'} strategic thinking."""
-
-        return json.dumps({
-            'psychological_patterns': psychological_patterns,
-            'strategic_evolution': strategic_evolution,
-            'decision_analysis': decision_analysis,
-            'information_theory_insights': f"Entropy: {metrics['entropy']:.3f}, Information content: {(metrics['entropy']/1.585)*100:.1f}% of maximum",
-            'game_theory_assessment': f"Nash distance: {metrics['nash_distance']:.3f}, Exploitability: {metrics['predictability']*100:.1f}%",
-            'cognitive_load_analysis': f"Decision complexity: {metrics['complexity']:.3f}, Processing depth: {'High' if metrics['complexity'] > 0.6 else 'Moderate'}",
-            'learning_recommendations': learning_recommendations,
-            'fascinating_discoveries': fascinating_discoveries,
-            'educational_summary': educational_summary,
-            'personalized_roadmap': f"Phase 1: {'Maintain randomness' if metrics['entropy'] > 1.2 else 'Increase entropy'} → Phase 2: Optimize Nash distance → Phase 3: Master anti-exploitation"
-        })
-    
-    def _generate_mock_general_advice(self, prompt: str) -> str:
-        """Generate mock general advice with analytical depth"""
-        return "Focus on maintaining unpredictability (entropy > 1.2) while approximating Nash equilibrium through balanced move distributions."
-
 
 class LangChainAICoach:
     """
@@ -561,12 +497,12 @@ class LangChainAICoach:
         
         print("✅ LangChain AI Coach initialized successfully")
     
-    def _initialize_llm(self) -> LLM:
+    def _initialize_llm(self) -> Any:
         """Initialize LLM with fallback options - prioritizing fast MockLLM"""
         
-        # Use MockLLM as primary choice for speed and reliability
-        print("🚀 Using enhanced MockLLM for fast, intelligent coaching")
-        mock_llm = MockLLM()
+        # Use BasicCoach as primary choice for speed and reliability
+        print("🚀 Using enhanced BasicCoach for fast, intelligent coaching")
+        mock_llm = BasicCoach()
         mock_llm.set_coaching_style(self.coaching_style)
         return mock_llm
         
@@ -681,14 +617,23 @@ CURRENT SITUATION:
 
 COACHING APPROACH: Provide {style_instruction} guidance that's helpful and encouraging.
 
-Based on the game data above, please provide personalized coaching advice. Include:
+Based on the game data above, please provide personalized coaching advice. Your response MUST be structured using the following clear section headers (in this order):
 
-1. **Immediate Tips**: 2-3 specific things they can do right now to improve
-2. **Pattern Insights**: What you notice about their playing style  
-3. **Strategic Advice**: How they can adapt to beat the AI
-4. **Encouragement**: Positive reinforcement about what they're doing well
+---
+**IMMEDIATE TIPS**
+List 2-3 specific things the player can do right now to improve.
 
-Please respond in a natural, conversational way as if you're coaching them in person. Be specific about the numbers and patterns you see, but explain them in an accessible way."""
+**PATTERN INSIGHTS**
+Describe what you notice about their playing style, including any habits or tendencies.
+
+**STRATEGIC ADVICE**
+Explain how they can adapt to beat the AI's current strategy.
+
+**ENCOURAGEMENT**
+Give positive reinforcement about what the player is doing well.
+---
+
+Please use these section headers verbatim and keep your advice concise, actionable, and easy to follow. Respond in a natural, conversational way as if you're coaching them in person. Be specific about the numbers and patterns you see, but explain them in an accessible way."""
 
         # Store both templates for dynamic selection
         self.mock_real_time_template = mock_template
@@ -704,6 +649,7 @@ Please respond in a natural, conversational way as if you're coaching them in pe
     def _create_comprehensive_prompt(self) -> PromptTemplate:
         """Create prompt template for comprehensive analysis"""
         
+        # Create different templates for different LLM types
         mock_template = """You are conducting a comprehensive post-game analysis of a Rock-Paper-Scissors session.
 
 SESSION DATA:
@@ -727,32 +673,44 @@ Provide comprehensive analysis in JSON format:
 
 Make this analysis {style_instruction} and educationally valuable."""
 
-        real_template = """You are conducting a comprehensive post-game analysis of a Rock-Paper-Scissors session.
+        real_template = """You are an expert Rock-Paper-Scissors coach conducting a comprehensive post-game analysis for a player.
 
 COMPLETE SESSION DATA:
 {session_data}
 
 ANALYSIS STYLE: Provide {style_instruction} insights that help the player understand their strategic development.
 
-Please provide a thorough post-game analysis covering:
+Your response MUST be structured using the following section headers, in this order. For each section, provide clear, concise, and actionable feedback. Write in a conversational but well-organized and professional tone.
 
-**🧠 Psychological Patterns**: What does their decision-making reveal about their playing style and cognitive approach?
+---
+**PSYCHOLOGICAL PATTERNS**
+Analyze the player's decision-making style, risk tolerance, and any psychological tendencies observed during the session.
 
-**📈 Strategic Evolution**: How did their strategy develop throughout the session? What adaptations did they make?
+**STRATEGIC EVOLUTION**
+Describe how the player's strategy developed throughout the session. Note any adaptations, shifts in approach, or learning moments.
 
-**🎯 Decision Analysis**: What patterns emerge from their choices? Are they predictable or effectively random?
+**DECISION ANALYSIS**
+Identify patterns in the player's choices. Are their moves predictable or random? Highlight any habits or exploitable tendencies.
 
-**📊 Performance Insights**: How do the metrics (entropy, predictability, win rate) tell the story of their gameplay?
+**PERFORMANCE INSIGHTS**
+Interpret key metrics (entropy, predictability, win rate, etc.) and explain what they reveal about the player's gameplay.
 
-**🎓 Learning Opportunities**: What specific areas should they focus on to improve?
+**LEARNING OPPORTUNITIES**
+Suggest specific areas the player should focus on to improve, based on your analysis.
 
-**🔍 Fascinating Discoveries**: What interesting or unexpected patterns emerged from their play?
+**FASCINATING DISCOVERIES**
+Share any interesting or unexpected patterns, behaviors, or turning points you noticed.
 
-**📚 Educational Summary**: Key lessons and connections to game theory/strategy principles.
+**EDUCATIONAL SUMMARY**
+Summarize the main lessons and connect them to relevant game theory or strategy principles.
 
-**🛤️ Personalized Roadmap**: Specific next steps tailored to their current skill level and playing style.
+**PERSONALIZED ROADMAP**
+Provide a step-by-step improvement plan tailored to the player's current skill level and playing style.
 
-Please write this as if you're having a thoughtful conversation with the player about their game."""
+---
+
+Please use these section headers verbatim and keep your advice well-structured, easy to follow, and actionable. Avoid emojis. Respond as if you are having a thoughtful conversation with the player about their game.
+"""
 
         # Store both templates for dynamic selection
         self.mock_comprehensive_template = mock_template
@@ -767,16 +725,24 @@ Please write this as if you're having a thoughtful conversation with the player 
     
     def _create_real_time_chain(self):
         """Create chain for real-time coaching using modern LangChain API"""
-        if LANGCHAIN_AVAILABLE:
-            # Use modern RunnableSequence instead of deprecated LLMChain
-            return self.real_time_prompt | self.llm
+        if LANGCHAIN_AVAILABLE and hasattr(self.llm, 'invoke') and not isinstance(self.llm, BasicCoach):
+            # Use modern RunnableSequence for real LLM
+            try:
+                # Type ignore because we're handling various LLM types
+                return self.real_time_prompt | self.llm  # type: ignore
+            except:
+                return None
         return None
     
     def _create_comprehensive_chain(self):
         """Create chain for comprehensive analysis using modern LangChain API"""
-        if LANGCHAIN_AVAILABLE:
-            # Use modern RunnableSequence instead of deprecated LLMChain
-            return self.comprehensive_prompt | self.llm
+        if LANGCHAIN_AVAILABLE and hasattr(self.llm, 'invoke') and not isinstance(self.llm, BasicCoach):
+            # Use modern RunnableSequence for real LLM
+            try:
+                # Type ignore because we're handling various LLM types
+                return self.comprehensive_prompt | self.llm  # type: ignore
+            except:
+                return None
         return None
     
     def set_coaching_style(self, style: str) -> None:
@@ -784,7 +750,7 @@ Please write this as if you're having a thoughtful conversation with the player 
         if style in ['easy', 'scientific']:
             self.coaching_style = style
             # Update MockLLM style if it's being used
-            if isinstance(self.llm, MockLLM):
+            if isinstance(self.llm, BasicCoach):
                 self.llm.set_coaching_style(style)
     
     def get_coaching_style(self) -> str:
@@ -813,8 +779,8 @@ Please write this as if you're having a thoughtful conversation with the player 
         try:
             if llm_type == 'mock':
                 # Switch to MockLLM
-                print("🔄 Switching to MockLLM for fast responses")
-                mock_llm = MockLLM()
+                print("🔄 Switching to BasicCoach for fast responses")
+                mock_llm = BasicCoach()
                 mock_llm.set_coaching_style(self.coaching_style)
                 self.llm = mock_llm
                 # Clear trained model when switching away from it
@@ -838,7 +804,7 @@ Please write this as if you're having a thoughtful conversation with the player 
             elif llm_type == 'trained':
                 # Switch to our trained model
                 print("🔄 Switching to trained RPS coaching model")
-                if TRAINED_MODEL_AVAILABLE:
+                if TRAINED_MODEL_AVAILABLE and TrainedCoachWrapper is not None:
                     trained_coach = TrainedCoachWrapper()
                     trained_coach.set_coaching_style(self.coaching_style)
                     if trained_coach.is_available():
@@ -880,7 +846,7 @@ Please write this as if you're having a thoughtful conversation with the player 
         """Get current LLM type"""
         if hasattr(self, 'trained_coach') and self.trained_coach is not None:
             return 'trained'
-        elif isinstance(self.llm, MockLLM):
+        elif isinstance(self.llm, BasicCoach):
             return 'mock'
         else:
             return 'real'
@@ -927,6 +893,341 @@ Please write this as if you're having a thoughtful conversation with the player 
             print(f"⚠️ LangChain coaching failed: {e}")
             return self._generate_fallback_advice(comprehensive_metrics, coaching_type)
     
+    def _identify_exploitable_patterns(self, core: Dict[str, Any], patterns: Dict[str, Any]) -> str:
+        """Identify patterns that can be exploited"""
+        recent_moves = core.get('recent_moves', {}).get('human_last_5', [])
+        if len(recent_moves) < 3:
+            return "Insufficient data for pattern analysis"
+        
+        # Check for repetition
+        if len(set(recent_moves[-3:])) == 1:
+            return f"🚨 DANGER: You've played {recent_moves[-1]} three times in a row - highly predictable!"
+        
+        # Check for simple alternations
+        if len(recent_moves) >= 4:
+            if recent_moves[-1] != recent_moves[-2] and recent_moves[-2] != recent_moves[-3] and recent_moves[-3] != recent_moves[-4]:
+                return "⚠️ WARNING: Alternating pattern detected - mix up your strategy"
+        
+        predictability = patterns.get('predictability_score', 0.0)
+        if predictability > 0.7:
+            return f"🎯 EXPLOITABLE: Your predictability is {predictability:.1%} - opponent can easily counter"
+        elif predictability > 0.5:
+            return f"⚡ MODERATE RISK: Predictability at {predictability:.1%} - consider mixing up moves"
+        else:
+            return f"✅ GOOD: Low predictability at {predictability:.1%} - keep it up!"
+
+    def _assess_predictability_risk(self, recent_moves: List[str], predictability: float) -> str:
+        """Assess the risk level of current predictability"""
+        if len(recent_moves) < 2:
+            return "Need more moves to assess risk"
+        
+        move_sequence = " → ".join(recent_moves[-5:])
+        
+        if predictability > 0.8:
+            return f"🔴 HIGH RISK: Sequence {move_sequence} is very predictable ({predictability:.1%})"
+        elif predictability > 0.6:
+            return f"🟡 MEDIUM RISK: Sequence {move_sequence} shows patterns ({predictability:.1%})"
+        elif predictability > 0.4:
+            return f"🟢 LOW RISK: Sequence {move_sequence} is reasonably unpredictable ({predictability:.1%})"
+        else:
+            return f"💎 EXCELLENT: Sequence {move_sequence} is highly unpredictable ({predictability:.1%})"
+
+    def _suggest_next_move(self, core: Dict[str, Any], patterns: Dict[str, Any], ai_behavior: Dict[str, Any]) -> str:
+        """Suggest the best next move based on current situation"""
+        recent_moves = core.get('recent_moves', {}).get('human_last_5', [])
+        robot_strategy = ai_behavior.get('ai_strategy', 'unknown')
+        
+        if len(recent_moves) == 0:
+            return "🎲 Start with any move - no pattern established yet"
+        
+        last_move = recent_moves[-1]
+        move_dist = patterns.get('move_distribution', {})
+        
+        # Find least used move
+        least_used = min(move_dist.items(), key=lambda x: x[1])[0] if move_dist else 'rock'
+        
+        # Check for repetition
+        if len(recent_moves) >= 2 and recent_moves[-1] == recent_moves[-2]:
+            return f"🔄 SWITCH: You just played {last_move} twice - try {least_used} to break pattern"
+        
+        # Counter AI strategy
+        if robot_strategy == 'frequency_based':
+            return f"🎯 COUNTER: AI uses frequency analysis - play {least_used} (your least used move)"
+        elif robot_strategy == 'markov_chain':
+            return f"🧠 COUNTER: AI predicts based on sequences - avoid patterns, try {least_used}"
+        else:
+            return f"🎲 STRATEGIC: Mix it up - {least_used} is your least used move"
+
+    def _identify_opponent_weakness(self, ai_behavior: Dict[str, Any], core: Dict[str, Any]) -> str:
+        """Identify exploitable weaknesses in opponent (AI) behavior"""
+        robot_strategy = ai_behavior.get('ai_strategy', 'unknown')
+        ai_confidence = ai_behavior.get('confidence_history', {}).get('enhanced', [0.5])[-1] if ai_behavior.get('confidence_history', {}).get('enhanced') else 0.5
+        
+        win_rate = core.get('win_rates', {}).get('human', 0.0)
+        
+        if robot_strategy == 'frequency_based':
+            return "🎯 AI WEAKNESS: Uses frequency analysis - exploit by avoiding your most common moves"
+        elif robot_strategy == 'markov_chain':
+            return "🧠 AI WEAKNESS: Predicts sequences - break patterns with random moves"
+        elif robot_strategy == 'adaptive':
+            if ai_confidence < 0.4:
+                return "🤖 AI STRUGGLING: Low confidence detected - maintain pressure with unpredictable play"
+            else:
+                return "🤖 AI ADAPTING: High confidence - switch strategy to confuse its adaptation"
+        elif win_rate > 0.6:
+            return "💪 WINNING: You're exploiting AI successfully - maintain current unpredictability"
+        elif win_rate < 0.4:
+            return "🔄 LOSING: AI has found your patterns - drastically change your approach"
+        else:
+            return "⚖️ BALANCED: Even match - focus on increasing randomness"
+
+    def _generate_pattern_disruption_advice(self, recent_moves: List[str]) -> str:
+        """Generate specific advice for disrupting current patterns"""
+        if len(recent_moves) < 2:
+            return "Play any move to start establishing unpredictability"
+        
+        # Check for repetition
+        if len(set(recent_moves[-3:])) == 1 and len(recent_moves) >= 3:
+            last_move = recent_moves[-1]
+            other_moves = [m for m in ['rock', 'paper', 'scissors'] if m != last_move]
+            return f"⚡ URGENT: Break the {last_move} repetition! Try {other_moves[0]} or {other_moves[1]}"
+        
+        # Check for simple patterns
+        if len(recent_moves) >= 4:
+            pattern = recent_moves[-4:]
+            if pattern == ['rock', 'paper', 'rock', 'paper']:
+                return "🔄 Break the rock-paper alternation! Try scissors"
+            elif pattern == ['rock', 'paper', 'scissors', 'rock']:
+                return "🎯 Cycling detected! Skip your next expected move"
+        
+        # General advice based on move distribution
+        move_counts = {move: recent_moves.count(move) for move in ['rock', 'paper', 'scissors']}
+        most_used = max(move_counts.items(), key=lambda x: x[1])[0]
+        least_used = min(move_counts.items(), key=lambda x: x[1])[0]
+        
+        if move_counts[most_used] > len(recent_moves) * 0.6:
+            return f"📊 You're favoring {most_used} too much - try {least_used} more often"
+        else:
+            return f"✅ Good variety - consider playing {least_used} next to maintain balance"
+
+    def _assess_psychological_state(self, streaks: Dict[str, Any], recent_results: List[str]) -> str:
+        """Assess current psychological state and risks"""
+        current_streak = streaks.get('current_streak', {})
+        streak_type = current_streak.get('type', 'none')
+        streak_length = current_streak.get('length', 0)
+        
+        if streak_type == 'loss' and streak_length >= 3:
+            return f"😤 TILT RISK: {streak_length} losses in a row - stay calm, avoid emotional decisions"
+        elif streak_type == 'win' and streak_length >= 4:
+            return f"😎 CONFIDENCE HIGH: {streak_length} wins - don't get overconfident, maintain focus"
+        elif streak_type == 'tie' and streak_length >= 3:
+            return f"🤝 STALEMATE: {streak_length} ties - time to shake things up dramatically"
+        
+        # Analyze recent volatility
+        if len(recent_results) >= 5:
+            wins = recent_results.count('human')
+            if wins <= 1:
+                return "😰 STRUGGLING: Very few recent wins - take a breath and refocus strategy"
+            elif wins >= 4:
+                return "🔥 ON FIRE: Dominating recently - keep the pressure on!"
+        
+        return "😌 STABLE: Balanced emotional state - good time for strategic thinking"
+
+    def _assess_tactical_situation(self, current_round: int, momentum: Dict[str, Any]) -> str:
+        """Assess the current tactical situation"""
+        momentum_direction = momentum.get('momentum_direction', 'stable')
+        momentum_score = momentum.get('momentum_score', 0.0)
+        
+        if current_round <= 5:
+            return "🌱 EARLY GAME: Establish unpredictability, avoid early patterns"
+        elif current_round <= 15:
+            return "⚖️ MID GAME: Key phase - adapt based on AI's discovered weaknesses"
+        else:
+            return "🏁 LATE GAME: Maintain what's working, avoid major strategy changes"
+        
+        if momentum_direction == 'positive' and momentum_score > 0.6:
+            return f"📈 MOMENTUM UP: Riding high - maintain current strategy ({momentum_score:.1%} positive)"
+        elif momentum_direction == 'negative' and momentum_score < -0.6:
+            return f"📉 MOMENTUM DOWN: Need to turn it around ({abs(momentum_score):.1%} negative)"
+        else:
+            return f"➡️ MOMENTUM STABLE: Even battle - focus on execution ({momentum_score:.1%})"
+
+    def _identify_adaptation_opportunity(self, ai_behavior: Dict[str, Any], game_phase: str) -> str:
+        """Identify opportunities for strategic adaptation"""
+        robot_strategy = ai_behavior.get('ai_strategy', 'unknown')
+        ai_adaptation = ai_behavior.get('ai_adaptation', {})
+        
+        if robot_strategy == 'frequency_based':
+            return "🎯 ADAPT: AI tracks your frequencies - regularly switch your most common move"
+        elif robot_strategy == 'markov_chain':
+            return "🧠 ADAPT: AI learns sequences - break patterns every 3-4 moves"
+        elif robot_strategy == 'adaptive':
+            return "🤖 ADAPT: AI changes strategy - monitor its adjustments and counter-adapt"
+        elif game_phase == 'late':
+            return "🔄 ADAPT: Late game - AI has learned your patterns, try completely new approach"
+        else:
+            return "⚡ ADAPT: Stay one step ahead - vary your randomization strategy"
+
+    def _determine_strategic_priority(self, predictability: float, win_rate: float) -> str:
+        """Determine the top strategic priority"""
+        if predictability > 0.7:
+            return "🎯 TOP PRIORITY: Reduce predictability - you're too easy to read"
+        elif win_rate < 0.3:
+            return "🔄 TOP PRIORITY: Change strategy completely - current approach isn't working"
+        elif win_rate > 0.7:
+            return "💎 TOP PRIORITY: Maintain unpredictability - don't let success breed complacency"
+        elif predictability > 0.5:
+            return "⚖️ TOP PRIORITY: Balance randomness with strategic play"
+        else:
+            return "🚀 TOP PRIORITY: Fine-tune execution - you're on the right track"
+
+    # Helper methods for comprehensive analysis session data
+    def _identify_most_exploited_pattern(self, core: Dict[str, Any], patterns: Dict[str, Any]) -> str:
+        """Identify the most exploited pattern in the session"""
+        pattern_type = patterns.get('pattern_type', 'unknown')
+        predictability = patterns.get('predictability_score', 0.0)
+        
+        if predictability > 0.7:
+            return f"High predictability in {pattern_type} patterns ({predictability:.1%})"
+        elif pattern_type == 'single_move_repetition':
+            return "Repeated single moves too frequently"
+        elif pattern_type == 'low_variation':
+            return "Limited move variety made you predictable"
+        else:
+            return "No major exploitable patterns detected"
+
+    def _estimate_early_performance(self, performance: Dict[str, Any]) -> str:
+        """Estimate performance in early game"""
+        recent_perf = performance.get('recent_performance', {})
+        if 'last_10_games' in recent_perf:
+            return f"Early rounds showed developing strategy"
+        return "Building initial approach"
+
+    def _estimate_late_performance(self, performance: Dict[str, Any]) -> str:
+        """Estimate performance in late game"""
+        trend = performance.get('recent_performance', {}).get('trend', 'stable')
+        if trend == 'improving':
+            return "Strong finish with improving play"
+        elif trend == 'declining':
+            return "Struggled in later rounds"
+        else:
+            return "Maintained consistent performance"
+
+    def _assess_adaptation_success(self, performance: Dict[str, Any], temporal: Dict[str, Any]) -> str:
+        """Assess how well player adapted during session"""
+        trend = performance.get('recent_performance', {}).get('trend', 'stable')
+        momentum = performance.get('momentum', {}).get('momentum_direction', 'stable')
+        
+        if trend == 'improving' and momentum == 'positive':
+            return "Successfully adapted and improved throughout session"
+        elif trend == 'declining':
+            return "Struggled to adapt - AI learned your patterns"
+        else:
+            return "Moderate adaptation - mixed results"
+
+    def _identify_learning_patterns(self, patterns: Dict[str, Any], performance: Dict[str, Any]) -> str:
+        """Identify learning and improvement patterns"""
+        entropy = patterns.get('entropy_calculation', 0.0)
+        trend = performance.get('recent_performance', {}).get('trend', 'stable')
+        
+        if entropy > 1.2 and trend == 'improving':
+            return "Strong learning - improved randomness and performance"
+        elif entropy > 1.2:
+            return "Good randomness learning - focus on tactical execution"
+        elif trend == 'improving':
+            return "Tactical improvements - work on unpredictability"
+        else:
+            return "Learning opportunities identified for next session"
+
+    def _identify_key_turning_point(self, performance: Dict[str, Any], core: Dict[str, Any]) -> str:
+        """Identify key turning points in the session"""
+        streaks = performance.get('streaks', {})
+        longest_win = streaks.get('longest_win_streak', 0)
+        longest_loss = streaks.get('longest_loss_streak', 0)
+        total_rounds = core.get('current_round', 0)
+        
+        if longest_win >= 4:
+            return f"Mid-session win streak of {longest_win} showed strategic breakthrough"
+        elif longest_loss >= 4:
+            return f"Extended loss streak of {longest_loss} highlighted need for adaptation"
+        elif total_rounds > 15:
+            return "Gradual strategic evolution throughout extended session"
+        else:
+            return "No major turning points in short session"
+
+    def _identify_main_weakness(self, patterns: Dict[str, Any], performance: Dict[str, Any]) -> str:
+        """Identify the main weakness that was exploited"""
+        predictability = patterns.get('predictability_score', 0.0)
+        pattern_type = patterns.get('pattern_type', 'unknown')
+        win_rate = performance.get('overall_performance', {}).get('win_rate', 0.0)
+        
+        if predictability > 0.7:
+            return f"High predictability ({predictability:.1%}) due to {pattern_type} patterns"
+        elif win_rate < 0.4:
+            return "Poor strategic adaptation against AI counter-moves"
+        elif pattern_type == 'single_move_repetition':
+            return "Tendency to repeat same moves too frequently"
+        else:
+            return "Inconsistent randomization strategy"
+
+    def _suggest_biggest_improvement(self, patterns: Dict[str, Any], performance: Dict[str, Any]) -> str:
+        """Suggest the biggest area for improvement"""
+        predictability = patterns.get('predictability_score', 0.0)
+        entropy = patterns.get('entropy_calculation', 0.0)
+        win_rate = performance.get('overall_performance', {}).get('win_rate', 0.0)
+        
+        if predictability > 0.6:
+            return "Focus on unpredictability - break patterns and increase randomness"
+        elif entropy < 1.0:
+            return "Improve move variety - aim for more balanced distribution"
+        elif win_rate < 0.4:
+            return "Study AI patterns and develop better counter-strategies"
+        else:
+            return "Fine-tune timing and psychological awareness"
+
+    def _extract_strategic_lesson(self, ai_behavior: Dict[str, Any], performance: Dict[str, Any]) -> str:
+        """Extract the key strategic lesson from the session"""
+        robot_strategy = ai_behavior.get('ai_strategy', 'unknown')
+        trend = performance.get('recent_performance', {}).get('trend', 'stable')
+        
+        if robot_strategy == 'frequency_based' and trend == 'improving':
+            return "Successfully countered frequency analysis by varying move patterns"
+        elif robot_strategy == 'markov_chain':
+            return "Pattern sequences matter - AI learns from move combinations"
+        elif robot_strategy == 'adaptive':
+            return "Adaptive AI requires constant strategy evolution"
+        else:
+            return "Maintaining unpredictability is key to success"
+
+    def _assess_consistency_evolution(self, patterns: Dict[str, Any], performance: Dict[str, Any]) -> str:
+        """Assess how consistency evolved throughout session"""
+        pattern_type = patterns.get('pattern_type', 'unknown')
+        trend = performance.get('recent_performance', {}).get('trend', 'stable')
+        
+        if pattern_type == 'mixed_pattern' and trend == 'stable':
+            return "Maintained good strategic consistency throughout"
+        elif pattern_type == 'high_variation':
+            return "Highly varied play - sometimes too unpredictable for optimal strategy"
+        elif pattern_type == 'low_variation':
+            return "Too consistent - became predictable over time"
+        else:
+            return "Evolving strategic approach with room for refinement"
+
+    def _assess_emotional_resilience(self, performance: Dict[str, Any]) -> str:
+        """Assess emotional resilience during the session"""
+        streaks = performance.get('streaks', {})
+        longest_loss = streaks.get('longest_loss_streak', 0)
+        momentum = performance.get('momentum', {}).get('momentum_direction', 'stable')
+        
+        if longest_loss >= 5:
+            return "Showed resilience during extended losing streak"
+        elif momentum == 'positive':
+            return "Strong emotional control - maintained positive momentum"
+        elif momentum == 'negative':
+            return "Struggled with emotional balance during difficult periods"
+        else:
+            return "Stable emotional approach throughout session"
+
     def _generate_real_time_advice(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
         """Generate real-time coaching advice using ALL comprehensive analytics with LLM-specific strategies"""
         
@@ -942,7 +1243,7 @@ Please write this as if you're having a thoughtful conversation with the player 
         temporal = metrics.get('temporal', {})
         strategic = metrics.get('strategic', {})
         
-        # Create COMPREHENSIVE context with ALL metrics
+        # Create COMPREHENSIVE context with ALL metrics plus STRATEGIC INSIGHTS
         full_context = {
             # Core game data
             'current_round': core.get('current_round', 0),
@@ -994,7 +1295,18 @@ Please write this as if you're having a thoughtful conversation with the player 
             'current_strategy_assessment': strategic.get('current_strategy_assessment', {}),
             'strategic_opportunities': strategic.get('strategic_opportunities', {}),
             'strategic_weaknesses': strategic.get('weaknesses', {}),
-            'educational_focus': strategic.get('educational_focus', {})
+            'educational_focus': strategic.get('educational_focus', {}),
+            
+            # NEW STRATEGIC INSIGHTS for better coaching
+            'exploitable_patterns': self._identify_exploitable_patterns(core, patterns),
+            'predictability_risk': self._assess_predictability_risk(core.get('recent_moves', {}).get('human_last_5', []), patterns.get('predictability_score', 0.0)),
+            'next_move_recommendation': self._suggest_next_move(core, patterns, ai_behavior),
+            'opponent_weakness': self._identify_opponent_weakness(ai_behavior, core),
+            'pattern_disruption_advice': self._generate_pattern_disruption_advice(core.get('recent_moves', {}).get('human_last_5', [])),
+            'psychological_state': self._assess_psychological_state(performance.get('streaks', {}), core.get('results', [])[-5:] if core.get('results') else []),
+            'tactical_situation': self._assess_tactical_situation(core.get('current_round', 0), performance.get('momentum', {})),
+            'adaptation_opportunity': self._identify_adaptation_opportunity(ai_behavior, temporal.get('game_phase', 'unknown')),
+            'strategic_priority': self._determine_strategic_priority(patterns.get('predictability_score', 0.0), core.get('win_rates', {}).get('human', 0.0))
         }
         
         print(f"📊 FEEDING {len(full_context)} METRICS TO LLM")
@@ -1002,8 +1314,8 @@ Please write this as if you're having a thoughtful conversation with the player 
         # Choose strategy based on LLM type
         if hasattr(self, 'trained_coach') and self.trained_coach is not None:
             return self._generate_trained_model_advice(metrics)  # Use original metrics for trained model
-        elif isinstance(self.llm, MockLLM):
-            return self._generate_mockllm_advice(full_context)
+        elif isinstance(self.llm, BasicCoach):
+            return self._generate_basic_coach_advice(full_context)
         else:
             return self._generate_real_llm_advice(full_context)
     
@@ -1039,59 +1351,51 @@ Please write this as if you're having a thoughtful conversation with the player 
                 'response_type': 'error'
             }
     
-    def _generate_mockllm_advice(self, full_context: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate advice using MockLLM with JSON format"""
-        print("🧠 Using Enhanced MockLLM with ALL metrics")
+    def _generate_basic_coach_advice(self, full_context: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate advice using BasicCoach with simplified logic and only 3 tips"""
+        print("🎯 Using Basic coaching algorithm")
         
-        # Create comprehensive prompt for MockLLM with ALL data
-        comprehensive_prompt = f"""
-COACHING REQUEST: {self.coaching_style} style real-time advice
+        # Create simplified prompt for BasicCoach with only essential data
+        simplified_prompt = f"""
+Basic coaching request for Rock-Paper-Scissors player.
 
-COMPLETE GAME DATA:
-Round: {full_context['current_round']}/{full_context['total_moves']}
+ESSENTIAL GAME DATA:
+Round: {full_context['current_round']}
 Win Rate: {full_context['win_rate']:.1%}
 Recent Moves: {full_context['recent_moves']}
 Recent Results: {full_context['recent_results']}
 
-PATTERN ANALYSIS:
-Entropy: {full_context['entropy']:.4f} (max=1.585, randomness measure)
-Predictability: {full_context['predictability']:.4f} (lower=better)
+KEY METRICS:
+Predictability: {full_context['predictability']:.3f} (0=random, 1=predictable)
 Move Distribution: {full_context['move_distribution']}
-Sequence Patterns: {full_context['sequence_patterns']}
-
-ADVANCED ANALYTICS:
-Decision Complexity: {full_context['decision_complexity']:.4f}
-Strategy Consistency: {full_context['strategy_consistency']:.4f}
-Adaptation Rate: {full_context['adaptation_rate']:.4f}
-Nash Distance: {full_context['nash_distance']:.4f} (optimal=0)
-Exploitability: {full_context['exploitability']:.4f}
-Mutual Information: {full_context['mutual_information']:.4f}
-Compression Ratio: {full_context['compression_ratio']:.4f}
-
-PSYCHOLOGICAL PROFILE:
-Impulsiveness: {full_context['impulsiveness']:.4f}
-Consistency: {full_context['consistency_score']:.4f}
-Risk Tolerance: {full_context['risk_tolerance']}
-Emotional State: {full_context['emotional_indicators']}
-Cognitive Patterns: {full_context['cognitive_patterns']}
-
-AI BEHAVIOR:
-Robot Strategy: {full_context['robot_strategy']}
-AI Confidence: {full_context['ai_confidence']:.4f}
-AI Adaptation: {full_context['ai_adaptation']}
-Prediction Patterns: {full_context['prediction_patterns']}
-
-PERFORMANCE CONTEXT:
-Streaks: {full_context['streaks']}
-Momentum: {full_context['momentum']}
-Game Phase: {full_context['game_phase']}
-Strategic Assessment: {full_context['current_strategy_assessment']}
+Current Pattern: {full_context.get('pattern_type', 'mixed')}
+AI Strategy: {full_context['robot_strategy']}
 """
+
+        response_text = self._safe_llm_call(simplified_prompt)
+        
+        # Parse BasicCoach response (should be JSON)
+        try:
+            parsed_response = self.output_parser.parse(response_text)
+            return {
+                'tips': parsed_response.tips,
+                'insights': parsed_response.insights,
+                'educational_content': parsed_response.educational_content,
+                'behavioral_analysis': parsed_response.behavioral_analysis,
+                'confidence_level': parsed_response.confidence_level,
+                'response_type': parsed_response.response_type,
+                'llm_type': 'Basic',
+                'metrics_count': 6,  # Only using 6 essential metrics
+                'raw_response': response_text[:200] if isinstance(response_text, str) else str(response_text)[:200]
+            }
+        except Exception as e:
+            print(f"⚠️ Basic coaching response parsing failed: {e}")
+            return self._generate_fallback_advice({}, 'real_time')
     def _safe_llm_call(self, prompt: str) -> str:
         """Safely call LLM with proper error handling"""
         try:
             # Handle different LLM types with their respective calling methods
-            if isinstance(self.llm, MockLLM):
+            if isinstance(self.llm, BasicCoach):
                 return self.llm(prompt)
             elif hasattr(self.llm, 'invoke'):
                 # Modern LangChain LLMs use invoke
@@ -1201,54 +1505,45 @@ Be conversational and encouraging while being specific about the numbers and wha
             }
 
     def _generate_mockllm_advice(self, full_context: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate advice using MockLLM with JSON format"""
-        print("🧠 Using Enhanced MockLLM with ALL metrics")
+        """Generate advice using MockLLM with enhanced strategic context"""
+        print("🧠 Using Enhanced MockLLM with ALL metrics + Strategic Insights")
         
-        # Create comprehensive prompt for MockLLM with ALL data
-        comprehensive_prompt = f"""
-COACHING REQUEST: {self.coaching_style} style real-time advice
+        # Create strategic prompt with actionable insights
+        strategic_prompt = f"""
+STRATEGIC COACHING REQUEST: {self.coaching_style} style real-time advice
 
-COMPLETE GAME DATA:
+🎮 GAME STATUS:
 Round: {full_context['current_round']}/{full_context['total_moves']}
 Win Rate: {full_context['win_rate']:.1%}
 Recent Moves: {full_context['recent_moves']}
 Recent Results: {full_context['recent_results']}
 
-PATTERN ANALYSIS:
+🎯 STRATEGIC INSIGHTS:
+{full_context['strategic_priority']}
+{full_context['exploitable_patterns']}
+{full_context['predictability_risk']}
+
+💡 TACTICAL RECOMMENDATIONS:
+Next Move: {full_context['next_move_recommendation']}
+Pattern Fix: {full_context['pattern_disruption_advice']}
+Opponent Weakness: {full_context['opponent_weakness']}
+
+🧠 PSYCHOLOGICAL STATE:
+{full_context['psychological_state']}
+{full_context['tactical_situation']}
+
+⚡ ADAPTATION OPPORTUNITY:
+{full_context['adaptation_opportunity']}
+
+📊 ADVANCED METRICS:
 Entropy: {full_context['entropy']:.4f} (max=1.585, randomness measure)
 Predictability: {full_context['predictability']:.4f} (lower=better)
-Move Distribution: {full_context['move_distribution']}
-Sequence Patterns: {full_context['sequence_patterns']}
-
-ADVANCED ANALYTICS:
-Decision Complexity: {full_context['decision_complexity']:.4f}
-Strategy Consistency: {full_context['strategy_consistency']:.4f}
-Adaptation Rate: {full_context['adaptation_rate']:.4f}
 Nash Distance: {full_context['nash_distance']:.4f} (optimal=0)
-Exploitability: {full_context['exploitability']:.4f}
-Mutual Information: {full_context['mutual_information']:.4f}
-Compression Ratio: {full_context['compression_ratio']:.4f}
-
-PSYCHOLOGICAL PROFILE:
-Impulsiveness: {full_context['impulsiveness']:.4f}
-Consistency: {full_context['consistency_score']:.4f}
-Risk Tolerance: {full_context['risk_tolerance']}
-Emotional State: {full_context['emotional_indicators']}
-Cognitive Patterns: {full_context['cognitive_patterns']}
-
-AI BEHAVIOR:
 Robot Strategy: {full_context['robot_strategy']}
-AI Confidence: {full_context['ai_confidence']:.4f}
-AI Adaptation: {full_context['ai_adaptation']}
-Prediction Patterns: {full_context['prediction_patterns']}
-
-PERFORMANCE CONTEXT:
-Streaks: {full_context['streaks']}
-Momentum: {full_context['momentum']}
-Game Phase: {full_context['game_phase']}
-Strategic Assessment: {full_context['current_strategy_assessment']}
+Complexity: {full_context['decision_complexity']:.4f}
 """
-        response_text = self._safe_llm_call(comprehensive_prompt)
+
+        response_text = self._safe_llm_call(strategic_prompt)
         
         # Parse MockLLM response (should be JSON)
         try:
@@ -1260,114 +1555,19 @@ Strategic Assessment: {full_context['current_strategy_assessment']}
                 'behavioral_analysis': parsed_response.behavioral_analysis,
                 'confidence_level': parsed_response.confidence_level,
                 'response_type': parsed_response.response_type,
-                'llm_type': 'MockLLM',
+                'llm_type': 'Enhanced_MockLLM',
                 'metrics_count': len(full_context),
+                'strategic_insights': {
+                    'priority': full_context['strategic_priority'],
+                    'next_move': full_context['next_move_recommendation'],
+                    'pattern_risk': full_context['exploitable_patterns'],
+                    'opponent_weakness': full_context['opponent_weakness']
+                },
                 'raw_response': response_text[:200] if isinstance(response_text, str) else str(response_text)[:200]
             }
         except Exception as e:
-            print(f"⚠️ MockLLM response parsing failed: {e}")
+            print(f"⚠️ Enhanced MockLLM response parsing failed: {e}")
             return self._generate_fallback_advice({}, 'real_time')
-    
-    def _generate_real_llm_advice(self, full_context: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate advice using Real LLM with natural language format"""
-        print(f"🌐 Using Real LLM: {type(self.llm).__name__}")
-        
-        # Create distinct coaching personalities based on style
-        if self.coaching_style == "scientific":
-            personality_prompt = """You are Dr. GameMaster, a professional gaming strategist and cognitive scientist specializing in competitive game theory. You speak with authority about mathematical concepts, statistical analysis, and advanced strategic principles. You use precise terminology, reference academic concepts, and provide detailed analytical breakdowns. Your tone is professional, insightful, and intellectually stimulating."""
-            
-            coaching_approach = """
-COACHING APPROACH: Provide comprehensive, data-driven analysis with:
-• Deep statistical insights with specific numerical targets
-• Game theory and information theory explanations  
-• Advanced strategic concepts and terminology
-• Detailed step-by-step optimization recommendations
-• Each tip should be 2-3 sentences with specific metrics and reasoning
-• Reference entropy thresholds, Nash equilibrium principles, and exploitability theory"""
-            
-        else:  # easy style
-            personality_prompt = """You are Coach Sam, a friendly and enthusiastic Rock-Paper-Scissors mentor who loves helping players improve. You speak in an encouraging, accessible way using simple language and gaming metaphors. You're like a supportive friend who happens to be really good at strategy games. Your tone is warm, motivational, and easy to understand."""
-            
-            coaching_approach = """
-COACHING APPROACH: Provide encouraging, practical guidance with:
-• Clear, actionable advice using everyday language
-• Encouraging motivation and positive reinforcement
-• Simple explanations of complex concepts using analogies
-• Fun, engaging tips that build confidence
-• Each tip should be 2-3 sentences focusing on practical actions and encouragement
-• Use gaming metaphors and friendly language"""
-        
-        natural_prompt = f"""{personality_prompt}
-
-{coaching_approach}
-
-PLAYER'S CURRENT SITUATION:
-• Round {full_context['current_round']} with {full_context['win_rate']:.1%} win rate
-• Recent moves: {full_context['recent_moves']}
-• Entropy (randomness): {full_context['entropy']:.3f} out of 1.585 maximum
-• Predictability: {full_context['predictability']:.3f} (lower is better)  
-• Nash distance: {full_context['nash_distance']:.3f} (measures optimal play balance)
-• AI opponent using: {full_context['robot_strategy']} strategy
-• Decision complexity: {full_context['decision_complexity']:.3f}
-• Pattern consistency: {full_context['strategy_consistency']:.3f}
-
-DETAILED ANALYSIS CONTEXT:
-The player's move distribution shows {full_context['move_distribution']}. Their recent performance trend is {full_context.get('momentum', {})}. Current psychological indicators suggest {full_context.get('impulsiveness', 0.5):.3f} impulsiveness level and {full_context.get('consistency_score', 0.5):.3f} consistency score.
-
-Please provide comprehensive coaching advice with 4-5 detailed tips that include:
-1. Immediate tactical recommendations for the next 2-3 moves (be specific about which moves to consider)
-2. Pattern analysis insights about their current playing style (reference the specific metrics)
-3. Strategic optimization advice for improving randomness and unpredictability (give specific targets)
-4. Counter-strategy recommendations for the AI's {full_context['robot_strategy']} approach (explain the reasoning)
-5. Long-term strategic development advice based on their performance profile
-
-Make each tip substantial (2-3 sentences) with specific reasoning, and maintain your coaching personality throughout. Reference the actual numbers and explain what they mean in your coaching style."""
-
-        try:
-            # Use safe LLM call method
-            response_text = self._safe_llm_call(natural_prompt)
-            
-            print(f"📝 Real LLM Response Preview: {str(response_text)[:100]}...")
-            
-            # Parse natural language response
-            parsed_response = self.output_parser.parse(str(response_text))
-            
-            return {
-                'tips': parsed_response.tips,
-                'insights': parsed_response.insights,
-                'educational_content': parsed_response.educational_content,
-                'behavioral_analysis': parsed_response.behavioral_analysis,
-                'confidence_level': parsed_response.confidence_level,
-                'response_type': parsed_response.response_type,
-                'llm_type': type(self.llm).__name__,
-                'metrics_count': len(full_context),
-                'raw_response': str(response_text)[:300],  # More text for natural language
-                'natural_language_full': str(response_text),  # Store full response
-                'coaching_personality': 'Dr. GameMaster (Scientific)' if self.coaching_style == 'scientific' else 'Coach Sam (Friendly)'
-            }
-            
-        except Exception as e:
-            print(f"⚠️ Real LLM coaching failed: {e}")
-            # Fallback to a simple natural language attempt
-            try:
-                style_instruction = "scientific and detailed" if self.coaching_style == "scientific" else "easy-to-understand and encouraging"
-                simple_prompt = f"Give coaching advice for rock-paper-scissors. The player has {full_context['win_rate']:.1%} win rate and entropy {full_context['entropy']:.3f}. Be helpful and {style_instruction}."
-                fallback_response = self._safe_llm_call(simple_prompt)
-                
-                parsed_fallback = self.output_parser.parse(str(fallback_response))
-                return {
-                    'tips': parsed_fallback.tips,
-                    'insights': {'error_recovery': 'Used simplified prompt due to parsing issues'},
-                    'educational_content': parsed_fallback.educational_content,
-                    'behavioral_analysis': parsed_fallback.behavioral_analysis,
-                    'confidence_level': 0.6,
-                    'response_type': 'fallback_natural_language',
-                    'llm_type': type(self.llm).__name__,
-                    'raw_response': str(fallback_response)[:200]
-                }
-            except Exception as e2:
-                print(f"⚠️ Fallback also failed: {e2}")
-                return self._generate_fallback_advice({}, 'real_time')
     
     def _generate_comprehensive_analysis(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
         """Generate comprehensive post-game analysis"""
@@ -1379,20 +1579,47 @@ Make each tip substantial (2-3 sentences) with specific reasoning, and maintain 
         psychological = metrics.get('psychological', {})
         ai_behavior = metrics.get('ai_behavior', {})
         
-        # Create session data summary
+        # Create enhanced session data summary with strategic insights
+        temporal_metrics = metrics.get('temporal', {})
         session_data = f"""
+📊 SESSION OVERVIEW:
 Total Rounds: {core.get('current_round', 0)}
-Performance: {core.get('win_rates', {}).get('human', 0.0):.1%} win rate
-Pattern Analysis: {patterns.get('pattern_type', 'unknown')} patterns detected
-Entropy: {patterns.get('entropy_calculation', 0.0):.3f}
-Predictability: {patterns.get('predictability_score', 0.0):.3f}
-AI Strategy: {ai_behavior.get('ai_strategy', 'unknown')}
-Decision Style: {psychological.get('decision_making_style', {})}
+Final Performance: {core.get('win_rates', {}).get('human', 0.0):.1%} win rate
+Session Duration: {temporal_metrics.get('session_duration', 0):.0f} seconds
+
+🎯 PATTERN ANALYSIS:
+Pattern Type: {patterns.get('pattern_type', 'unknown')} patterns detected
+Final Entropy: {patterns.get('entropy_calculation', 0.0):.3f} (max 1.585)
+Final Predictability: {patterns.get('predictability_score', 0.0):.3f} (lower is better)
+Most Exploited Pattern: {self._identify_most_exploited_pattern(core, patterns)}
+
+📈 PERFORMANCE EVOLUTION:
+Starting Performance: {self._estimate_early_performance(performance)}
+Ending Performance: {self._estimate_late_performance(performance)}
+Best Streak: {performance.get('streaks', {}).get('longest_win_streak', 0)} wins
+Worst Streak: {performance.get('streaks', {}).get('longest_loss_streak', 0)} losses
+Overall Trend: {performance.get('recent_performance', {}).get('trend', 'stable')}
+
+🧠 STRATEGIC DEVELOPMENT:
+AI Strategy Faced: {ai_behavior.get('ai_strategy', 'unknown')}
+Player Adaptation: {self._assess_adaptation_success(performance, temporal_metrics)}
+Learning Indicators: {self._identify_learning_patterns(patterns, performance)}
+Key Turning Point: {self._identify_key_turning_point(performance, core)}
+
+🎓 EDUCATIONAL INSIGHTS:
+Main Weakness Exploited: {self._identify_main_weakness(patterns, performance)}
+Biggest Improvement Area: {self._suggest_biggest_improvement(patterns, performance)}
+Strategic Lesson Learned: {self._extract_strategic_lesson(ai_behavior, performance)}
+
+💡 PSYCHOLOGICAL PROFILE:
+Decision Making Style: {psychological.get('decision_making_style', {})}
+Consistency Throughout: {self._assess_consistency_evolution(patterns, performance)}
+Emotional Resilience: {self._assess_emotional_resilience(performance)}
 """
         
-        # Use MockLLM directly for fast, reliable responses
-        if isinstance(self.llm, MockLLM):
-            # Create simple prompt for MockLLM comprehensive analysis
+        # Use BasicCoach directly for fast, reliable responses
+        if isinstance(self.llm, BasicCoach):
+            # Create simple prompt for BasicCoach comprehensive analysis
             prompt_text = f"Comprehensive analysis for {self.coaching_style} style:\n{session_data}"
             response_text = self.llm(prompt_text)
         else:
@@ -1410,11 +1637,11 @@ Decision Style: {psychological.get('decision_making_style', {})}
                     response_text = "Unable to generate comprehensive analysis"
             except Exception as e:
                 print(f"⚠️ LangChain comprehensive analysis failed: {e}")
-                # Fall back to MockLLM approach
-                mock_llm = MockLLM()
-                mock_llm.set_coaching_style(self.coaching_style)
+                # Fall back to BasicCoach approach
+                basic_coach = BasicCoach()
+                basic_coach.set_coaching_style(self.coaching_style)
                 prompt_text = f"Comprehensive analysis for {self.coaching_style} style:\n{session_data}"
-                response_text = mock_llm(prompt_text)
+                response_text = basic_coach(prompt_text)
         
         # Parse response and structure for frontend compatibility
         try:

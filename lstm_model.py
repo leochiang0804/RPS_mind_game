@@ -248,7 +248,7 @@ class SyntheticPlayerGenerator:
         
         return history[:length]
 
-def create_and_export_model(export_path: str = "models/lstm_rps.onnx"):
+def create_and_export_model(export_path: str = "models/lstm/lstm_rps.onnx"):
     """
     Create, train, and export LSTM model
     """
@@ -345,4 +345,4 @@ if __name__ == "__main__":
     model, trainer = create_and_export_model()
     
     print("\n🎉 LSTM training pipeline completed!")
-    print("📂 Check the 'models/' directory for exported files")
+    print("📂 Check the 'models/lstm/' directory for exported files")

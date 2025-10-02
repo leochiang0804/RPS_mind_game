@@ -19,10 +19,18 @@ model_training_path = os.path.join(os.path.dirname(__file__), 'model_training')
 sys.path.append(model_training_path)
 
 try:
-    from simple_train_coach import SimpleRPSCoachModel
+    from models.enhanced_architecture import EnhancedRPSCoachModel
+    SimpleRPSCoachModel = EnhancedRPSCoachModel  # Alias for compatibility
 except ImportError as e:
     print(f"⚠️ Could not import trained model: {e}")
-    SimpleRPSCoachModel = None
+    try:
+        # Try importing from models directory directly
+        sys.path.append(os.path.join(model_training_path, 'models'))
+        from enhanced_architecture import EnhancedRPSCoachModel
+        SimpleRPSCoachModel = EnhancedRPSCoachModel
+    except ImportError as e2:
+        print(f"⚠️ Could not import enhanced model either: {e2}")
+        SimpleRPSCoachModel = None
 
 
 class TrainedCoachWrapper:
@@ -33,16 +41,16 @@ class TrainedCoachWrapper:
         self.vocab = None
         self.device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
         self.coaching_style = 'easy'
-        
-        # Default model path
+
+        # Default model path (updated to new location)
         if model_path is None:
             model_path = os.path.join(
-                os.path.dirname(__file__), 
-                'model_training', 
-                'models', 
-                'simple_rps_coach.pth'
+                os.path.dirname(__file__),
+                'models',
+                'coach',
+                'Leo_model.pth'
             )
-        
+
         self.model_path = model_path
         self._load_model()
     
@@ -54,14 +62,33 @@ class TrainedCoachWrapper:
                 return False
             
             if SimpleRPSCoachModel is None:
-                print("⚠️ SimpleRPSCoachModel class not available")
+                print("⚠️ EnhancedRPSCoachModel class not available")
                 return False
             
-            # Initialize model architecture
-            self.model = SimpleRPSCoachModel(vocab_size=40, hidden_size=256)
+            print(f"📂 Loading model from: {self.model_path}")
+            
+            # Load checkpoint
+            checkpoint = torch.load(self.model_path, map_location=self.device)
+            
+            # Get model configuration and fix key mappings
+            config = checkpoint.get('config', {})
+            print(f"📋 Model config loaded: {config.get('vocab_size', 'unknown')} vocab, {config.get('hidden_size', 'unknown')} hidden")
+            
+            # Fix config key mappings for the enhanced model
+            model_config = {
+                'vocab_size': config.get('vocab_size', 8000),
+                'hidden_size': config.get('hidden_size', 768),
+                'num_hidden_layers': config.get('num_layers', 12),  # Map num_layers -> num_hidden_layers
+                'num_attention_heads': config.get('num_heads', 12),  # Map num_heads -> num_attention_heads
+                'intermediate_size': config.get('intermediate_size', 3072),
+                'max_position_embeddings': config.get('max_position_embeddings', 1024),
+                'dropout': config.get('dropout_rate', 0.1),  # Map dropout_rate -> dropout
+            }
+            
+            # Initialize model architecture with correct config
+            self.model = SimpleRPSCoachModel(model_config)
             
             # Load trained weights
-            checkpoint = torch.load(self.model_path, map_location=self.device)
             self.model.load_state_dict(checkpoint['model_state_dict'])
             self.model.to(self.device)
             self.model.eval()
@@ -69,14 +96,17 @@ class TrainedCoachWrapper:
             # Load vocabulary from checkpoint
             self.vocab = checkpoint.get('vocab', self._build_vocab())
             
-            print(f"✅ Trained model loaded successfully from {self.model_path}")
+            print(f"✅ Enhanced model loaded successfully from {self.model_path}")
             print(f"   Device: {self.device}")
             print(f"   Parameters: {sum(p.numel() for p in self.model.parameters()):,}")
+            print(f"   Vocab size: {len(self.vocab)}")
             
             return True
             
         except Exception as e:
-            print(f"❌ Failed to load trained model: {e}")
+            print(f"❌ Failed to load enhanced model: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def _build_vocab(self) -> Dict[str, int]:
@@ -215,28 +245,43 @@ class TrainedCoachWrapper:
                     'adaptation_rate': 0.5
                 }
             
-            # Prepare model input
+            # Prepare model input (simple text tokenization for enhanced model)
             dummy_text = "player strategy analysis coaching"
             words = dummy_text.split()
             if self.vocab:
                 token_ids = [self.vocab.get(word, 1) for word in words]
             else:
                 token_ids = [1] * len(words)  # Use unknown tokens if vocab not loaded
+            
+            # Pad to reasonable length
+            max_len = 32
+            if len(token_ids) < max_len:
+                token_ids = token_ids + [0] * (max_len - len(token_ids))  # Pad with <pad> tokens
+            else:
+                token_ids = token_ids[:max_len]
+            
             input_tokens = torch.tensor([token_ids], dtype=torch.long).to(self.device)
             
-            # Create metrics tensor
-            metrics_tensor = torch.tensor([[
-                simple_metrics['entropy'],
-                simple_metrics['win_rate'],
-                simple_metrics['pattern_strength'], 
-                simple_metrics['adaptation_rate']
-            ]], dtype=torch.float32).to(self.device)
+            # Create attention mask (1 for real tokens, 0 for padding)
+            attention_mask = torch.tensor([[1 if tok != 0 else 0 for tok in token_ids]], dtype=torch.long).to(self.device)
             
-            # Generate prediction
+            # Generate prediction using the enhanced model
             with torch.no_grad():
-                outputs = self.model(input_tokens, metrics_tensor)
-                predicted_category = int(torch.argmax(outputs, dim=-1).item())
-                confidence = float(torch.softmax(outputs, dim=-1).max().item())
+                # The enhanced model expects different inputs than the simple model
+                outputs = self.model(
+                    input_ids=input_tokens,
+                    attention_mask=attention_mask,
+                    coaching_mode="real_time"
+                )
+                
+                # Handle different output types from enhanced model
+                if hasattr(outputs, 'logits'):
+                    logits = outputs.logits
+                else:
+                    logits = outputs
+                
+                predicted_category = int(torch.argmax(logits, dim=-1).item())
+                confidence = float(torch.softmax(logits, dim=-1).max().item())
             
             # Convert prediction to coaching advice
             coaching_advice = self._category_to_advice(predicted_category, simple_metrics)
