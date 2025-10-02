@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paper Scissor Stone ML Game</title>
+    <title>RPS ML Game</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/experimental-theme.css') }}">
     <style>
         /* Disabled Tournament Button Styling */
@@ -145,7 +145,7 @@
         <div class="app-content">
             <header class="app-header">
                 <div class="app-title-group">
-                    <h1 class="app-title">Paper Scissor Stone ML Arena</h1>
+                    <h1 class="app-title">RPS ML Arena</h1>
                     <p class="app-subtitle">Challenge adaptive AI opponents with live analytics, coaching intelligence, and cinematic battle visuals.</p>
                     <div class="badge-deck">
                         <span class="badge">🧠 Adaptive ML</span>
@@ -420,8 +420,8 @@
                             <div id="endgame-summary-panel" class="endgame-summary" aria-live="polite"></div>
                             <div class="move-pad">
                                 <button type="button" id="move-paper" class="move-btn" onclick="submitMove('paper')">Paper (P)</button>
-                                <button type="button" id="move-stone" class="move-btn" onclick="submitMove('stone')">Rock (R)</button>
-                                <button type="button" id="move-scissor" class="move-btn" onclick="submitMove('scissor')">Scissor (S)</button>
+                                <button type="button" id="move-rock" class="move-btn" onclick="submitMove('rock')">Rock (R)</button>
+                                <button type="button" id="move-scissors" class="move-btn" onclick="submitMove('scissors')">Scissors (S)</button>
                             </div>
                         </div>
                     </section>
@@ -485,9 +485,9 @@
                                         <div class="move-bar">
                                             <div class="move-label">Scissor (S)</div>
                                             <div class="bar-container">
-                                                <div class="bar-fill scissor" id="scissor-fill"></div>
+                                                <div class="bar-fill scissors" id="scissors-fill"></div>
                                             </div>
-                                            <div class="bar-percentage" id="scissor-percent">0%</div>
+                                            <div class="bar-percentage" id="scissors-percent">0%</div>
                                         </div>
                                     </div>
                                 </section>
@@ -528,7 +528,7 @@
                                     </div>
                                     <div class="chart-card wide">
                                         <h4>🤖 Model Prediction Tracking</h4>
-                                        <p class="chart-hint">Compare human moves vs robot moves vs optional model predictions (Axis shows S=Scissor, R=Rock, P=Paper)</p>
+                                        <p class="chart-hint">Compare human moves vs robot moves vs optional model predictions (Axis shows S=Scissors, R=Rock, P=Paper)</p>
                                         <div class="prediction-toggle">
                                             <div class="prediction-info">Human Move (always on)</div>
                                             <label class="prediction-option">
@@ -563,6 +563,7 @@
                                         <canvas id="modelPredictionChart"></canvas>
                                     </div>
                                 </section>
+                                
                                 <section class="panel analytics-quick">
                                     <div class="panel-heading">
                                         <h2 class="panel-title">Performance Snapshots</h2>
@@ -735,8 +736,8 @@
         document.addEventListener('keydown', function(e) {
             console.log('Key pressed:', e.key);
             if (e.key === 'p' || e.key === 'P') submitMove('paper');
-            if (e.key === 'r' || e.key === 'R') submitMove('stone'); // Rock = Stone
-            if (e.key === 's' || e.key === 'S') submitMove('scissor');
+            if (e.key === 'r' || e.key === 'R') submitMove('rock'); // Rock
+            if (e.key === 's' || e.key === 'S') submitMove('scissors');
         });
         
 
@@ -760,11 +761,11 @@
             if (activeDatasets.length === 1) {
                 const { dataset: activeDataset } = activeDatasets[0];
                 activeDataset.pointRadius = activeDataset.data.map((value, idx) => {
-                    const humanValue = humanDataset.data[idx];
+                    const humanValue = humanDataset.data[idx];  // Compare prediction to same index human move
                     return value !== null && value === humanValue ? 6 : 3;
                 });
                 activeDataset.pointBackgroundColor = activeDataset.data.map((value, idx) => {
-                    const humanValue = humanDataset.data[idx];
+                    const humanValue = humanDataset.data[idx];  // Compare prediction to same index human move
                     return value !== null && value === humanValue ? '#4ade80' : activeDataset.borderColor;
                 });
             }
@@ -789,6 +790,11 @@
                     modelPredictionChart.data.datasets[index].hidden = !input.checked;
                     highlightMatches();
                     modelPredictionChart.update();
+                    
+                    // Update debug panel to show currently selected model
+                    if (lastChartData) {
+                        updateDebugPanel(lastChartData);
+                    }
                 });
             });
 
@@ -886,7 +892,7 @@
             if (humanMove === robotMove) return 'tie';
             const normalizedHuman = humanMove.toLowerCase();
             const normalizedRobot = robotMove.toLowerCase();
-            const winMap = { 'rock': 'scissor', 'stone': 'scissor', 'scissor': 'paper', 'paper': 'rock' };
+            const winMap = { 'rock': 'scissors', 'scissors': 'paper', 'paper': 'rock' };
             return winMap[normalizedHuman] === normalizedRobot ? 'human' : 'robot';
         }
 
@@ -912,7 +918,8 @@
         function formatMoveName(move) {
             if (!move || move === 'unknown') return '—';
             const normalized = move.toLowerCase();
-            if (normalized === 'stone') return 'Rock';
+            if (normalized === 'rock') return 'Rock';
+            if (normalized === 'scissors') return 'Scissors';
             return normalized.charAt(0).toUpperCase() + normalized.slice(1);
         }
 
@@ -923,9 +930,9 @@
             const toNumber = (move) => {
                 if (!move) return null;
                 const normalized = move.toLowerCase();
-                if (normalized === 'paper') return 2;
-                if (normalized === 'rock' || normalized === 'stone') return 1;
-                if (normalized === 'scissor') return 0;
+                if (normalized === 'paper') return 1;
+                if (normalized === 'rock') return 0;
+                if (normalized === 'scissors') return 2;
                 return null;
             };
 
@@ -1095,7 +1102,7 @@
         function calculateMoveVariance(moveHistory) {
             if (!moveHistory || moveHistory.length < 3) return 0;
             
-            const moveCounts = { paper: 0, stone: 0, scissor: 0 };
+            const moveCounts = { paper: 0, rock: 0, scissors: 0 };
             moveHistory.forEach(move => {
                 const normalized = move ? move.toLowerCase() : '';
                 if (moveCounts.hasOwnProperty(normalized)) {
@@ -1341,9 +1348,9 @@
             if (move && move !== 'unknown') {
                 // Set the correct image
                 const imageMap = {
-                    'stone': '/static/stone.png',
+                    'rock': '/static/stone.png',    // Note: keeping image filename as stone.png
                     'paper': '/static/paper.png',
-                    'scissor': '/static/scissor.png'
+                    'scissors': '/static/scissor.png' // Note: keeping image filename as scissor.png
                 };
                 
                 moveImg.src = imageMap[move.toLowerCase()] || '/static/paper.png';
@@ -1892,22 +1899,22 @@
             const totalMoves = history.length;
 
             const paperCount = history.filter(m => m === 'paper').length;
-            const stoneCount = history.filter(m => m === 'stone').length;
-            const scissorCount = history.filter(m => m === 'scissor').length;
+            const rockCount = history.filter(m => m === 'rock').length;
+            const scissorsCount = history.filter(m => m === 'scissors').length;
 
             const paperPercent = totalMoves ? ((paperCount / totalMoves) * 100).toFixed(1) : '0.0';
-            const stonePercent = totalMoves ? ((stoneCount / totalMoves) * 100).toFixed(1) : '0.0';
-            const scissorPercent = totalMoves ? ((scissorCount / totalMoves) * 100).toFixed(1) : '0.0';
+            const rockPercent = totalMoves ? ((rockCount / totalMoves) * 100).toFixed(1) : '0.0';
+            const scissorsPercent = totalMoves ? ((scissorsCount / totalMoves) * 100).toFixed(1) : '0.0';
 
             document.getElementById('paper-fill').style.width = paperPercent + '%';
-            document.getElementById('rock-fill').style.width = stonePercent + '%';
-            document.getElementById('scissor-fill').style.width = scissorPercent + '%';
+            document.getElementById('rock-fill').style.width = rockPercent + '%';
+            document.getElementById('scissors-fill').style.width = scissorsPercent + '%';
 
             document.getElementById('paper-percent').textContent = paperPercent + '%';
-            document.getElementById('rock-percent').textContent = stonePercent + '%';
-            document.getElementById('scissor-percent').textContent = scissorPercent + '%';
+            document.getElementById('rock-percent').textContent = rockPercent + '%';
+            document.getElementById('scissors-percent').textContent = scissorsPercent + '%';
 
-            const predictabilityScore = Math.max(parseFloat(paperPercent), parseFloat(stonePercent), parseFloat(scissorPercent)) || 0;
+            const predictabilityScore = Math.max(parseFloat(paperPercent), parseFloat(rockPercent), parseFloat(scissorsPercent)) || 0;
             document.getElementById('predictability-score').textContent = predictabilityScore.toFixed(1) + '%';
 
             let predictabilityStatus = 'Highly Unpredictable';
@@ -1919,8 +1926,8 @@
             document.getElementById('win-rate-trend').textContent = winRate + '%';
 
             const p1 = totalMoves ? paperCount / totalMoves : 0;
-            const p2 = totalMoves ? stoneCount / totalMoves : 0;
-            const p3 = totalMoves ? scissorCount / totalMoves : 0;
+            const p2 = totalMoves ? rockCount / totalMoves : 0;
+            const p3 = totalMoves ? scissorsCount / totalMoves : 0;
             let entropy = 0;
             if (p1 > 0) entropy -= p1 * Math.log2(p1);
             if (p2 > 0) entropy -= p2 * Math.log2(p2);
@@ -2135,7 +2142,7 @@
                     move_distribution: {
                         paper: document.getElementById('paper-percent').textContent,
                         rock: document.getElementById('rock-percent').textContent,
-                        scissor: document.getElementById('scissor-percent').textContent
+                        scissors: document.getElementById('scissors-percent').textContent
                     }
                 };
                 const dataStr = JSON.stringify(analyticsData, null, 2);
@@ -2585,22 +2592,22 @@
                 if (moveDistributionChart) {
                     const history = data.human_history;
                     const paperCount = history.filter(m => m === 'paper').length;
-                    const stoneCount = history.filter(m => m === 'stone').length;
-                    const scissorCount = history.filter(m => m === 'scissor').length;
-                    const total = paperCount + stoneCount + scissorCount;
-                    let paperPct = 0, stonePct = 0, scissorPct = 0;
+                    const rockCount = history.filter(m => m === 'rock').length;
+                    const scissorsCount = history.filter(m => m === 'scissors').length;
+                    const total = paperCount + rockCount + scissorsCount;
+                    let paperPct = 0, rockPct = 0, scissorsPct = 0;
                     if (total > 0) {
                         paperPct = ((paperCount / total) * 100).toFixed(1);
-                        stonePct = ((stoneCount / total) * 100).toFixed(1);
-                        scissorPct = ((scissorCount / total) * 100).toFixed(1);
+                        rockPct = ((rockCount / total) * 100).toFixed(1);
+                        scissorsPct = ((scissorsCount / total) * 100).toFixed(1);
                     }
                     // Update the chart
-                    moveDistributionChart.data.datasets[0].data = [paperCount, stoneCount, scissorCount];
+                    moveDistributionChart.data.datasets[0].data = [paperCount, rockCount, scissorsCount];
                     moveDistributionChart.update('none'); // No animation for performance
                     // Update the percentage display above the chart
                     const pctDiv = document.getElementById('moveDistributionPercentages');
                     if (pctDiv) {
-                        pctDiv.innerHTML = `P: <b>${paperPct}%</b> &nbsp; | &nbsp; R: <b>${stonePct}%</b> &nbsp; | &nbsp; S: <b>${scissorPct}%</b>`;
+                        pctDiv.innerHTML = `P: <b>${paperPct}%</b> &nbsp; | &nbsp; R: <b>${rockPct}%</b> &nbsp; | &nbsp; S: <b>${scissorsPct}%</b>`;
                     }
                 }
                 
@@ -2643,9 +2650,10 @@
                 // Update Model Prediction Chart
                 if (modelPredictionChart && data.human_history && data.robot_history) {
                     const moveToNumber = (move) => {
-                        if (move === 'paper') return 2;
-                        if (move === 'stone' || move === 'rock') return 1;
-                        if (move === 'scissor') return 0;
+                        // Unified mapping: 0=rock, 1=paper, 2=scissors
+                        if (move === 'rock') return 0;
+                        if (move === 'paper') return 1;
+                        if (move === 'scissors') return 2;
                         return null;
                     };
                     
@@ -2729,6 +2737,9 @@
                 // Update Recommended Strategy
                 updateRecommendedStrategy(data);
                 
+                // Update Debug Panel
+                updateDebugPanel(data);
+                
             } catch (error) {
                 console.error('Error updating charts:', error);
             }
@@ -2794,6 +2805,21 @@
                     ${data.round < 10 ? 'Play more rounds for better analysis' : 'Pattern analysis complete'}
                 </div>
             `;
+        }
+        
+        // Debug Data Display Function
+        function updateDebugPanel(data) {
+            // Helper function to format arrays nicely
+            const formatArray = (arr, name = '') => {
+                if (!arr || arr.length === 0) return '[]';
+                return `[${arr.map((item, i) => `${i}: "${item}"`).join(', ')}]`;
+            };
+            
+            const formatNumericArray = (arr, name = '') => {
+                if (!arr || arr.length === 0) return '[]';
+                return `[${arr.map((item, i) => `${i}: ${item}`).join(', ')}]`;
+            };
+            
         }
         
         // Tournament Management Functions

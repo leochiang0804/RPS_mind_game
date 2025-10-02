@@ -44,9 +44,11 @@ class TinyLSTM(nn.Module):
         self.output_proj = nn.Linear(hidden_dim, vocab_size)
         self.softmax = nn.Softmax(dim=-1)
         
-        # Move mapping
-        self.move_to_idx = {'stone': 0, 'paper': 1, 'scissor': 2}
-        self.idx_to_move = {0: 'stone', 1: 'paper', 2: 'scissor'}
+        # Move mapping - using unified system: 0=rock, 1=paper, 2=scissors
+        from move_mapping import MOVE_TO_NUMBER, NUMBER_TO_MOVE, normalize_move
+        self.move_to_idx = {'rock': 0, 'paper': 1, 'scissors': 2}
+        self.idx_to_move = {0: 'rock', 1: 'paper', 2: 'scissors'}
+        self.normalize_move = normalize_move
         
     def forward(self, x, hidden=None):
         """Forward pass through the network"""
@@ -71,14 +73,15 @@ class TinyLSTM(nn.Module):
         Returns probabilities for each move
         """
         if len(move_history) == 0:
-            return {'stone': 0.33, 'paper': 0.33, 'scissor': 0.34}
+            return {'rock': 0.33, 'paper': 0.33, 'scissors': 0.34}
         
-        # Convert moves to indices
+        # Convert moves to indices using normalized moves
         try:
-            move_indices = [self.move_to_idx[move.lower()] for move in move_history]
+            normalized_history = [self.normalize_move(move.lower()) for move in move_history]
+            move_indices = [self.move_to_idx[move] for move in normalized_history]
         except KeyError as e:
             print(f"Unknown move in history: {e}")
-            return {'stone': 0.33, 'paper': 0.33, 'scissor': 0.34}
+            return {'rock': 0.33, 'paper': 0.33, 'scissors': 0.34}
         
         # Convert to tensor
         x = torch.tensor([move_indices], dtype=torch.long)  # (1, seq_len)
@@ -94,9 +97,9 @@ class TinyLSTM(nn.Module):
                 probs = probs / np.sum(probs)
         
         return {
-            'stone': float(probs[0]),
+            'rock': float(probs[0]),
             'paper': float(probs[1]),
-            'scissor': float(probs[2])
+            'scissors': float(probs[2])
         }
 
 class LSTMTrainer:
@@ -187,7 +190,7 @@ class SyntheticPlayerGenerator:
     @staticmethod
     def repeater_player(length: int, repeat_prob: float = 0.8) -> List[str]:
         """Player that tends to repeat their last move"""
-        moves = ['stone', 'paper', 'scissor']
+        moves = ['rock', 'paper', 'scissors']
         history = [random.choice(moves)]
         
         for _ in range(length - 1):
@@ -201,7 +204,7 @@ class SyntheticPlayerGenerator:
     @staticmethod
     def cycler_player(length: int, cycle_prob: float = 0.7) -> List[str]:
         """Player that tends to cycle through R→P→S"""
-        cycle = ['stone', 'paper', 'scissor']
+        cycle = ['rock', 'paper', 'scissors']
         history = []
         position = 0
         
@@ -217,7 +220,7 @@ class SyntheticPlayerGenerator:
     @staticmethod
     def mirror_player(length: int, opponent_history: List[str], mirror_prob: float = 0.6) -> List[str]:
         """Player that tends to mirror opponent's previous move"""
-        moves = ['stone', 'paper', 'scissor']
+        moves = ['rock', 'paper', 'scissors']
         history = [random.choice(moves)]
         
         for i in range(1, length):
@@ -235,7 +238,7 @@ class SyntheticPlayerGenerator:
         strategies = [
             lambda: SyntheticPlayerGenerator.repeater_player(shift_interval),
             lambda: SyntheticPlayerGenerator.cycler_player(shift_interval),
-            lambda: [random.choice(['stone', 'paper', 'scissor']) for _ in range(shift_interval)]
+            lambda: [random.choice(['rock', 'paper', 'scissors']) for _ in range(shift_interval)]
         ]
         
         remaining = length
@@ -269,7 +272,7 @@ def create_and_export_model(export_path: str = "models/lstm/lstm_rps.onnx"):
     
     # Add some random data
     for _ in range(100):
-        training_data.append(random.choice(['stone', 'paper', 'scissor']))
+        training_data.append(random.choice(['rock', 'paper', 'scissors']))
     
     print(f"Generated {len(training_data)} training moves")
     
@@ -332,7 +335,7 @@ def create_and_export_model(export_path: str = "models/lstm/lstm_rps.onnx"):
     
     # Test the model
     print("🧪 Testing model...")
-    test_history = ['stone', 'stone', 'paper', 'paper', 'scissor']
+    test_history = ['rock', 'rock', 'paper', 'paper', 'scissors']
     predictions = model.predict_next_move(test_history)
     print(f"Test prediction for {test_history}: {predictions}")
     

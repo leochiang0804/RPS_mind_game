@@ -38,12 +38,12 @@ class ChangePointDetector:
                 'switch_prob': 0.0,
                 'entropy': 0.0,
                 'bias_paper': 0.0,
-                'bias_scissor': 0.0,
-                'bias_stone': 0.0
+                'bias_scissors': 0.0,
+                'bias_rock': 0.0
             }
         
         # Basic probabilities
-        move_counts = {'paper': 0, 'scissor': 0, 'stone': 0}
+        move_counts = {'paper': 0, 'scissors': 0, 'rock': 0}
         for move in moves:
             move_counts[move] += 1
         
@@ -60,8 +60,8 @@ class ChangePointDetector:
         # Cycle detection (Rock->Paper->Scissors pattern)
         cycle_forward = 0
         cycle_backward = 0
-        cycle_map_forward = {'stone': 'paper', 'paper': 'scissor', 'scissor': 'stone'}
-        cycle_map_backward = {'paper': 'stone', 'scissor': 'paper', 'stone': 'scissor'}
+        cycle_map_forward = {'rock': 'paper', 'paper': 'scissors', 'scissors': 'rock'}
+        cycle_map_backward = {'paper': 'rock', 'scissors': 'paper', 'rock': 'scissors'}
         
         for i in range(1, len(moves)):
             if cycle_map_forward.get(moves[i-1]) == moves[i]:
@@ -84,14 +84,14 @@ class ChangePointDetector:
             'switch_prob': switch_prob,
             'entropy': entropy,
             'bias_paper': probs['paper'],
-            'bias_scissor': probs['scissor'],
-            'bias_stone': probs['stone']
+            'bias_scissors': probs['scissors'],
+            'bias_rock': probs['rock']
         }
     
     def _chi_squared_test(self, features1: Dict[str, float], features2: Dict[str, float]) -> float:
         """Calculate chi-squared statistic between two feature sets"""
         chi2 = 0
-        feature_keys = ['repeat_prob', 'cycle_score', 'switch_prob', 'bias_paper', 'bias_scissor', 'bias_stone']
+        feature_keys = ['repeat_prob', 'cycle_score', 'switch_prob', 'bias_paper', 'bias_scissors', 'bias_rock']
         
         for key in feature_keys:
             expected = features1[key] + 1e-6  # Add small epsilon to avoid division by zero
@@ -168,17 +168,17 @@ class ChangePointDetector:
             descriptions.append("became more predictable")
         
         # Check for bias changes
-        old_bias = max(old_features['bias_paper'], old_features['bias_scissor'], old_features['bias_stone'])
-        new_bias = max(new_features['bias_paper'], new_features['bias_scissor'], new_features['bias_stone'])
+        old_bias = max(old_features['bias_paper'], old_features['bias_scissors'], old_features['bias_rock'])
+        new_bias = max(new_features['bias_paper'], new_features['bias_scissors'], new_features['bias_rock'])
         
         if new_bias > 0.6 and old_bias < 0.5:
             # Find which move is now favored
             if new_features['bias_paper'] > 0.6:
                 descriptions.append("started favoring paper")
-            elif new_features['bias_scissor'] > 0.6:
+            elif new_features['bias_scissors'] > 0.6:
                 descriptions.append("started favoring scissors")
-            elif new_features['bias_stone'] > 0.6:
-                descriptions.append("started favoring stone")
+            elif new_features['bias_rock'] > 0.6:
+                descriptions.append("started favoring rock")
         
         if not descriptions:
             descriptions.append("changed strategy pattern")
@@ -214,14 +214,14 @@ class ChangePointDetector:
             return "anti-repeater"
         elif features['entropy'] > 1.4:
             return "randomizer"
-        elif max(features['bias_paper'], features['bias_scissor'], features['bias_stone']) > 0.6:
+        elif max(features['bias_paper'], features['bias_scissors'], features['bias_rock']) > 0.6:
             # Find favored move
             if features['bias_paper'] > 0.6:
                 return "paper-biased"
-            elif features['bias_scissor'] > 0.6:
-                return "scissor-biased"
+            elif features['bias_scissors'] > 0.6:
+                return "scissors-biased"
             else:
-                return "stone-biased"
+                return "rock-biased"
         else:
             return "balanced"
     

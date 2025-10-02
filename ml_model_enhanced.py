@@ -67,10 +67,10 @@ class EnhancedMLModel:
 
     def predict(self, history):
         """Predict next move with confidence score"""
-        counter = {'paper': 'scissor', 'scissor': 'stone', 'stone': 'paper'}
+        counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
         
         if not history:
-            return random.choice(['paper', 'scissor', 'stone']), 0.33
+            return random.choice(['paper', 'scissors', 'rock']), 0.33
         
         # Try different orders, starting from highest
         best_prediction = None
@@ -115,10 +115,10 @@ class EnhancedMLModel:
                     best_prediction = max(freq.keys(), key=lambda k: freq[k])
                     best_confidence = freq[best_prediction] / total
                 else:
-                    best_prediction = random.choice(['paper', 'scissor', 'stone'])
+                    best_prediction = random.choice(['paper', 'scissors', 'rock'])
                     best_confidence = 0.33
             else:
-                best_prediction = random.choice(['paper', 'scissor', 'stone'])
+                best_prediction = random.choice(['paper', 'scissors', 'rock'])
                 best_confidence = 0.33
         
         # Return counter move

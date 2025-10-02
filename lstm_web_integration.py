@@ -1,7 +1,20 @@
 """
-LSTM Web Integration for Flask App
-Provides a web-compatible interface for the LSTM model
+LSTM Web Integration Module
+Provides LSTM model training and prediction capabilities for the web application.
 """
+
+import os
+import sys
+import json
+import random
+from typing import List, Dict, Optional, Any
+import torch
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from lstm_model import TinyLSTM, LSTMTrainer
+from move_mapping import normalize_move, MOVE_TO_NUMBER, NUMBER_TO_MOVE
 
 import os
 import json
@@ -9,6 +22,7 @@ import torch
 import numpy as np
 from typing import Dict, List, Optional
 from lstm_model import TinyLSTM
+from move_mapping import normalize_move
 
 class LSTMPredictor:
     """Web-compatible LSTM predictor"""
@@ -59,18 +73,23 @@ class LSTMPredictor:
     def predict(self, move_history: List[str]) -> Dict[str, float]:
         """
         Predict next move probabilities
-        Compatible with existing strategy interface
+        Returns standard format (rock/paper/scissors)
         """
         if not self.is_loaded:
             if not self.load_model():
-                # Fallback to random predictions
-                return {'stone': 0.33, 'paper': 0.33, 'scissor': 0.34}
+                # Fallback to random predictions in standard format
+                return {'rock': 0.33, 'paper': 0.33, 'scissors': 0.34}
         
         try:
-            return self.model.predict_next_move(move_history)
+            # Normalize input moves and get predictions
+            normalized_history = [normalize_move(move) for move in move_history]
+            probs = self.model.predict_next_move(normalized_history)
+            
+            # Return in standard format (the model already returns rock/paper/scissors)
+            return probs
         except Exception as e:
             print(f"LSTM prediction error: {e}")
-            return {'stone': 0.33, 'paper': 0.33, 'scissor': 0.34}
+            return {'rock': 0.33, 'paper': 0.33, 'scissors': 0.34}
     
     def get_confidence(self, move_history: List[str]) -> float:
         """Get confidence level for predictions"""
@@ -85,49 +104,41 @@ class LSTMPredictor:
             return 0.33
     
     def get_counter_move(self, move_history: List[str]) -> str:
-        """Get the robot's counter move based on prediction"""
-        if not move_history:
-            return 'paper'  # Default
+        """Get robot's counter move based on predicted human move"""
+        if not self.is_loaded:
+            if not self.load_model():
+                return random.choice(['rock', 'paper', 'scissors'])
         
         try:
-            # Get human move predictions
             probs = self.predict(move_history)
-            
-            # Find most likely human move
+            # Get most likely human move
             predicted_human_move = max(probs.items(), key=lambda x: x[1])[0]
             
-            # Return counter move
-            counters = {
-                'stone': 'paper',
-                'paper': 'scissor', 
-                'scissor': 'stone'
-            }
-            
-            return counters.get(predicted_human_move, 'paper')
-            
+            # Return counter move (what beats the predicted human move)
+            counters = {'rock': 'paper', 'paper': 'scissors', 'scissors': 'rock'}
+            counter_move = counters.get(predicted_human_move)
+            return counter_move if counter_move is not None else random.choice(['rock', 'paper', 'scissors'])
         except Exception as e:
-            print(f"Counter move error: {e}")
-            return 'paper'
+            print(f"LSTM counter move error: {e}")
+            return random.choice(['rock', 'paper', 'scissors'])
     
-    def fine_tune(self, recent_moves: List[str], epochs: int = 5):
-        """
-        Fine-tune the model on recent moves
-        Called every 5 rounds as per the development plan
-        """
-        if not self.is_loaded or len(recent_moves) < 6:
-            return
+    def train_on_games(self, game_sequences: List[List[str]], epochs: int = 20) -> bool:
+        """Train the model on new game sequences"""
+        if not self.is_loaded or self.model is None:
+            if not self.load_model():
+                return False
         
         try:
-            from lstm_model import LSTMTrainer
             trainer = LSTMTrainer(self.model, learning_rate=0.0001)  # Lower LR for fine-tuning
-            trainer.fine_tune(recent_moves, epochs=epochs, seq_length=5)
+            trainer.train_on_sequences(game_sequences, epochs=epochs)
             
             # Save updated model
             torch.save(self.model.state_dict(), self.model_path)
-            print(f"✅ LSTM model fine-tuned on {len(recent_moves)} recent moves")
-            
+            print(f"Model updated and saved to {self.model_path}")
+            return True
         except Exception as e:
-            print(f"Fine-tuning error: {e}")
+            print(f"Training error: {e}")
+            return False
     
     def get_model_info(self) -> Dict:
         """Get model information for debugging"""

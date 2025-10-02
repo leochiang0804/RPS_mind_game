@@ -5,19 +5,19 @@
   "hidden_dim": 24,
   "num_layers": 2,
   "move_mapping": {
-    "stone": 0,
+    "rock": 0,
     "paper": 1,
-    "scissor": 2
+    "scissors": 2
   },
   "training_data_size": 700,
-  "created_at": "2025-09-30T12:18:58.805004",
+  "created_at": "2025-10-02T18:30:41.007155",
   "training_history": [
     {
-      "timestamp": "2025-09-30T12:18:58.802343",
+      "timestamp": "2025-10-02T18:30:41.007163",
       "data_size": 700,
-      "sequences": 690,
+      "sequences": 1,
       "epochs": 100,
-      "final_loss": 1.0573882842063904
+      "format": "rock/paper/scissors"
     }
   ]
 }

@@ -255,12 +255,12 @@ class CoachTipsGenerator:
         
         # Check for cycling
         cycle_patterns = [
-            ['stone', 'paper', 'scissor'],
-            ['paper', 'scissor', 'stone'], 
-            ['scissor', 'stone', 'paper'],
-            ['stone', 'scissor', 'paper'],  # reverse
-            ['paper', 'stone', 'scissor'],  # reverse
-            ['scissor', 'paper', 'stone']   # reverse
+            ['rock', 'paper', 'scissors'],
+            ['paper', 'scissors', 'rock'], 
+            ['scissors', 'rock', 'paper'],
+            ['rock', 'scissors', 'paper'],  # reverse
+            ['paper', 'rock', 'scissors'],  # reverse
+            ['scissors', 'paper', 'rock']   # reverse
         ]
         
         for pattern in cycle_patterns:

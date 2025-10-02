@@ -2,6 +2,7 @@
 import random
 from collections import defaultdict, deque
 from ml_model_enhanced import EnhancedMLModel
+from move_mapping import MOVE_TO_NUMBER, NUMBER_TO_MOVE, normalize_move, get_counter_move
 
 class Strategy:
     def predict(self, history):
@@ -20,37 +21,38 @@ class DecisionTreeStrategy(Strategy):
             return
         X = []
         y = []
-        move_map = {'paper': 0, 'scissor': 1, 'stone': 2}
         for prev, nxt in zip(history[:-1], history[1:]):
-            X.append([move_map[prev]])
-            y.append(move_map[nxt])
+            prev_normalized = normalize_move(prev)
+            nxt_normalized = normalize_move(nxt)
+            X.append([MOVE_TO_NUMBER[prev_normalized]])
+            y.append(MOVE_TO_NUMBER[nxt_normalized])
         self.clf.fit(X, y)
         self.is_trained = True
 
     def predict(self, history):
         import random
-        move_map = {'paper': 0, 'scissor': 1, 'stone': 2}
-        rev_map = {0: 'paper', 1: 'scissor', 2: 'stone'}
         if not self.is_trained or not history:
-            return random.choice(['paper', 'scissor', 'stone'])
-        last_move = move_map[history[-1]]
-        pred = self.clf.predict([[last_move]])[0]
-        # Counter move
-        counter = {'paper': 'scissor', 'scissor': 'stone', 'stone': 'paper'}
-        return counter[rev_map[pred]]
+            return random.choice(['rock', 'paper', 'scissors'])
+        last_move = normalize_move(history[-1])
+        last_move_number = MOVE_TO_NUMBER[last_move]
+        pred_number = self.clf.predict([[last_move_number]])[0]
+        predicted_move = NUMBER_TO_MOVE[pred_number]
+        # Return counter move
+        return get_counter_move(predicted_move)
 
 class RandomStrategy(Strategy):
     def predict(self, history):
-        return random.choice(['paper', 'scissor', 'stone'])
+        return random.choice(['rock', 'paper', 'scissors'])
 
 class FrequencyStrategy(Strategy):
     def predict(self, history):
         if not history:
-            return random.choice(['paper', 'scissor', 'stone'])
-        freq = {move: history.count(move) for move in ['paper', 'scissor', 'stone']}
+            return random.choice(['rock', 'paper', 'scissors'])
+        # Normalize history to standard format
+        normalized_history = [normalize_move(move) for move in history]
+        freq = {move: normalized_history.count(move) for move in ['rock', 'paper', 'scissors']}
         most_common = max(freq.keys(), key=lambda k: freq[k])
-        counter = {'paper': 'scissor', 'scissor': 'stone', 'stone': 'paper'}
-        return counter[most_common]
+        return get_counter_move(most_common)
 
 class MarkovStrategy(Strategy):
     def __init__(self):

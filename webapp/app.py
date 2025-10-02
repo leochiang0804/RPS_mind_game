@@ -10,6 +10,7 @@ from tournament_system import TournamentSystem
 from optimized_strategies import ToWinStrategy, NotToLoseStrategy
 from personality_engine import get_personality_engine
 from replay_system import GameReplay, get_replay_manager, get_replay_analyzer
+from move_mapping import normalize_move, get_counter_move, MOVES
 
 # Centralized Data Management - All AI coach endpoints use this for consistent data building
 from game_context import build_game_context
@@ -155,8 +156,9 @@ game_state = {
         }
     }
 
-MOVES = ['paper', 'scissor', 'stone']
-HOTKEYS = {'a': 'paper', 'w': 'scissor', 'd': 'stone'}
+# Game constants - using standard rock/paper/scissors terminology
+MOVES = ['rock', 'paper', 'scissors']
+HOTKEYS = {'a': 'paper', 'w': 'scissors', 'd': 'rock'}
 
 @app.route('/')
 def index():
@@ -228,7 +230,7 @@ def play():
             predicted = to_win_strategy.predict(history)
             confidence = to_win_strategy.get_confidence()
             # Convert to robot counter move
-            counter = {'paper': 'scissor', 'scissor': 'stone', 'stone': 'paper'}
+            counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
             base_move = counter.get(predicted) if predicted else random.choice(MOVES)
             
         elif strategy_preference == 'not_to_lose' and difficulty in ['enhanced', 'markov', 'frequency']:
@@ -236,7 +238,7 @@ def play():
             predicted = not_to_lose_strategy.predict(history)
             confidence = not_to_lose_strategy.get_confidence()
             # Convert to robot counter move
-            counter = {'paper': 'scissor', 'scissor': 'stone', 'stone': 'paper'}
+            counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
             base_move = counter.get(predicted) if predicted else random.choice(MOVES)
             
         else:
@@ -247,13 +249,13 @@ def play():
             elif difficulty == 'frequency':
                 predicted_counter = frequency_strategy.predict(history)
                 # Convert back to predicted human move
-                reverse_counter = {'scissor': 'paper', 'stone': 'scissor', 'paper': 'stone'}
+                reverse_counter = {'scissors': 'paper', 'rock': 'scissors', 'paper': 'rock'}
                 predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
                 confidence = 0.5
             elif difficulty == 'markov':
                 markov_strategy.train(history)
                 predicted_counter = markov_strategy.predict(history)
-                reverse_counter = {'scissor': 'paper', 'stone': 'scissor', 'paper': 'stone'}
+                reverse_counter = {'scissors': 'paper', 'rock': 'scissors', 'paper': 'rock'}
                 predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
                 confidence = 0.6
             elif difficulty == 'enhanced':
@@ -268,7 +270,7 @@ def play():
                     predicted_counter = enhanced_strategy.predict(history)
                     
                 confidence = enhanced_strategy.get_confidence()
-                reverse_counter = {'scissor': 'paper', 'stone': 'scissor', 'paper': 'stone'}
+                reverse_counter = {'scissors': 'paper', 'rock': 'scissors', 'paper': 'rock'}
                 predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
             elif difficulty == 'lstm' and LSTM_AVAILABLE and lstm_predictor:
                 # LSTM prediction
@@ -291,7 +293,7 @@ def play():
                 confidence = 0.33
             
             # Convert prediction to robot move
-            counter = {'paper': 'scissor', 'scissor': 'stone', 'stone': 'paper'}
+            counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
             base_move = counter.get(predicted) if predicted else random.choice(MOVES)
         
         # Track inference time for non-LSTM models
@@ -353,21 +355,27 @@ def play():
         game_state['model_predictions_history']['random'].append(random_pred)
         
         # Frequency prediction
-        freq_pred_counter = frequency_strategy.predict(history)
-        reverse_counter = {'scissor': 'paper', 'stone': 'scissor', 'paper': 'stone'}
-        freq_pred = reverse_counter.get(freq_pred_counter, random.choice(MOVES))
+        freq_robot_move = frequency_strategy.predict(history)  # This returns robot's move
+        # Convert robot move back to what human move it was expecting
+        reverse_counter = {'rock': 'scissors', 'paper': 'rock', 'scissors': 'paper'}
+        freq_pred = reverse_counter.get(freq_robot_move, random.choice(MOVES))
         game_state['model_predictions_history']['frequency'].append(freq_pred)
         
         # Markov prediction
         markov_strategy.train(history)
-        markov_pred_counter = markov_strategy.predict(history)
-        markov_pred = reverse_counter.get(markov_pred_counter, random.choice(MOVES))
+        markov_result = markov_strategy.predict(history)  # This returns (robot_move, confidence)
+        markov_robot_move = markov_result[0] if isinstance(markov_result, tuple) else markov_result
+        # Convert robot move back to what human move it was expecting
+        reverse_counter = {'rock': 'scissors', 'paper': 'rock', 'scissors': 'paper'}
+        markov_pred = reverse_counter.get(markov_robot_move, random.choice(MOVES))
         game_state['model_predictions_history']['markov'].append(markov_pred)
         
         # Enhanced prediction
         enhanced_strategy.train(history)
-        enhanced_pred_counter = enhanced_strategy.predict(history)
-        enhanced_pred = reverse_counter.get(enhanced_pred_counter, random.choice(MOVES))
+        enhanced_robot_move = enhanced_strategy.predict(history)  # Returns just robot move string
+        # Convert robot move back to what human move it was expecting
+        reverse_counter = {'rock': 'scissors', 'paper': 'rock', 'scissors': 'paper'}
+        enhanced_pred = reverse_counter.get(enhanced_robot_move, random.choice(MOVES))
         game_state['model_predictions_history']['enhanced'].append(enhanced_pred)
         
         # LSTM prediction (if available)
@@ -494,12 +502,12 @@ def play():
         for model_name in game_state['model_predictions_history']:
             predictions = game_state['model_predictions_history'][model_name]
             if len(predictions) > 0:
-                # Compare predictions to actual human moves (excluding first move since no prediction exists)
+                # Compare predictions to actual human moves
                 correct_predictions = 0
-                total_predictions = min(len(predictions), len(game_state['human_history']) - 1)
+                total_predictions = min(len(predictions), len(game_state['human_history']))
                 
                 for i in range(total_predictions):
-                    if predictions[i] == game_state['human_history'][i + 1]:  # i+1 because predictions start from move 2
+                    if predictions[i] == game_state['human_history'][i]:  # Direct comparison of same indices
                         correct_predictions += 1
                 
                 # Calculate accuracy percentage
@@ -659,18 +667,18 @@ def export_analytics():
             }
         else:
             paper_count = history.count('paper')
-            stone_count = history.count('stone')
-            scissor_count = history.count('scissor')
+            rock_count = history.count('rock')
+            scissors_count = history.count('scissors')
             
             # Calculate predictability (highest percentage)
-            max_count = max(paper_count, stone_count, scissor_count)
+            max_count = max(paper_count, rock_count, scissors_count)
             predictability = (max_count / total_moves) * 100
             
             # Calculate win rate
             win_rate = (game_state['stats']['human_win'] / game_state['round'] * 100) if game_state['round'] > 0 else 0
             
             # Calculate entropy (randomness)
-            p1, p2, p3 = paper_count/total_moves, stone_count/total_moves, scissor_count/total_moves
+            p1, p2, p3 = paper_count/total_moves, rock_count/total_moves, scissors_count/total_moves
             entropy = 0
             for p in [p1, p2, p3]:
                 if p > 0:
@@ -686,8 +694,8 @@ def export_analytics():
                 'randomness_level': round(randomness, 2),
                 'move_distribution': {
                     'paper': {'count': paper_count, 'percentage': round((paper_count/total_moves)*100, 2)},
-                    'stone': {'count': stone_count, 'percentage': round((stone_count/total_moves)*100, 2)},
-                    'scissor': {'count': scissor_count, 'percentage': round((scissor_count/total_moves)*100, 2)}
+                    'rock': {'count': rock_count, 'percentage': round((rock_count/total_moves)*100, 2)},
+                    'scissors': {'count': scissors_count, 'percentage': round((scissors_count/total_moves)*100, 2)}
                 },
                 'stats': game_state['stats'],
                 'strategy_changes': len(game_state.get('change_points', [])),
@@ -763,8 +771,8 @@ def reset():
 def get_result(robot_move, human_move):
     if robot_move == human_move:
         return 'tie'
-    elif (robot_move == 'paper' and human_move == 'stone') or \
-         (robot_move == 'stone' and human_move == 'scissor') or \
+    elif (robot_move == 'paper' and human_move == 'rock') or \
+         (robot_move == 'rock' and human_move == 'scissors') or \
          (robot_move == 'scissor' and human_move == 'paper'):
         return 'robot'
     else:
