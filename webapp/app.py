@@ -102,40 +102,35 @@ game_state = {
         'random': None,
         'frequency': None,
         'markov': None,
-        'hybrid': None,
-        'decision_tree': None
+        'lstm': None,
     },
     'correct_predictions': {
         'random': 0,
         'frequency': 0,
         'markov': 0,
-        'hybrid': 0,
-        'decision_tree': 0
+        'lstm': 0,
     },
     'total_predictions': {
         'random': 0,
         'frequency': 0,
         'markov': 0,
-        'hybrid': 0,
-        'decision_tree': 0
+        'lstm': 0,
     },
-        'model_predictions_history': {
-            'random': [],
-            'frequency': [],
-            'markov': [],
-            'lstm': [],
-            'to_win': [],
-            'not_to_lose': []
-        },
-        'model_confidence_history': {
-            'random': [],
-            'frequency': [],
-            'markov': [],
-            'lstm': [],
-            'to_win': [],
-            'not_to_lose': []
-        }
-    }
+    'model_predictions_history': {
+        'random': [],
+        'frequency': [],
+        'markov': [],
+        'lstm': [],
+    },
+    'model_confidence_history': {
+        'random': [],
+        'frequency': [],
+        'markov': [],
+        'lstm': [],
+        'to_win': [],
+        'not_to_lose': [],
+    },
+}
 
 # Game constants - using standard rock/paper/scissors terminology
 MOVES = ['rock', 'paper', 'scissors']
@@ -353,7 +348,7 @@ def create_centralized_ai_strategy_accuracy():
         'correct_predictions': {},
         'total_valid_predictions': {},
         'detailed_comparisons': {},
-        'calculation_method': 'predictions[i] vs human_moves[i+1]'  # Correct method
+        'calculation_method': 'predictions[i] vs human_moves[i]'  # Correct method
     }
     
     # For each model, calculate accuracy correctly
@@ -571,14 +566,6 @@ def play():
                 game_state['model_predictions_history']['lstm'].append(random.choice(MOVES))
         else:
             game_state['model_predictions_history']['lstm'].append(random.choice(MOVES))
-        
-        # To Win prediction
-        to_win_pred = to_win_strategy.predict(history)
-        game_state['model_predictions_history']['to_win'].append(to_win_pred)
-        
-        # Not to Lose prediction
-        not_to_lose_pred = not_to_lose_strategy.predict(history)
-        game_state['model_predictions_history']['not_to_lose'].append(not_to_lose_pred)
         
         # Track confidence values for each model - Fixed to use model-specific confidence
         # Random and Frequency should always be 0%

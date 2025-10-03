@@ -261,10 +261,7 @@
                                             <span class="label">Most Common Move</span>
                                             <span class="value" id="overview-common-move">--</span>
                                         </div>
-                                        <div class="overview-card">
-                                            <span class="label">AI Prediction Accuracy</span>
-                                            <span class="value" id="overview-ai-accuracy">--%</span>
-                                        </div>
+                                        <!-- AI Prediction Accuracy box fully removed as requested -->
                                     </div>
                                 </div>
                                 <div class="overview-section">
@@ -1037,7 +1034,7 @@
             document.getElementById('overview-score-diff').textContent = scoreDiff;
             
             // New metrics for Strategic Intelligence
-            document.getElementById('overview-ai-accuracy').textContent = insights.aiAccuracy.toFixed(1) + '%';
+            // document.getElementById('overview-ai-accuracy') removed as requested
             document.getElementById('overview-ai-confidence').textContent = insights.aiConfidence + '%';
             
             // Calculate predictability (higher moveVariance = more predictable)

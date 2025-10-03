@@ -83,25 +83,75 @@ class GameContextBuilder:
         end_game = valid_game_length and game_length_int is not None and round_num >= game_length_int and round_num > 0 and not in_game
 
         # Metrics (Overview, Scoreboard, Snapshot, Momentum, Strategic Intelligence)
+        human_moves = session.get('human_moves', [])
+        robot_moves = session.get('robot_moves', [])
+        results = session.get('results', [])
+
+        # Win/tie counts
+        human_wins = results.count('human')
+        robot_wins = results.count('robot')
+        ties = results.count('tie')
+        total_rounds = len(results) if results else 0
+        human_win_rate = human_wins / total_rounds if total_rounds else 0.0
+        robot_win_rate = robot_wins / total_rounds if total_rounds else 0.0
+        tie_rate = ties / total_rounds if total_rounds else 0.0
+
+        # Longest streaks
+        def longest_streak(target):
+            max_streak = streak = 0
+            for r in results:
+                if r == target:
+                    streak += 1
+                    max_streak = max(max_streak, streak)
+                else:
+                    streak = 0
+            return max_streak
+        longest_human_streak = longest_streak('human')
+        longest_robot_streak = longest_streak('robot')
+
+        # Most common move
+        from collections import Counter
+        most_common_move = Counter(human_moves).most_common(1)[0][0] if human_moves else None
+
+        # Recent win rate (last 10 rounds)
+        recent_results = results[-10:]
+        recent_human_wins = recent_results.count('human')
+        recent_win_rate = recent_human_wins / len(recent_results) if recent_results else 0.0
+
+        # Score differential
+        score_differential = human_wins - robot_wins
+
+        # AI confidence (placeholder, not yet defined)
+        ai_confidence = None
+
+        # Predictability score (ensure matches overview panel)
+        predictability_score = session.get('predictability_score', 0.0)
+
         metrics = {
-            'scoreboard': session.get('stats', {}),
             'full_game_snapshot': {
-                'human_moves': session.get('human_moves', []),
-                'robot_moves': session.get('robot_moves', []),
-                'results': session.get('results', []),
+                'human_moves': human_moves,
+                'robot_moves': robot_moves,
+                'results': results,
             },
             'recent_momentum': {
-                'last_10': session.get('human_moves', [])[-10:],
+                'last_10': human_moves[-10:],
                 'recent_bias_type': None,
                 'recent_bias_percent': None,
             },
-            'strategic_intelligence': {
-                'model_predictions': session.get('model_predictions_history', {}),
-                'frequency_predictions': session.get('model_predictions_history', {}).get('frequency', []),
-                'markov_predictions': session.get('model_predictions_history', {}).get('markov', []),
-                'lstm_predictions': session.get('model_predictions_history', {}).get('lstm', []),
-                'random_predictions': session.get('model_predictions_history', {}).get('random', []),
-            },
+            'strategic_intelligence': predictability_score,
+            'human_wins': human_wins,
+            'robot_wins': robot_wins,
+            'ties': ties,
+            'human_win_rate': human_win_rate,
+            'robot_win_rate': robot_win_rate,
+            'tie_rate': tie_rate,
+            'longest_human_streak': longest_human_streak,
+            'longest_robot_streak': longest_robot_streak,
+            'most_common_move': most_common_move,
+            # 'AI_prediction_accuracy': ai_accuracy,  # Removed as requested
+            'recent_win_rate': recent_win_rate,
+            'score_differential': score_differential,
+            'AI_confidence': ai_confidence,
         }
         # Calculate recent bias type/percent
         recent_moves = metrics['recent_momentum']['last_10']
