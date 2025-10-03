@@ -144,6 +144,7 @@ HOTKEYS = {'a': 'paper', 'w': 'scissors', 'd': 'rock'}
 @app.route('/')
 def index():
     # Serve all game state for single-page UI - using main index.html template
+    session['game_recording'] = False
     return render_template('index.html', moves=MOVES, hotkeys=HOTKEYS,
         stats=game_state['stats'],
         human_history=game_state['human_history'],
@@ -401,14 +402,14 @@ def play():
     difficulty = data.get('difficulty', game_state['difficulty'])
     strategy_preference = data.get('strategy', 'to_win')
     personality = data.get('personality', 'neutral')
-    multiplayer = data.get('multiplayer', game_state['multiplayer'])
-    
+    multiplayer = bool(data.get('multiplayer', False))
+
     game_state['difficulty'] = difficulty
     game_state['ai_difficulty'] = difficulty
     game_state['multiplayer'] = multiplayer
     game_state['strategy_preference'] = strategy_preference
     game_state['personality'] = personality
-    
+
     if move not in MOVES:
         return jsonify({'error': 'Invalid move'}), 400
 
@@ -978,7 +979,26 @@ def reset_game():
     game_state['round'] = 0
     game_state['stats'] = {'human_win': 0, 'robot_win': 0, 'tie': 0}
     game_state['change_points'] = []
-    
+
+    # Reset session game context and recording flag
+    session['human_moves'] = []
+    session['robot_moves'] = []
+    session['results'] = []
+    session['round_count'] = 0
+    session['stats'] = {'human_win': 0, 'robot_win': 0, 'tie': 0}
+    session['change_points'] = []
+    session['model_predictions_history'] = {}
+    session['model_confidence_history'] = {}
+    session['correct_predictions'] = {}
+    session['total_predictions'] = {}
+    session['strategy_preference'] = 'to_win'
+    session['personality'] = 'neutral'
+    session['ai_difficulty'] = 'unknown'
+    session['game_length'] = None
+    session['game_recording'] = False
+    session['analytics_metrics'] = {}
+    session['endgame_metrics'] = {}
+
     return jsonify({'message': 'Game reset successfully'})
 
 @app.route('/developer', methods=['GET'])
@@ -1668,6 +1688,17 @@ def ai_coach_llm_comparison():
             'success': False,
             'error': 'Failed to get coaching style information'
         }), 500
+
+@app.route('/start_recording', methods=['POST'])
+def start_recording():
+    # Get game_length from frontend POST
+    data = request.get_json(silent=True) or {}
+    game_length = data.get('game_length', '25')
+    # Store as string (e.g., '25') or 'infinite'
+    session['game_length'] = f"{game_length} Moves" if game_length != 'infinite' else 'Infinite'
+    session['game_recording'] = True
+    return jsonify({'success': True, 'message': f'Game recording started. Game length set to {session["game_length"]}.'})
+
 
 # This is for Debug only
 @app.route('/download_game_context')

@@ -485,6 +485,15 @@
         document.getElementById('move-rock').disabled = false;
         document.getElementById('move-scissors').disabled = false;
         gameStarted = true;
+        // Notify backend to start recording
+        // Send selected game length to backend
+        const gameLengthSelect = document.getElementById('game-length');
+        const selectedGameLength = gameLengthSelect ? gameLengthSelect.value : '25';
+        fetch('/start_recording', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ game_length: selectedGameLength })
+        });
     }
     // On page load, ensure move buttons are disabled until Start is clicked
     document.addEventListener('DOMContentLoaded', function() {
@@ -497,11 +506,11 @@
     });
     // Only allow keyboard move input after Start is clicked
     document.addEventListener('keydown', function(e) {
-        if (gameStarted) {
-            if (e.key === 'p' || e.key === 'P') submitMove('paper');
-            if (e.key === 'r' || e.key === 'R') submitMove('rock');
-            if (e.key === 's' || e.key === 'S') submitMove('scissors');
-        }
+        if (!gameStarted) return;
+        if (e.repeat) return; // Prevent holding key from triggering multiple moves
+        if (e.key === 'p' || e.key === 'P') submitMove('paper');
+        else if (e.key === 'r' || e.key === 'R') submitMove('rock');
+        else if (e.key === 's' || e.key === 'S') submitMove('scissors');
     });
     // Gate submitMove so it cannot be called before gameStarted
     const originalSubmitMove = window.submitMove;
@@ -577,13 +586,7 @@
             setGameLength();
         });
         
-        // Keyboard controls
-        document.addEventListener('keydown', function(e) {
-            console.log('Key pressed:', e.key);
-            if (e.key === 'p' || e.key === 'P') submitMove('paper');
-            if (e.key === 'r' || e.key === 'R') submitMove('rock'); // Rock
-            if (e.key === 's' || e.key === 'S') submitMove('scissors');
-        });
+        // Keyboard controls (removed duplicate listener)
         
 
         function highlightMatches() {

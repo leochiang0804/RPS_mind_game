@@ -36,51 +36,112 @@ class GameContextBuilder:
         self.build_count = 0  # For performance monitoring
         
     def build_game_context(
-        self, 
-        session: Dict[str, Any], 
+        self,
+        session: Dict[str, Any],
         overrides: Optional[Dict[str, Any]] = None,
         config: Optional[GameContextConfig] = None
     ) -> Dict[str, Any]:
         """
         Build comprehensive game context from session data and optional overrides.
-        
-        This is the single source of truth for game context construction.
-        
-        Args:
-            session: Flask session dictionary containing game state
-            overrides: Optional dict to override specific fields (for requests)
-            config: Optional config to control what data is included
-            
-        Returns:
-            Complete game context dictionary ready for AI coach or analytics
-            
-        Raises:
-            ValueError: If required session data is missing
+        Returns a dict with four main areas: opponent_info, game_status, analytics_metrics, endgame_metrics.
         """
         self.build_count += 1
-        
         if config is None:
             config = GameContextConfig()
-            
-        # Start with base structure
-        context = self._build_base_context(session, overrides)
+
+        raw_game_length = session.get('game_length', '25 Moves')
+        game_length_int = None
+        if isinstance(raw_game_length, str):
+            import re
+            match = re.search(r'(\d+)', raw_game_length)
+            if match:
+                game_length_int = int(match.group(1))
+        elif isinstance(raw_game_length, int):
+            game_length_int = raw_game_length
+        opponent_info = {
+            'ai_difficulty': session.get('ai_difficulty', 'unknown'),
+            'ai_strategy': session.get('strategy_preference', 'unknown'),
+            'ai_personality': session.get('personality', 'unknown'),
+            # Store as integer if possible
+            'game_length': game_length_int,
+        }
+
+        # Game Status
+        round_num = session.get('round_count', 0)
+        game_length = opponent_info['game_length']
+        try:
+            game_length_int = int(game_length)
+            valid_game_length = game_length_int > 0
+        except (TypeError, ValueError):
+            game_length_int = None
+            valid_game_length = False
         
-        # Add AI behavior data if requested and available
-        if config.include_ai_behavior:
-            context.update(self._build_ai_behavior_context(session, overrides))
-            
-        # Add advanced metrics if requested
-        if config.include_advanced_metrics:
-            context.update(self._build_advanced_context(session, overrides))
-            
-        # Add temporal data if requested
-        if config.include_temporal_data:
-            context.update(self._build_temporal_context(session, overrides))
-            
-        # Validate schema if requested
-        if config.validate_schema:
-            self._validate_context(context, config)
-            
+        in_game = valid_game_length and round_num < game_length_int
+        end_game = valid_game_length and game_length_int is not None and round_num >= game_length_int and round_num > 0 and not in_game
+        
+        in_game = valid_game_length and round_num < game_length_int
+        end_game = valid_game_length and game_length_int is not None and round_num >= game_length_int and round_num > 0 and not in_game
+
+        # Metrics (Overview, Scoreboard, Snapshot, Momentum, Strategic Intelligence)
+        metrics = {
+            'scoreboard': session.get('stats', {}),
+            'full_game_snapshot': {
+                'human_moves': session.get('human_moves', []),
+                'robot_moves': session.get('robot_moves', []),
+                'results': session.get('results', []),
+            },
+            'recent_momentum': {
+                'last_10': session.get('human_moves', [])[-10:],
+                'recent_bias_type': None,
+                'recent_bias_percent': None,
+            },
+            'strategic_intelligence': {
+                'model_predictions': session.get('model_predictions_history', {}),
+                'frequency_predictions': session.get('model_predictions_history', {}).get('frequency', []),
+                'markov_predictions': session.get('model_predictions_history', {}).get('markov', []),
+                'lstm_predictions': session.get('model_predictions_history', {}).get('lstm', []),
+                'random_predictions': session.get('model_predictions_history', {}).get('random', []),
+            },
+        }
+        # Calculate recent bias type/percent
+        recent_moves = metrics['recent_momentum']['last_10']
+        if recent_moves:
+            from collections import Counter
+            move_counts = Counter([m for m in recent_moves if m])
+            if move_counts:
+                bias_type, bias_count = move_counts.most_common(1)[0]
+                percent = (bias_count / len(recent_moves)) * 100
+                metrics['recent_momentum']['recent_bias_type'] = bias_type
+                metrics['recent_momentum']['recent_bias_percent'] = percent
+
+        # Move histories and predictions (append per round)
+        game_status = {
+            'in_game': in_game,
+            'end_game': end_game,
+            'round_number': round_num,
+            'metrics': metrics,
+            'human_move_history': session.get('human_moves', []),
+            'robot_move_history': session.get('robot_moves', []),
+            'random_ai_predictions': session.get('model_predictions_history', {}).get('random', []),
+            'frequency_ai_predictions': session.get('model_predictions_history', {}).get('frequency', []),
+            'markov_ai_predictions': session.get('model_predictions_history', {}).get('markov', []),
+            'lstm_ai_predictions': session.get('model_predictions_history', {}).get('lstm', []),
+        }
+
+        # Analytics Metrics (placeholder)
+        analytics_metrics = session.get('analytics_metrics', {})
+
+        # End-Game Metrics (placeholder)
+        endgame_metrics = session.get('endgame_metrics', {})
+
+        # Centralized context structure
+        context = {
+            'opponent_info': opponent_info,
+            'game_status': game_status,
+            'analytics_metrics': analytics_metrics,
+            'endgame_metrics': endgame_metrics,
+        }
+
         return context
     
     def _build_base_context(
