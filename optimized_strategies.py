@@ -18,7 +18,7 @@ class OptimizedStrategy:
     def get_move_probabilities(self, history: List[str]) -> Dict[str, float]:
         """Calculate probabilities for each move based on history"""
         if not history:
-            return {'paper': 0.33, 'stone': 0.33, 'scissor': 0.33}
+            return {'paper': 0.33, 'rock': 0.33, 'scissors': 0.33}
         
         # Count recent moves (last 10 for better adaptation)
         recent_history = history[-10:] if len(history) > 10 else history
@@ -27,8 +27,8 @@ class OptimizedStrategy:
         
         probabilities = {
             'paper': move_counts.get('paper', 0) / total_moves,
-            'stone': move_counts.get('stone', 0) / total_moves,
-            'scissor': move_counts.get('scissor', 0) / total_moves
+            'rock': move_counts.get('rock', 0) / total_moves,
+            'scissors': move_counts.get('scissors', 0) / total_moves
         }
         
         return probabilities
@@ -37,9 +37,9 @@ class OptimizedStrategy:
         """Calculate win probabilities for each robot move"""
         # Robot move -> probability of winning
         win_probs = {
-            'paper': human_probs['stone'],      # Paper beats Stone
-            'stone': human_probs['scissor'],    # Stone beats Scissor  
-            'scissor': human_probs['paper']     # Scissor beats Paper
+            'paper': human_probs['rock'],       # Paper beats Rock
+            'rock': human_probs['scissors'],    # Rock beats Scissors  
+            'scissors': human_probs['paper']    # Scissors beats Paper
         }
         return win_probs
     
@@ -47,9 +47,9 @@ class OptimizedStrategy:
         """Calculate not-lose probabilities for each robot move (win + tie)"""
         # Robot move -> probability of not losing (winning + tying)
         not_lose_probs = {
-            'paper': human_probs['stone'] + human_probs['paper'],      # Win vs Stone + Tie vs Paper
-            'stone': human_probs['scissor'] + human_probs['stone'],    # Win vs Scissor + Tie vs Stone
-            'scissor': human_probs['paper'] + human_probs['scissor']   # Win vs Paper + Tie vs Scissor
+            'paper': human_probs['rock'] + human_probs['paper'],       # Win vs Rock + Tie vs Paper
+            'rock': human_probs['scissors'] + human_probs['rock'],     # Win vs Scissors + Tie vs Rock
+            'scissors': human_probs['paper'] + human_probs['scissors'] # Win vs Paper + Tie vs Scissors
         }
         return not_lose_probs
 
@@ -64,7 +64,7 @@ class ToWinStrategy(OptimizedStrategy):
     def predict(self, history: List[str]) -> str:
         """Predict robot move to maximize winning probability"""
         if len(history) < 3:
-            return random.choice(['paper', 'stone', 'scissor'])
+            return random.choice(['paper', 'rock', 'scissors'])
         
         # Get human move probabilities
         human_probs = self.get_move_probabilities(history)
@@ -74,16 +74,19 @@ class ToWinStrategy(OptimizedStrategy):
         
         # Find the move with highest win probability
         best_move = max(win_probs.keys(), key=lambda move: win_probs[move])
-        best_prob = win_probs[best_move]
+        highest_prob = max(win_probs.values())
+        
+        # Calculate confidence score as absolute(2*highest_prob-1)
+        confidence = abs(2 * highest_prob - 1)
         
         # Apply aggressive factor if confidence is high
-        if best_prob > self.confidence_threshold:
-            confidence = best_prob * self.aggressive_factor
+        if highest_prob > self.confidence_threshold:
+            # Already calculated confidence above - no need to modify
+            pass
         else:
             # If no clear advantage, add some randomness to avoid predictability
             if random.random() < 0.3:
                 best_move = random.choice(list(win_probs.keys()))
-            confidence = best_prob
         
         # Store prediction for analysis
         self.prediction_history.append({
@@ -91,7 +94,8 @@ class ToWinStrategy(OptimizedStrategy):
             'human_probs': human_probs,
             'win_probs': win_probs,
             'chosen_move': best_move,
-            'confidence': min(confidence, 1.0)
+            'confidence': min(confidence, 1.0),
+            'highest_prob': highest_prob
         })
         
         return best_move
@@ -126,39 +130,42 @@ class NotToLoseStrategy(OptimizedStrategy):
     def predict(self, history: List[str]) -> str:
         """Predict robot move to maximize not-losing probability"""
         if len(history) < 3:
-            return random.choice(['paper', 'stone', 'scissor'])
+            return random.choice(['paper', 'rock', 'scissors'])
         
         # Get human move probabilities
         human_probs = self.get_move_probabilities(history)
         
-        # Calculate not-lose probabilities (win + tie) for each robot move
-        not_lose_probs = self.get_not_lose_probabilities(human_probs)
+        # For "not to lose" strategy, we need to calculate the probability of not losing
+        # For each robot move, calculate the probability of not losing (win + tie)
+        # Robot loses when: Robot=Paper & Human=Scissors, Robot=Rock & Human=Paper, Robot=Scissors & Human=Rock
         
-        # Find the move with highest not-lose probability
+        lose_probs = {
+            'paper': human_probs['scissors'],   # Robot paper loses to human scissors
+            'rock': human_probs['paper'],       # Robot rock loses to human paper  
+            'scissors': human_probs['rock']     # Robot scissors loses to human rock
+        }
+        
+        # Not-to-lose probability = 1 - lose_probability
+        not_lose_probs = {move: 1 - lose_prob for move, lose_prob in lose_probs.items()}
+        
+        # Find the move with highest not-lose probability (lowest losing probability)
         best_move = max(not_lose_probs.keys(), key=lambda move: not_lose_probs[move])
-        best_prob = not_lose_probs[best_move]
         
-        # Apply defensive factor for more conservative play
-        confidence = best_prob * self.defensive_factor
-        
-        # If probabilities are very close, prefer the move that maximizes pure wins
-        win_probs = self.get_win_probabilities(human_probs)
-        prob_diff = max(not_lose_probs.values()) - min(not_lose_probs.values())
-        
-        if prob_diff < 0.1:  # If not-lose probabilities are very close
-            # Fall back to win-maximizing strategy
-            best_move = max(win_probs.keys(), key=lambda move: win_probs[move])
-            confidence = win_probs[best_move] * 0.9  # Slightly less confident
+        # Calculate confidence score as absolute(2*(sum of highest two probs)-1)
+        # Get the two highest human move probabilities
+        sorted_probs = sorted(human_probs.values(), reverse=True)
+        highest_two_sum = sorted_probs[0] + sorted_probs[1]
+        confidence = abs(2 * highest_two_sum - 1)
         
         # Store prediction for analysis
         self.prediction_history.append({
             'strategy': 'not_to_lose',
             'human_probs': human_probs,
+            'lose_probs': lose_probs,
             'not_lose_probs': not_lose_probs,
-            'win_probs': win_probs,
             'chosen_move': best_move,
             'confidence': min(confidence, 1.0),
-            'prob_diff': prob_diff
+            'highest_two_sum': highest_two_sum
         })
         
         return best_move
@@ -188,26 +195,62 @@ class NotToLoseStrategy(OptimizedStrategy):
 if __name__ == "__main__":
     # Test the strategies with example scenarios
     
-    print("🎯 Testing Optimized Robot Strategies\n")
+    print("🎯 Testing Updated Optimized Robot Strategies\n")
     
-    # Scenario 1: Your first example
-    print("Scenario 1: Human tendencies - Scissor(34%), Stone(33%), Paper(33%)")
-    history1 = ['scissor'] * 34 + ['stone'] * 33 + ['paper'] * 33
-    random.shuffle(history1)
+    # Test scenario from user requirements: R:15%, P:65%, S:20%
+    print("Scenario from requirements: Human tendencies - Rock:15%, Paper:65%, Scissors:20%")
+    # Create history with these proportions
+    history_test = ['paper'] * 65 + ['scissors'] * 20 + ['rock'] * 15  # Using internal names
+    random.shuffle(history_test)
     
     to_win = ToWinStrategy()
     not_lose = NotToLoseStrategy()
     
-    win_move = to_win.predict(history1)
-    lose_move = not_lose.predict(history1)
+    win_move = to_win.predict(history_test)
+    lose_move = not_lose.predict(history_test)
     
-    print(f"To Win Strategy chooses: {win_move} (confidence: {to_win.get_confidence():.2f})")
-    print(f"Not to Lose Strategy chooses: {lose_move} (confidence: {not_lose.get_confidence():.2f})")
+    print(f"To Win Strategy chooses: {win_move} (confidence: {to_win.get_confidence():.3f})")
+    print(f"Not to Lose Strategy chooses: {lose_move} (confidence: {not_lose.get_confidence():.3f})")
+    
+    # Verify the "not to lose" logic
+    if not_lose.prediction_history:
+        last_pred = not_lose.prediction_history[-1]
+        print("\nDetailed analysis for 'Not to Lose' strategy:")
+        print("Human probabilities:", {k: f"{v:.2f}" for k, v in last_pred['human_probs'].items()})
+        print("Lose probabilities:", {k: f"{v:.2f}" for k, v in last_pred['lose_probs'].items()})
+        print("Not-lose probabilities:", {k: f"{v:.2f}" for k, v in last_pred['not_lose_probs'].items()})
+        print(f"Sum of highest two human probs: {last_pred['highest_two_sum']:.2f}")
+        print(f"Confidence calculation: abs(2 * {last_pred['highest_two_sum']:.2f} - 1) = {last_pred['confidence']:.3f}")
+        
+        # Verify the robot should choose scissors according to requirements
+        expected_not_lose = {
+            'paper': 0.15 + 0.65,  # 80% - beats rock + ties with paper
+            'rock': 0.20 + 0.15,   # 35% - beats scissors + ties with rock  
+            'scissors': 0.65 + 0.20  # 85% - beats paper + ties with scissors
+        }
+        print(f"Expected not-lose rates: {expected_not_lose}")
+        print(f"Robot should choose scissors (85% not-lose rate): {'✓' if lose_move == 'scissors' else '✗'}")
+    
+    print()
+    
+    # Original scenario 1: Your first example
+    print("Scenario 1: Human tendencies - Scissors(34%), Rock(33%), Paper(33%)")
+    history1 = ['scissors'] * 34 + ['rock'] * 33 + ['paper'] * 33
+    random.shuffle(history1)
+    
+    to_win1 = ToWinStrategy()
+    not_lose1 = NotToLoseStrategy()
+    
+    win_move1 = to_win1.predict(history1)
+    lose_move1 = not_lose1.predict(history1)
+    
+    print(f"To Win Strategy chooses: {win_move1} (confidence: {to_win1.get_confidence():.3f})")
+    print(f"Not to Lose Strategy chooses: {lose_move1} (confidence: {not_lose1.get_confidence():.3f})")
     print()
     
     # Scenario 2: Your second example  
-    print("Scenario 2: Human tendencies - Scissor(50%), Stone(26%), Paper(24%)")
-    history2 = ['scissor'] * 50 + ['stone'] * 26 + ['paper'] * 24
+    print("Scenario 2: Human tendencies - Scissors(50%), Rock(26%), Paper(24%)")
+    history2 = ['scissors'] * 50 + ['rock'] * 26 + ['paper'] * 24
     random.shuffle(history2)
     
     to_win2 = ToWinStrategy()
@@ -216,18 +259,15 @@ if __name__ == "__main__":
     win_move2 = to_win2.predict(history2)
     lose_move2 = not_lose2.predict(history2)
     
-    print(f"To Win Strategy chooses: {win_move2} (confidence: {to_win2.get_confidence():.2f})")
-    print(f"Not to Lose Strategy chooses: {lose_move2} (confidence: {not_lose2.get_confidence():.2f})")
+    print(f"To Win Strategy chooses: {win_move2} (confidence: {to_win2.get_confidence():.3f})")
+    print(f"Not to Lose Strategy chooses: {lose_move2} (confidence: {not_lose2.get_confidence():.3f})")
     print()
     
-    # Show detailed analysis
-    print("📊 Detailed Analysis:")
-    if to_win.prediction_history:
-        last_pred = to_win.prediction_history[-1]
-        print("To Win - Human probabilities:", last_pred['human_probs'])
-        print("To Win - Win probabilities:", last_pred['win_probs'])
-    
-    if not_lose2.prediction_history:
-        last_pred = not_lose2.prediction_history[-1]
-        print("Not to Lose - Not-lose probabilities:", last_pred['not_lose_probs'])
-        print("Not to Lose - Probability difference:", last_pred['prob_diff'])
+    # Show detailed analysis for To Win strategy
+    print("📊 Detailed Analysis for To Win Strategy:")
+    if to_win2.prediction_history:
+        last_pred = to_win2.prediction_history[-1]
+        print("Human probabilities:", {k: f"{v:.2f}" for k, v in last_pred['human_probs'].items()})
+        print("Win probabilities:", {k: f"{v:.2f}" for k, v in last_pred['win_probs'].items()})
+        print(f"Highest win prob: {last_pred['highest_prob']:.2f}")
+        print(f"Confidence calculation: abs(2 * {last_pred['highest_prob']:.2f} - 1) = {last_pred['confidence']:.3f}")

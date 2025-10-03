@@ -1597,7 +1597,6 @@ class AICoachMetricsAggregator:
             'random': 1.0,
             'frequency': 0.9,
             'markov': 0.8,
-            'enhanced': 0.7,
             'lstm': 0.6
         }
         
@@ -1780,8 +1779,8 @@ class AICoachMetricsAggregator:
             suggestions.append("Against frequency AI: Balance your move distribution (aim for 33% each)")
         elif ai_strategy == 'markov':
             suggestions.append("Against Markov AI: Break patterns by avoiding predictable sequences")
-        elif ai_strategy == 'enhanced':
-            suggestions.append("Against enhanced AI: Use counter-exploitation and mixed strategies")
+        elif ai_strategy == 'lstm':
+            suggestions.append("Against LSTM AI: Use complex pattern switching and meta-gaming")
         elif ai_strategy == 'lstm':
             suggestions.append("Against LSTM AI: Maximize entropy and avoid any learnable patterns")
         
@@ -1924,7 +1923,6 @@ class AICoachMetricsAggregator:
             'random': 'Beginner',
             'frequency': 'Easy',
             'markov': 'Medium',
-            'enhanced': 'Hard',
             'lstm': 'Expert'
         }
         return difficulty_map.get(ai_strategy, 'Unknown')
@@ -1956,7 +1954,6 @@ class AICoachMetricsAggregator:
             'random': 0.33,
             'frequency': 0.4 + (max_frequency - 0.33) * 0.5,
             'markov': 0.45 + (max_frequency - 0.33) * 0.7,
-            'enhanced': 0.5 + (max_frequency - 0.33) * 0.8,
             'lstm': 0.55 + (max_frequency - 0.33) * 0.9
         }
         
@@ -1970,7 +1967,6 @@ class AICoachMetricsAggregator:
             'random': 'None (no adaptation)',
             'frequency': 'Slow (global frequency tracking)',
             'markov': 'Medium (pattern recognition)',
-            'enhanced': 'Fast (advanced ML)',
             'lstm': 'Very Fast (neural learning)'
         }
         
@@ -2032,21 +2028,6 @@ class AICoachMetricsAggregator:
             'estimated_win_rate': self._format_metric(markov_win_rate),
             'confidence': 'medium',
             'reasoning': markov_reasoning
-        }
-        
-        # Against Enhanced AI
-        adaptability_score = adaptation_rate if adaptation_rate else 0.5
-        if move_entropy > 1.3 and adaptability_score > 0.6:
-            enhanced_win_rate = 0.35
-            enhanced_reasoning = 'High entropy and adaptability should help against enhanced AI'
-        else:
-            enhanced_win_rate = 0.15
-            enhanced_reasoning = 'Enhanced AI can exploit most human patterns'
-        
-        performance_estimates['enhanced'] = {
-            'estimated_win_rate': self._format_metric(enhanced_win_rate),
-            'confidence': 'low',
-            'reasoning': enhanced_reasoning
         }
         
         # Against LSTM AI

@@ -3,13 +3,11 @@ import os
 import sys
 import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from strategy import EnhancedStrategy, FrequencyStrategy, MarkovStrategy
+from strategy import FrequencyStrategy, MarkovStrategy
 from change_point_detector import ChangePointDetector
 from coach_tips import CoachTipsGenerator
-from tournament_system import TournamentSystem
 from optimized_strategies import ToWinStrategy, NotToLoseStrategy
 from personality_engine import get_personality_engine
-from replay_system import GameReplay, get_replay_manager, get_replay_analyzer
 from move_mapping import normalize_move, get_counter_move, MOVES
 
 # Centralized Data Management - All AI coach endpoints use this for consistent data building
@@ -60,7 +58,6 @@ app = Flask(__name__)
 app.secret_key = 'your-secret-key-here-for-ai-coach-sessions-2024'
 
 # Initialize strategy instances
-enhanced_strategy = EnhancedStrategy(order=2, recency_weight=0.8)
 frequency_strategy = FrequencyStrategy()
 markov_strategy = MarkovStrategy()
 to_win_strategy = ToWinStrategy()
@@ -89,13 +86,6 @@ change_detector = ChangePointDetector(window_size=6, chi2_threshold=3.5, min_seg
 # Initialize coach tips generator
 coach = CoachTipsGenerator()
 
-# Initialize tournament system
-tournament_system = TournamentSystem('webapp/tournament_data.json')
-
-# Initialize replay system
-replay_manager = get_replay_manager()
-replay_analyzer = get_replay_analyzer()
-
 game_state = {
     'human_history': [],
     'robot_history': [],
@@ -103,13 +93,12 @@ game_state = {
     'round_history': [],  # Each entry: {'round': n, 'human': move, 'robot': move}
     'round': 0,
     'stats': {'human_win': 0, 'robot_win': 0, 'tie': 0},
-    'difficulty': 'enhanced',  # Default to enhanced mode (legacy)
-    'ai_difficulty': 'enhanced',  # Explicit AI difficulty label
-    'strategy_preference': 'balanced',  # Default strategy preference
+    'difficulty': 'markov',  # Default to markov mode
+    'ai_difficulty': 'markov',  # Explicit AI difficulty label
+    'strategy_preference': 'to_win',  # Default strategy preference
     'personality': 'neutral',  # Default personality
     'multiplayer': False,
     'change_points': [],  # Store detected strategy changes
-    'current_replay': None,  # Current game replay session
     'current_strategy': 'warming up',  # Human strategy label (legacy field)
     'human_strategy_label': 'warming up',  # Explicit human strategy label for analytics
     'accuracy': {
@@ -117,30 +106,26 @@ game_state = {
         'frequency': None,
         'markov': None,
         'hybrid': None,
-        'decision_tree': None,
-        'enhanced': None
+        'decision_tree': None
     },
     'correct_predictions': {
         'random': 0,
         'frequency': 0,
         'markov': 0,
         'hybrid': 0,
-        'decision_tree': 0,
-        'enhanced': 0
+        'decision_tree': 0
     },
     'total_predictions': {
         'random': 0,
         'frequency': 0,
         'markov': 0,
         'hybrid': 0,
-        'decision_tree': 0,
-        'enhanced': 0
+        'decision_tree': 0
     },
         'model_predictions_history': {
             'random': [],
             'frequency': [],
             'markov': [],
-            'enhanced': [],
             'lstm': [],
             'to_win': [],
             'not_to_lose': []
@@ -149,7 +134,6 @@ game_state = {
             'random': [],
             'frequency': [],
             'markov': [],
-            'enhanced': [],
             'lstm': [],
             'to_win': [],
             'not_to_lose': []
@@ -181,12 +165,244 @@ def debug():
     # Minimal debug page
     return render_template('minimal_debug.html')
 
+def create_prediction_debug_object():
+    """
+    Creates a comprehensive debug object showing:
+    1. All model predictions for each round
+    2. Actual human moves for each round  
+    3. Move-by-move comparison showing matches/misses
+    4. Current accuracy calculation (wrong method)
+    5. Correct accuracy calculation
+    6. Manual verification data
+    """
+    debug_data = {}
+    
+    # Get current game data
+    human_moves = game_state['human_history']
+    predictions_history = game_state['model_predictions_history']
+    
+    # Models to analyze (exclude enhanced since it was removed)
+    models = ['random', 'frequency', 'markov', 'lstm']
+    
+    for model in models:
+        if model in predictions_history:
+            predictions = predictions_history[model]
+            
+            # Create detailed comparison for this model
+            debug_data[model] = {
+                'prediction_history': predictions.copy(),
+                'human_move_history': human_moves.copy(),
+                'total_predictions': len(predictions),
+                'total_human_moves': len(human_moves),
+                
+                # Current (wrong) accuracy calculation: predictions[i] vs human_history[i]
+                'current_method': {
+                    'description': 'Current backend method (WRONG): predictions[i] vs human_history[i]',
+                    'comparisons': [],
+                    'correct_count': 0,
+                    'accuracy_percentage': 0
+                },
+                
+                # Correct accuracy calculation: predictions[i] vs human_history[i+1]
+                'correct_method': {
+                    'description': 'Correct method (RIGHT): predictions[i] vs human_history[i+1]', 
+                    'comparisons': [],
+                    'correct_count': 0,
+                    'accuracy_percentage': 0
+                },
+                
+                # AI Strategy Accuracy from current system
+                'ai_strategy_accuracy': game_state['accuracy'].get(model, 0)
+            }
+            
+            # Calculate current (wrong) method - predictions[i] vs human_history[i] 
+            current_correct = 0
+            for i in range(min(len(predictions), len(human_moves))):
+                predicted = predictions[i]
+                actual = human_moves[i]  # Wrong: should be human_moves[i+1]
+                is_correct = predicted == actual
+                if is_correct:
+                    current_correct += 1
+                    
+                debug_data[model]['current_method']['comparisons'].append({
+                    'round': i + 1,
+                    'predicted': predicted,
+                    'actual': actual,
+                    'correct': is_correct,
+                    'note': f'Round {i+1}: Prediction #{i} vs Human move #{i}'
+                })
+            
+            if len(predictions) > 0:
+                debug_data[model]['current_method']['correct_count'] = current_correct
+                debug_data[model]['current_method']['accuracy_percentage'] = round((current_correct / len(predictions)) * 100, 1)
+            
+            # Calculate correct method - predictions[i] vs human_history[i+1]
+            correct_correct = 0
+            for i in range(len(predictions)):
+                if i + 1 < len(human_moves):  # Make sure we have the next human move
+                    predicted = predictions[i] 
+                    actual = human_moves[i + 1]  # Correct: prediction was for NEXT move
+                    is_correct = predicted == actual
+                    if is_correct:
+                        correct_correct += 1
+                        
+                    debug_data[model]['correct_method']['comparisons'].append({
+                        'round': i + 1,
+                        'predicted': predicted, 
+                        'actual': actual,
+                        'correct': is_correct,
+                        'note': f'Round {i+1}: Prediction #{i} vs Human move #{i+1}'
+                    })
+            
+            # Calculate accuracy for correct method
+            valid_predictions = len([p for i, p in enumerate(predictions) if i + 1 < len(human_moves)])
+            if valid_predictions > 0:
+                debug_data[model]['correct_method']['correct_count'] = correct_correct
+                debug_data[model]['correct_method']['accuracy_percentage'] = round((correct_correct / valid_predictions) * 100, 1)
+            
+            # Add discrepancy analysis
+            current_acc = debug_data[model]['current_method']['accuracy_percentage']
+            correct_acc = debug_data[model]['correct_method']['accuracy_percentage'] 
+            ai_strategy_acc = debug_data[model]['ai_strategy_accuracy'] or 0  # Handle None values
+            
+            debug_data[model]['discrepancy_analysis'] = {
+                'current_vs_correct': round(abs(current_acc - correct_acc), 1),
+                'ai_strategy_vs_current': round(abs(ai_strategy_acc - current_acc), 1),
+                'ai_strategy_vs_correct': round(abs(ai_strategy_acc - correct_acc), 1),
+                'explanation': f'AI Strategy shows {ai_strategy_acc}%, Current method shows {current_acc}%, Correct method shows {correct_acc}%'
+            }
+    
+    return debug_data
+
+def create_centralized_model_prediction_tracking():
+    """
+    Create Model Prediction Tracking object sourced from centralized data management.
+    Returns prediction history for each model that can be used for charts and analysis.
+    """
+    # Get data from centralized system
+    game_data = build_game_context(
+        session=dict(session),
+        overrides={},
+        context_type='full'
+    )
+    
+    # Extract model predictions from centralized data
+    model_predictions = game_data.get('model_predictions_history', {})
+    human_moves = game_data.get('human_moves', [])
+    
+    # Create tracking object with raw prediction data for charts
+    tracking_data = {
+        'models': ['random', 'frequency', 'markov', 'lstm'],
+        'prediction_counts': {},
+        'prediction_history': {},
+        'total_predictions': len(human_moves) - 1 if len(human_moves) > 1 else 0,  # Predictions start from round 2
+        'rounds_data': []
+    }
+    
+    # For each model, get their prediction history
+    for model in tracking_data['models']:
+        predictions = model_predictions.get(model, [])
+        tracking_data['prediction_history'][model] = predictions.copy()
+        
+        # Count predictions by move type
+        tracking_data['prediction_counts'][model] = {
+            'rock': predictions.count('rock'),
+            'paper': predictions.count('paper'), 
+            'scissors': predictions.count('scissors'),
+            'total': len(predictions)
+        }
+    
+    # Create round-by-round data for detailed tracking
+    max_rounds = max(len(model_predictions.get(model, [])) for model in tracking_data['models']) if model_predictions else 0
+    
+    for round_num in range(max_rounds):
+        round_data = {
+            'round': round_num + 1,
+            'predictions': {}
+        }
+        
+        for model in tracking_data['models']:
+            predictions = model_predictions.get(model, [])
+            if round_num < len(predictions):
+                round_data['predictions'][model] = predictions[round_num]
+            else:
+                round_data['predictions'][model] = None
+                
+        tracking_data['rounds_data'].append(round_data)
+    
+    return tracking_data
+
+def create_centralized_ai_strategy_accuracy():
+    """
+    Create AI Strategy Accuracy object sourced from centralized data management.
+    Calculates accuracy by comparing model predictions to actual human moves using raw data.
+    """
+    # Get data from centralized system  
+    game_data = build_game_context(
+        session=dict(session),
+        overrides={},
+        context_type='full'
+    )
+    
+    # Extract raw data
+    model_predictions = game_data.get('model_predictions_history', {})
+    human_moves = game_data.get('human_moves', [])
+    
+    # Create accuracy object
+    accuracy_data = {
+        'models': ['random', 'frequency', 'markov', 'lstm'],
+        'accuracy_percentages': {},
+        'correct_predictions': {},
+        'total_valid_predictions': {},
+        'detailed_comparisons': {},
+        'calculation_method': 'predictions[i] vs human_moves[i+1]'  # Correct method
+    }
+    
+    # For each model, calculate accuracy correctly
+    for model in accuracy_data['models']:
+        predictions = model_predictions.get(model, [])
+        
+        # Initialize counters
+        correct_count = 0
+        total_valid = 0
+        comparisons = []
+        
+        # Compare predictions[i] with human_moves[i+1] (correct method)
+        for i in range(len(predictions)):
+            if i + 1 < len(human_moves):  # Ensure we have the next human move
+                predicted_move = predictions[i]
+                actual_move = human_moves[i + 1]  # Prediction was for the NEXT move
+                
+                is_correct = predicted_move == actual_move
+                if is_correct:
+                    correct_count += 1
+                total_valid += 1
+                
+                comparisons.append({
+                    'prediction_round': i + 1,
+                    'predicted': predicted_move,
+                    'actual': actual_move,
+                    'correct': is_correct,
+                    'note': f'Prediction #{i} vs Human move #{i+1}'
+                })
+        
+        # Calculate accuracy percentage
+        accuracy_percentage = (correct_count / total_valid * 100) if total_valid > 0 else 0
+        
+        # Store results
+        accuracy_data['accuracy_percentages'][model] = round(accuracy_percentage, 1)
+        accuracy_data['correct_predictions'][model] = correct_count
+        accuracy_data['total_valid_predictions'][model] = total_valid
+        accuracy_data['detailed_comparisons'][model] = comparisons
+    
+    return accuracy_data
+
 @app.route('/play', methods=['POST'])
 def play():
     data = request.get_json(force=True)
     move = data.get('move')
     difficulty = data.get('difficulty', game_state['difficulty'])
-    strategy_preference = data.get('strategy', 'balanced')
+    strategy_preference = data.get('strategy', 'to_win')
     personality = data.get('personality', 'neutral')
     multiplayer = data.get('multiplayer', game_state['multiplayer'])
     
@@ -196,21 +412,12 @@ def play():
     game_state['strategy_preference'] = strategy_preference
     game_state['personality'] = personality
     
-    # Initialize replay if starting new game
-    if game_state['current_replay'] is None:
-        game_state['current_replay'] = GameReplay()
-        game_state['current_replay'].metadata.update({
-            'difficulty': difficulty,
-            'strategy': strategy_preference,
-            'personality': personality
-        })
-    
     if move not in MOVES:
         return jsonify({'error': 'Invalid move'}), 400
 
     import random
     # Difficulty strategies
-    def robot_strategy(history, difficulty, strategy_preference='balanced', personality='neutral'):
+    def robot_strategy(history, difficulty, strategy_preference='to_win', personality='neutral'):
         # Performance tracking - start timing
         start_time = time.time()
         
@@ -225,7 +432,7 @@ def play():
         confidence = 0.33
         
         # Apply strategy preference to determine which approach to use
-        if strategy_preference == 'to_win' and difficulty in ['enhanced', 'markov', 'frequency']:
+        if strategy_preference == 'to_win' and difficulty in ['markov', 'frequency', 'random', 'lstm']:
             # Force the AI to use the aggressive "to win" approach
             predicted = to_win_strategy.predict(history)
             confidence = to_win_strategy.get_confidence()
@@ -233,7 +440,7 @@ def play():
             counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
             base_move = counter.get(predicted) if predicted else random.choice(MOVES)
             
-        elif strategy_preference == 'not_to_lose' and difficulty in ['enhanced', 'markov', 'frequency']:
+        elif strategy_preference == 'not_to_lose' and difficulty in ['markov', 'frequency', 'random', 'lstm']:
             # Force the AI to use the defensive "not to lose" approach
             predicted = not_to_lose_strategy.predict(history)
             confidence = not_to_lose_strategy.get_confidence()
@@ -258,20 +465,6 @@ def play():
                 reverse_counter = {'scissors': 'paper', 'rock': 'scissors', 'paper': 'rock'}
                 predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
                 confidence = 0.6
-            elif difficulty == 'enhanced':
-                if PERFORMANCE_OPTIMIZER_AVAILABLE:
-                    # Use performance-timed inference
-                    def enhanced_inference():
-                        enhanced_strategy.train(history)
-                        return enhanced_strategy.predict(history)
-                    predicted_counter, inference_time = time_model_inference('enhanced', enhanced_inference)
-                else:
-                    enhanced_strategy.train(history)
-                    predicted_counter = enhanced_strategy.predict(history)
-                    
-                confidence = enhanced_strategy.get_confidence()
-                reverse_counter = {'scissors': 'paper', 'rock': 'scissors', 'paper': 'rock'}
-                predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
             elif difficulty == 'lstm' and LSTM_AVAILABLE and lstm_predictor:
                 # LSTM prediction
                 try:
@@ -370,14 +563,6 @@ def play():
         markov_pred = reverse_counter.get(markov_robot_move, random.choice(MOVES))
         game_state['model_predictions_history']['markov'].append(markov_pred)
         
-        # Enhanced prediction
-        enhanced_strategy.train(history)
-        enhanced_robot_move = enhanced_strategy.predict(history)  # Returns just robot move string
-        # Convert robot move back to what human move it was expecting
-        reverse_counter = {'rock': 'scissors', 'paper': 'rock', 'scissors': 'paper'}
-        enhanced_pred = reverse_counter.get(enhanced_robot_move, random.choice(MOVES))
-        game_state['model_predictions_history']['enhanced'].append(enhanced_pred)
-        
         # LSTM prediction (if available)
         if LSTM_AVAILABLE and lstm_predictor:
             try:
@@ -397,21 +582,58 @@ def play():
         not_to_lose_pred = not_to_lose_strategy.predict(history)
         game_state['model_predictions_history']['not_to_lose'].append(not_to_lose_pred)
         
-        # Track confidence values for each model
-        game_state['model_confidence_history']['random'].append(0.33)
-        game_state['model_confidence_history']['frequency'].append(min(0.8, 0.3 + len(history) * 0.02))
-        game_state['model_confidence_history']['markov'].append(min(0.85, 0.4 + len(history) * 0.015))
-        game_state['model_confidence_history']['enhanced'].append(enhanced_strategy.get_confidence())
+        # Track confidence values for each model - Fixed to use model-specific confidence
+        # Random and Frequency should always be 0%
+        game_state['model_confidence_history']['random'].append(0.0)
+        game_state['model_confidence_history']['frequency'].append(0.0)
         
-        # LSTM confidence
+        # Get actual model predictions and apply strategy-specific confidence formulas
+        strategy_preference = game_state.get('strategy_preference', 'to_win')
+        
+        # Markov model - get its actual probability distribution
+        if len(history) > 0:
+            markov_strategy.train(history)
+            markov_pred, markov_raw_confidence = markov_strategy.predict(history)
+            
+            # Apply strategy-specific confidence formula using model's actual probabilities
+            # Note: markov_raw_confidence comes from the model's internal probability calculation
+            if strategy_preference == 'to_win':
+                # Formula: abs(2*highest_prob-1)
+                markov_confidence = abs(2 * markov_raw_confidence - 1)
+            elif strategy_preference == 'not_to_lose':
+                # For "not to lose", we need to estimate the sum of top two probabilities
+                # Since we only have the highest probability, we estimate the second highest
+                # Assuming uniform distribution for remaining probability mass
+                remaining_prob = 1 - markov_raw_confidence
+                second_highest = remaining_prob / 2  # Rough estimation
+                markov_confidence = abs(2 * (markov_raw_confidence + second_highest) - 1)
+            else:
+                markov_confidence = markov_raw_confidence
+        else:
+            markov_confidence = 0.33  # Default for no history
+        
+        game_state['model_confidence_history']['markov'].append(markov_confidence)
+        
+        # LSTM confidence - use its own confidence calculation with strategy formulas
         if LSTM_AVAILABLE and lstm_predictor:
             try:
-                lstm_confidence = lstm_predictor.get_confidence(history)
+                lstm_raw_confidence = lstm_predictor.get_confidence(history)
+                
+                # Apply strategy-specific confidence formula
+                if strategy_preference == 'to_win':
+                    lstm_confidence = abs(2 * lstm_raw_confidence - 1)
+                elif strategy_preference == 'not_to_lose':
+                    # Estimate second highest probability
+                    remaining_prob = 1 - lstm_raw_confidence
+                    second_highest = remaining_prob / 2
+                    lstm_confidence = abs(2 * (lstm_raw_confidence + second_highest) - 1)
+                else:
+                    lstm_confidence = lstm_raw_confidence
                 game_state['model_confidence_history']['lstm'].append(lstm_confidence)
             except:
-                game_state['model_confidence_history']['lstm'].append(0.33)
+                game_state['model_confidence_history']['lstm'].append(0.0)
         else:
-            game_state['model_confidence_history']['lstm'].append(0.33)
+            game_state['model_confidence_history']['lstm'].append(0.0)
         
         game_state['model_confidence_history']['to_win'].append(to_win_strategy.get_confidence())
         game_state['model_confidence_history']['not_to_lose'].append(not_to_lose_strategy.get_confidence())
@@ -474,24 +696,6 @@ def play():
         else:
             game_state['stats']['tie'] += 1
         
-        # Add move to replay system
-        if game_state['current_replay']:
-            analysis_data = {
-                'human_pattern': current_strategy,
-                'change_points_detected': len(change_points),
-                'robot_strategy': f"{difficulty}_{strategy_preference}_{personality}"
-            }
-            
-            game_state['current_replay'].add_move(
-                round_number=game_state['round'],
-                human_move=move,
-                robot_move=robot_move or 'paper',
-                result=result,
-                confidence=confidence,
-                strategy_used=f"{difficulty}_{strategy_preference}",
-                analysis=analysis_data
-            )
-        
         results = [result]
     
     # Calculate model accuracy after each move (only if we have predictions to compare)
@@ -546,7 +750,7 @@ def play():
     session['current_strategy'] = game_state.get('current_strategy', 'unknown')
     session['human_strategy_label'] = game_state.get('human_strategy_label', game_state.get('current_strategy', 'unknown'))
     session['round_count'] = game_state['round']
-    session['strategy_preference'] = game_state.get('strategy_preference', 'balanced')
+    session['strategy_preference'] = game_state.get('strategy_preference', 'to_win')
     session['personality'] = game_state.get('personality', 'neutral')
     session['multiplayer'] = game_state.get('multiplayer', False)
     session['accuracy'] = game_state['accuracy']
@@ -569,7 +773,7 @@ def play():
         'result': results,
         'difficulty': game_state['difficulty'],
         'ai_difficulty': game_state.get('ai_difficulty', game_state['difficulty']),
-        'strategy_preference': game_state.get('strategy_preference', 'balanced'),
+        'strategy_preference': game_state.get('strategy_preference', 'to_win'),
         'personality': game_state.get('personality', 'neutral'),
         'multiplayer': game_state['multiplayer'],
         'accuracy': game_state['accuracy'],
@@ -580,7 +784,9 @@ def play():
         'model_predictions_history': game_state['model_predictions_history'],
         'model_confidence_history': game_state['model_confidence_history'],
         'correct_predictions': game_state['correct_predictions'],
-        'total_predictions': game_state['total_predictions']
+        'total_predictions': game_state['total_predictions'],
+        'centralized_prediction_tracking': create_centralized_model_prediction_tracking(),  # New centralized object
+        'centralized_ai_strategy_accuracy': create_centralized_ai_strategy_accuracy()  # New centralized object
     })
 
 @app.route('/coaching', methods=['GET', 'POST'])
@@ -656,8 +862,15 @@ def export_analytics():
     try:
         format_type = request.args.get('format', 'json')
         
-        # Calculate analytics data
-        history = game_state['human_history']
+        # 🎯 CENTRALIZED DATA CONSTRUCTION: Use the centralized game context builder
+        game_data = build_game_context(
+            session=dict(session),  # Convert Flask session to dict
+            overrides={},  # No overrides for analytics export
+            context_type='analytics'
+        )
+        
+        # Extract data from centralized context
+        history = game_data['human_moves']
         total_moves = len(history)
         
         if total_moves == 0:
@@ -674,8 +887,10 @@ def export_analytics():
             max_count = max(paper_count, rock_count, scissors_count)
             predictability = (max_count / total_moves) * 100
             
-            # Calculate win rate
-            win_rate = (game_state['stats']['human_win'] / game_state['round'] * 100) if game_state['round'] > 0 else 0
+            # Calculate win rate - use centralized data
+            current_round = game_data['round']
+            stats = game_state['stats']  # Stats still come from game_state as they're not in context yet
+            win_rate = (stats['human_win'] / current_round * 100) if current_round > 0 else 0
             
             # Calculate entropy (randomness)
             p1, p2, p3 = paper_count/total_moves, rock_count/total_moves, scissors_count/total_moves
@@ -687,7 +902,7 @@ def export_analytics():
             
             analytics_data = {
                 'timestamp': datetime.now().isoformat(),
-                'total_games': game_state['round'],
+                'total_games': current_round,
                 'total_moves': total_moves,
                 'win_rate': round(win_rate, 2),
                 'predictability_score': round(predictability, 2),
@@ -697,12 +912,13 @@ def export_analytics():
                     'rock': {'count': rock_count, 'percentage': round((rock_count/total_moves)*100, 2)},
                     'scissors': {'count': scissors_count, 'percentage': round((scissors_count/total_moves)*100, 2)}
                 },
-                'stats': game_state['stats'],
-                'strategy_changes': len(game_state.get('change_points', [])),
+                'stats': stats,
+                'strategy_changes': len(game_data.get('change_points', [])),
                 'recent_history': history[-20:],  # Last 20 moves
                 'game_metadata': {
-                    'difficulty': game_state['difficulty'],
-                    'multiplayer': game_state['multiplayer']
+                    'difficulty': game_data['ai_difficulty'],
+                    'multiplayer': game_data.get('multiplayer', False),
+                    'human_strategy': game_data['human_strategy_label']
                 }
             }
         
@@ -718,34 +934,57 @@ def export_analytics():
 
 @app.route('/stats', methods=['GET'])
 def stats():
-    # Return stats as JSON for AJAX
+    """Return stats as JSON for AJAX using centralized data management"""
+    
+    # 🎯 CENTRALIZED DATA CONSTRUCTION: Use the centralized game context builder
+    game_data = build_game_context(
+        session=dict(session),  # Convert Flask session to dict
+        overrides={},  # No overrides for stats endpoint
+        context_type='full'  # Get comprehensive context with all available data
+    )
+    
+    # Return stats using centralized data
     return jsonify({
-        'stats': game_state['stats'],
-        'human_history': game_state['human_history'],
-        'robot_history': game_state['robot_history'],
-        'result_history': game_state['result_history'],
-        'round': game_state['round'],
-        'accuracy': game_state['accuracy'],
-        'ai_difficulty': game_state.get('ai_difficulty', game_state.get('difficulty', 'enhanced')),
-        'human_strategy_label': game_state.get('human_strategy_label', game_state.get('current_strategy', 'unknown'))
+        'stats': game_state['stats'],  # Stats still from game_state as they're not in context yet
+        'human_history': game_data['human_moves'],  # Centralized field name
+        'robot_history': game_data['robot_moves'],   # Centralized field name
+        'result_history': game_data['results'],      # Centralized field name
+        'round': game_data['round'],
+        'accuracy': game_data.get('accuracy', {}),
+        'ai_difficulty': game_data['ai_difficulty'],
+        'human_strategy_label': game_data['human_strategy_label']
     })
 
 @app.route('/history', methods=['GET'])
 def history():
-    # Return full game history including round details
-    return jsonify({
-        'stats': game_state['stats'],
-        'human_history': game_state['human_history'],
-        'robot_history': game_state['robot_history'],
-        'result_history': game_state['result_history'],
-        'round_history': game_state.get('round_history', []),
-        'round': game_state['round'],
-        'accuracy': game_state['accuracy'],
-        'change_points': game_state.get('change_points', []),
-        'current_strategy': game_state.get('current_strategy', 'unknown'),
-        'human_strategy_label': game_state.get('human_strategy_label', game_state.get('current_strategy', 'unknown')),
-        'ai_difficulty': game_state.get('ai_difficulty', game_state.get('difficulty', 'enhanced'))
-    })
+    """Return full game history including round details using centralized data management"""
+    
+    # 🎯 CENTRALIZED DATA CONSTRUCTION: Use the centralized game context builder
+    game_data = build_game_context(
+        session=dict(session),  # Convert Flask session to dict
+        overrides={},  # No overrides for history endpoint
+        context_type='full'  # Get comprehensive context with all available data
+    )
+    
+    # The centralized context already contains most of what we need
+    # Add any additional fields that might be missing
+    response_data = {
+        'stats': game_state['stats'],  # Stats still from game_state as they're not in context yet
+        'human_history': game_data['human_moves'],  # Centralized field name
+        'robot_history': game_data['robot_moves'],   # Centralized field name
+        'result_history': game_data['results'],      # Centralized field name
+        'round_history': game_state.get('round_history', []),  # This might not be in context yet
+        'round': game_data['round'],
+        'accuracy': game_data.get('accuracy', {}),
+        'change_points': game_data.get('change_points', []),
+        'current_strategy': game_data['human_strategy_label'],
+        'human_strategy_label': game_data['human_strategy_label'],
+        'ai_difficulty': game_data['ai_difficulty'],
+        'centralized_prediction_tracking': create_centralized_model_prediction_tracking(),  # New centralized object
+        'centralized_ai_strategy_accuracy': create_centralized_ai_strategy_accuracy()  # New centralized object
+    }
+    
+    return jsonify(response_data)
 
 @app.route('/reset', methods=['POST', 'GET'])
 def reset():
@@ -754,8 +993,8 @@ def reset():
     game_state['result_history'].clear()
     game_state['round'] = 0
     game_state['stats'] = {'human_win': 0, 'robot_win': 0, 'tie': 0}
-    game_state['difficulty'] = 'enhanced'  # Default to enhanced
-    game_state['ai_difficulty'] = 'enhanced'
+    game_state['difficulty'] = 'markov'  # Default to markov
+    game_state['ai_difficulty'] = 'markov'
     game_state['multiplayer'] = False
     game_state['change_points'] = []
     game_state['current_strategy'] = 'unknown'
@@ -777,50 +1016,6 @@ def get_result(robot_move, human_move):
         return 'robot'
     else:
         return 'human'
-
-# Tournament Routes
-@app.route('/tournament', methods=['GET'])
-def tournament_dashboard():
-    """Get tournament dashboard data"""
-    try:
-        leaderboard = tournament_system.get_leaderboard(10)
-        recent_matches = []
-        
-        # Get recent completed matches
-        for match in tournament_system.matches.values():
-            if match.status == 'completed':
-                recent_matches.append(match.to_dict())
-        
-        recent_matches.sort(key=lambda m: m['completed_at'] or '', reverse=True)
-        
-        return jsonify({
-            'leaderboard': leaderboard,
-            'recent_matches': recent_matches[:10],
-            'total_players': len(tournament_system.players),
-            'total_matches': len([m for m in tournament_system.matches.values() if m.status == 'completed'])
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/tournament/player', methods=['POST'])
-def create_player():
-    """Create a new tournament player"""
-    try:
-        data = request.get_json()
-        name = data.get('name', '').strip()
-        
-        if not name:
-            return jsonify({'error': 'Player name is required'}), 400
-        
-        # Check if player already exists
-        existing_player = tournament_system.get_player_by_name(name)
-        if existing_player:
-            return jsonify({'error': 'Player name already exists'}), 400
-        
-        player = tournament_system.create_player(name)
-        return jsonify({'success': True, 'player': player.to_dict()})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 @app.route('/personality/info/<personality_name>')
 def get_personality_info(personality_name):
@@ -854,128 +1049,8 @@ def list_personalities():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ========================================
-# REPLAY SYSTEM ENDPOINTS
-# ========================================
-
-@app.route('/replay/save', methods=['POST'])
-def save_current_replay():
-    """Save the current game replay"""
-    try:
-        if game_state['current_replay'] and len(game_state['current_replay'].moves) > 0:
-            filepath = replay_manager.save_replay(game_state['current_replay'])
-            return jsonify({
-                'success': True,
-                'session_id': game_state['current_replay'].session_id,
-                'filepath': filepath,
-                'total_rounds': len(game_state['current_replay'].moves)
-            })
-        else:
-            return jsonify({'success': False, 'error': 'No replay data to save'}), 400
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/replay/list')
-def list_replays():
-    """List all saved replays"""
-    try:
-        replays = replay_manager.list_replays()
-        return jsonify({'replays': replays})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/replay/<session_id>')
-def get_replay(session_id):
-    """Get a specific replay by session ID"""
-    try:
-        replay = replay_manager.load_replay(session_id)
-        if replay:
-            return jsonify(replay.to_dict())
-        else:
-            return jsonify({'error': 'Replay not found'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/replay/<session_id>/analyze')
-def analyze_replay(session_id):
-    """Analyze a specific replay"""
-    try:
-        replay = replay_manager.load_replay(session_id)
-        if replay:
-            analysis = replay_analyzer.analyze_replay(replay)
-            return jsonify(analysis)
-        else:
-            return jsonify({'error': 'Replay not found'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/replay/<session_id>/export')
-def export_replay(session_id):
-    """Export replay to CSV"""
-    try:
-        csv_data = replay_manager.export_replay_csv(session_id)
-        if csv_data:
-            from flask import Response
-            return Response(
-                csv_data,
-                mimetype='text/csv',
-                headers={'Content-Disposition': f'attachment; filename=replay_{session_id}.csv'}
-            )
-        else:
-            return jsonify({'error': 'Replay not found'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/replay/<session_id>/annotate', methods=['POST'])
-def annotate_replay(session_id):
-    """Add annotation to a replay round"""
-    try:
-        data = request.get_json()
-        round_number = data.get('round')
-        annotation = data.get('annotation')
-        
-        replay = replay_manager.load_replay(session_id)
-        if replay:
-            replay.add_annotation(round_number, annotation)
-            replay_manager.save_replay(replay)
-            return jsonify({'success': True})
-        else:
-            return jsonify({'error': 'Replay not found'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/replay/dashboard')
-def replay_dashboard():
-    """Replay dashboard page"""
-    try:
-        replays = replay_manager.list_replays()
-        return render_template('replay_dashboard.html', replays=replays)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/replay/viewer/<session_id>')
-def replay_viewer(session_id):
-    """Replay viewer page"""
-    try:
-        replay = replay_manager.load_replay(session_id)
-        if replay:
-            analysis = replay_analyzer.analyze_replay(replay)
-            return render_template('replay_viewer.html', replay=replay.to_dict(), analysis=analysis)
-        else:
-            return jsonify({'error': 'Replay not found'}), 404
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# Reset game now also resets replay
 @app.route('/reset', methods=['POST'])
 def reset_game():
-    # Save current replay if it has moves
-    if game_state['current_replay'] and len(game_state['current_replay'].moves) > 0:
-        try:
-            replay_manager.save_replay(game_state['current_replay'])
-        except Exception as e:
-            print(f"Error saving replay: {e}")
-    
     # Reset game state
     game_state['human_history'] = []
     game_state['robot_history'] = []
@@ -984,7 +1059,6 @@ def reset_game():
     game_state['round'] = 0
     game_state['stats'] = {'human_win': 0, 'robot_win': 0, 'tie': 0}
     game_state['change_points'] = []
-    game_state['current_replay'] = None  # Reset replay
     
     return jsonify({'message': 'Game reset successfully'})
 
@@ -1254,7 +1328,7 @@ def ai_coach_comprehensive():
             overrides = data
             
         game_data = build_game_context(
-            session=session, 
+            session=dict(session),  # Convert Flask session to dict
             overrides=overrides, 
             context_type='comprehensive'
         )

@@ -19,18 +19,31 @@ model_training_path = os.path.join(os.path.dirname(__file__), 'model_training')
 sys.path.append(model_training_path)
 
 try:
-    from models.enhanced_architecture import EnhancedRPSCoachModel
-    SimpleRPSCoachModel = EnhancedRPSCoachModel  # Alias for compatibility
+    # Try importing the optimized model architecture FIRST (this is what was actually trained)
+    from optimized_model_architecture import OptimizedRPSCoachModel, OptimizedModelConfig
+    SimpleRPSCoachModel = OptimizedRPSCoachModel
+    ModelConfigClass = OptimizedModelConfig
+    print("✅ Using OptimizedRPSCoachModel (correct architecture)")
 except ImportError as e:
-    print(f"⚠️ Could not import trained model: {e}")
+    print(f"⚠️ Could not import optimized model: {e}")
     try:
-        # Try importing from models directory directly
-        sys.path.append(os.path.join(model_training_path, 'models'))
-        from enhanced_architecture import EnhancedRPSCoachModel
-        SimpleRPSCoachModel = EnhancedRPSCoachModel
+        from models.enhanced_architecture import EnhancedRPSCoachModel
+        SimpleRPSCoachModel = EnhancedRPSCoachModel  # Alias for compatibility
+        ModelConfigClass = dict  # Enhanced model uses dict config
+        print("⚠️ Using EnhancedRPSCoachModel (fallback)")
     except ImportError as e2:
         print(f"⚠️ Could not import enhanced model either: {e2}")
-        SimpleRPSCoachModel = None
+        try:
+            # Try importing from models directory directly
+            sys.path.append(os.path.join(model_training_path, 'models'))
+            from enhanced_architecture import EnhancedRPSCoachModel
+            SimpleRPSCoachModel = EnhancedRPSCoachModel
+            ModelConfigClass = dict
+            print("⚠️ Using EnhancedRPSCoachModel from models directory (fallback)")
+        except ImportError as e3:
+            print(f"⚠️ Could not import any model: {e3}")
+            SimpleRPSCoachModel = None
+            ModelConfigClass = None
 
 
 class TrainedCoachWrapper:
@@ -48,7 +61,7 @@ class TrainedCoachWrapper:
                 os.path.dirname(__file__),
                 'models',
                 'coach',
-                'Leo_model.pth'
+                'Leo_model_fixed.pth'
             )
 
         self.model_path = model_path
@@ -62,28 +75,112 @@ class TrainedCoachWrapper:
                 return False
             
             if SimpleRPSCoachModel is None:
-                print("⚠️ EnhancedRPSCoachModel class not available")
+                print("⚠️ OptimizedRPSCoachModel class not available")
                 return False
             
             print(f"📂 Loading model from: {self.model_path}")
             
             # Load checkpoint
-            checkpoint = torch.load(self.model_path, map_location=self.device)
+            # Note: Using weights_only=False because this is a trusted model we trained ourselves
+            checkpoint = torch.load(self.model_path, map_location=self.device, weights_only=False)
             
             # Get model configuration and fix key mappings
             config = checkpoint.get('config', {})
-            print(f"📋 Model config loaded: {config.get('vocab_size', 'unknown')} vocab, {config.get('hidden_size', 'unknown')} hidden")
             
-            # Fix config key mappings for the enhanced model
-            model_config = {
-                'vocab_size': config.get('vocab_size', 8000),
-                'hidden_size': config.get('hidden_size', 768),
-                'num_hidden_layers': config.get('num_layers', 12),  # Map num_layers -> num_hidden_layers
-                'num_attention_heads': config.get('num_heads', 12),  # Map num_heads -> num_attention_heads
-                'intermediate_size': config.get('intermediate_size', 3072),
-                'max_position_embeddings': config.get('max_position_embeddings', 1024),
-                'dropout': config.get('dropout_rate', 0.1),  # Map dropout_rate -> dropout
-            }
+            # Check actual model dimensions from the saved weights
+            text_embedding_shape = checkpoint['model_state_dict']['text_embedding.weight'].shape
+            actual_vocab_size = text_embedding_shape[0]
+            actual_hidden_size = text_embedding_shape[1]
+            
+            # Count number of layers by checking transformer layer keys
+            layer_keys = [k for k in checkpoint['model_state_dict'].keys() if k.startswith('transformer_layers.')]
+            if layer_keys:
+                max_layer = max([int(k.split('.')[1]) for k in layer_keys])
+                actual_num_layers = max_layer + 1
+            else:
+                actual_num_layers = 6  # fallback
+                
+            print(f"📋 Detected from weights: {actual_vocab_size} vocab, {actual_hidden_size} hidden, {actual_num_layers} layers")
+            
+            # Override config with actual dimensions
+            if hasattr(config, 'hidden_size'):
+                config.hidden_size = actual_hidden_size
+                config.vocab_size = actual_vocab_size  
+                config.num_hidden_layers = actual_num_layers
+                if actual_hidden_size == 384:
+                    config.num_attention_heads = 6
+                    config.intermediate_size = 1024
+                    config.max_position_embeddings = 512
+            elif isinstance(config, dict):
+                config['hidden_size'] = actual_hidden_size
+                config['vocab_size'] = actual_vocab_size
+                config['num_hidden_layers'] = actual_num_layers  
+                if actual_hidden_size == 384:
+                    config['num_attention_heads'] = 6
+                    config['intermediate_size'] = 1024
+                    config['max_position_embeddings'] = 512
+            else:
+                # Create new config with detected dimensions
+                config = {
+                    'vocab_size': actual_vocab_size,
+                    'hidden_size': actual_hidden_size,
+                    'num_hidden_layers': actual_num_layers,
+                    'num_attention_heads': 6 if actual_hidden_size == 384 else 12,
+                    'intermediate_size': 1024 if actual_hidden_size == 384 else 3072,
+                    'max_position_embeddings': 512 if actual_hidden_size == 384 else 1024,
+                }
+            
+            # Handle both dict and object configs, using detected values
+            if hasattr(config, '__dict__'):
+                # Config is an object, convert to dict
+                config_dict = {
+                    'vocab_size': getattr(config, 'vocab_size', actual_vocab_size),
+                    'hidden_size': getattr(config, 'hidden_size', actual_hidden_size),
+                    'num_layers': getattr(config, 'num_layers', getattr(config, 'num_hidden_layers', actual_num_layers)),
+                    'num_heads': getattr(config, 'num_heads', getattr(config, 'num_attention_heads', 6 if actual_hidden_size == 384 else 12)),
+                    'intermediate_size': getattr(config, 'intermediate_size', 1024 if actual_hidden_size == 384 else 3072),
+                    'max_position_embeddings': getattr(config, 'max_position_embeddings', 512 if actual_hidden_size == 384 else 1024),
+                    'dropout_rate': getattr(config, 'dropout_rate', getattr(config, 'dropout', 0.1)),
+                }
+            else:
+                # Config is already a dict, use detected values preferring num_hidden_layers over num_layers
+                num_layers = config.get('num_hidden_layers', config.get('num_layers', actual_num_layers))
+                config_dict = {
+                    'vocab_size': config.get('vocab_size', actual_vocab_size),
+                    'hidden_size': config.get('hidden_size', actual_hidden_size),
+                    'num_layers': num_layers,
+                    'num_heads': config.get('num_attention_heads', config.get('num_heads', 6 if actual_hidden_size == 384 else 12)),
+                    'intermediate_size': config.get('intermediate_size', 1024 if actual_hidden_size == 384 else 3072),
+                    'max_position_embeddings': config.get('max_position_embeddings', 512 if actual_hidden_size == 384 else 1024),
+                    'dropout_rate': config.get('dropout_rate', config.get('dropout', 0.1)),
+                }
+            
+            # Create the appropriate config based on which model we're using
+            if ModelConfigClass is None:
+                print("⚠️ No model config class available")
+                return False
+            elif ModelConfigClass == dict:
+                # Enhanced model uses dict config
+                model_config = {
+                    'vocab_size': config_dict.get('vocab_size', 8000),
+                    'hidden_size': config_dict.get('hidden_size', 384),
+                    'num_hidden_layers': config_dict.get('num_layers', 6),
+                    'num_attention_heads': config_dict.get('num_heads', 6),
+                    'intermediate_size': config_dict.get('intermediate_size', 1024),
+                    'max_position_embeddings': config_dict.get('max_position_embeddings', 512),
+                    'dropout': config_dict.get('dropout_rate', 0.1),
+                }
+            else:
+                # Optimized model uses OptimizedModelConfig object
+                model_config = ModelConfigClass(
+                    vocab_size=config_dict.get('vocab_size', 8000),
+                    hidden_size=config_dict.get('hidden_size', 384),  # Correct optimized dimensions
+                    num_hidden_layers=config_dict.get('num_layers', 6),  # Correct optimized layers  
+                    num_attention_heads=config_dict.get('num_heads', 6),  # Correct optimized heads
+                    intermediate_size=config_dict.get('intermediate_size', 1024),  # Correct optimized size
+                    max_position_embeddings=config_dict.get('max_position_embeddings', 512),  # Correct optimized size
+                    dropout=config_dict.get('dropout_rate', 0.1),
+                )
             
             # Initialize model architecture with correct config
             self.model = SimpleRPSCoachModel(model_config)
@@ -96,7 +193,7 @@ class TrainedCoachWrapper:
             # Load vocabulary from checkpoint
             self.vocab = checkpoint.get('vocab', self._build_vocab())
             
-            print(f"✅ Enhanced model loaded successfully from {self.model_path}")
+            print(f"✅ Optimized model loaded successfully from {self.model_path}")
             print(f"   Device: {self.device}")
             print(f"   Parameters: {sum(p.numel() for p in self.model.parameters()):,}")
             print(f"   Vocab size: {len(self.vocab)}")
@@ -104,7 +201,7 @@ class TrainedCoachWrapper:
             return True
             
         except Exception as e:
-            print(f"❌ Failed to load enhanced model: {e}")
+            print(f"❌ Failed to load optimized model: {e}")
             import traceback
             traceback.print_exc()
             return False
@@ -267,11 +364,11 @@ class TrainedCoachWrapper:
             
             # Generate prediction using the enhanced model
             with torch.no_grad():
-                # The enhanced model expects different inputs than the simple model
+                # The optimized model expects input_ids and attention_mask
                 outputs = self.model(
                     input_ids=input_tokens,
                     attention_mask=attention_mask,
-                    coaching_mode="real_time"
+                    template_type="in_game"
                 )
                 
                 # Handle different output types from enhanced model

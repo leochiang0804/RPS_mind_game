@@ -363,21 +363,18 @@ if __name__ == "__main__":
     test_predictions = {
         'random': 'paper',
         'frequency': 'stone', 
-        'markov': 'scissor',
-        'enhanced': 'paper'
+        'markov': 'scissor'
     }
     
     test_confidences = {
         'random': 0.33,
         'frequency': 0.67,
-        'markov': 0.54,
-        'enhanced': 0.78
+        'markov': 0.54
     }
     
     # Track a few moves
     for i in range(5):
         track_move('paper', 'stone', 'human_win', test_predictions, test_confidences)
-        track_inference('enhanced', 0.023)
         track_inference('markov', 0.012)
         
     # Generate report

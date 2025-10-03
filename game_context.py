@@ -124,7 +124,7 @@ class GameContextBuilder:
             'difficulty': ai_difficulty,  # Legacy alias
             
             # Player preferences
-            'strategy_preference': session.get('strategy_preference', 'balanced'),
+            'strategy_preference': session.get('strategy_preference', 'to_win'),
             'personality': session.get('personality', 'neutral'),
             'confidence': session.get('confidence', 0.5),
             
