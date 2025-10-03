@@ -746,7 +746,10 @@ def play():
     session['correct_predictions'] = game_state['correct_predictions']
     session['total_predictions'] = game_state['total_predictions']
     
-    # Return updated state for AJAX
+    # Build unified game context with metrics (CRITICAL for frontend real-time updates)
+    game_data = build_game_context(session)  # Match download_game_context pattern
+    
+    # Return updated state for AJAX with unified metrics
     return jsonify({
         'stats': game_state['stats'],
         'human_history': game_state['human_history'],
@@ -771,7 +774,11 @@ def play():
         'correct_predictions': game_state['correct_predictions'],
         'total_predictions': game_state['total_predictions'],
         'centralized_prediction_tracking': create_centralized_model_prediction_tracking(),  # New centralized object
-        'centralized_ai_strategy_accuracy': create_centralized_ai_strategy_accuracy()  # New centralized object
+        'centralized_ai_strategy_accuracy': create_centralized_ai_strategy_accuracy(),  # New centralized object
+        # *** CRITICAL: Include unified metrics for frontend consumption ***
+        'metrics': game_data.get('game_status', {}).get('metrics', {}),  # Extract from game_status
+        'game_status': game_data.get('game_status', {}),
+        'full_game_snapshot': game_data.get('full_game_snapshot', {})
     })
 
 @app.route('/coaching', methods=['GET', 'POST'])

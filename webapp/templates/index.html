@@ -827,172 +827,81 @@
         }
 
         function deriveGameInsights(data) {
-            const stats = data.stats || {};
-            const humanHistory = data.human_history ? data.human_history.slice() : [];
-            const robotHistory = data.robot_history ? data.robot_history.slice() : [];
-            const toNumber = (move) => {
-                if (!move) return null;
-                const normalized = move.toLowerCase();
-                if (normalized === 'paper') return 1;
-                if (normalized === 'rock') return 0;
-                if (normalized === 'scissors') return 2;
-                return null;
+            // ===============================================
+            // SINGLE SOURCE OF TRUTH: Backend Metrics Only
+            // ===============================================
+            // All metric calculations are now done in the backend (game_context.py)
+            // Frontend only consumes and displays the pre-calculated metrics
+            
+            const metrics = data.metrics || {};
+            const gameStatus = data.game_status || data;
+            
+            // Helper for current streak calculation (only UI-specific logic)
+            const calculateCurrentStreak = (results) => {
+                if (!results || results.length === 0) return { owner: 'tie', length: 0 };
+                
+                let currentStreakOwner = 'tie';
+                let currentStreakLength = 0;
+                for (let i = results.length - 1; i >= 0; i--) {
+                    const w = results[i];
+                    if (w === 'unknown' || w === 'tie') break;
+                    if (currentStreakOwner === 'tie') {
+                        currentStreakOwner = w;
+                        currentStreakLength = 1;
+                    } else if (w === currentStreakOwner) {
+                        currentStreakLength += 1;
+                    } else {
+                        break;
+                    }
+                }
+                return { owner: currentStreakOwner, length: currentStreakOwner === 'tie' ? 0 : currentStreakLength };
             };
-
-            const humanNumeric = humanHistory.map(toNumber);
-            const winners = [];
-            let scoreDiff = 0;
-            const scoreDifferentialSeries = [];
-            let bestHumanStreak = 0;
-            let bestRobotStreak = 0;
-            let streakOwner = 'tie';
-            let streakLength = 0;
-
-            humanHistory.forEach((humanMove, index) => {
-                const robotMove = robotHistory[index];
-                const winner = determineWinner(humanMove, robotMove);
-                winners.push(winner);
-                if (winner === 'human') scoreDiff += 1;
-                if (winner === 'robot') scoreDiff -= 1;
-                scoreDifferentialSeries.push(scoreDiff);
-
-                if (winner === streakOwner) {
-                    streakLength += 1;
-                } else {
-                    streakOwner = winner;
-                    streakLength = 1;
-                }
-
-                if (winner === 'human') {
-                    if (streakLength > bestHumanStreak) bestHumanStreak = streakLength;
-                } else if (winner === 'robot') {
-                    if (streakLength > bestRobotStreak) bestRobotStreak = streakLength;
-                }
-            });
-
-            const moveCounts = humanHistory.reduce((acc, move) => {
-                if (!move) return acc;
-                const normalized = move.toLowerCase();
-                acc[normalized] = (acc[normalized] || 0) + 1;
-                return acc;
-            }, {});
-            const totalRounds = data.round || humanHistory.length || 0;
-            let mostCommonMove = '—';
-            let mostCommonMovePercent = 0;
-            Object.entries(moveCounts).forEach(([move, count]) => {
-                const percent = totalRounds > 0 ? (count / totalRounds) * 100 : 0;
-                if (percent > mostCommonMovePercent) {
-                    mostCommonMovePercent = percent;
-                    mostCommonMove = formatMoveName(move);
-                }
-            });
-
-            const padPredictions = (predictions) => {
-                const copy = Array.isArray(predictions) ? predictions.map(toNumber) : [];
-                while (copy.length < humanNumeric.length) copy.push(null);
-                return copy;
-            };
-
-            const frequencyPreds = padPredictions(data.model_predictions_history?.frequency || []);
-            const markovPreds = padPredictions(data.model_predictions_history?.markov || []);
-            const lstmPreds = padPredictions(data.model_predictions_history?.lstm || []);
-
-            const accuracySeries = {
-                frequency: computeRollingAccuracy(frequencyPreds, humanNumeric),
-                markov: computeRollingAccuracy(markovPreds, humanNumeric),
-                lstm: computeRollingAccuracy(lstmPreds, humanNumeric)
-            };
-
-            const recentSample = winners.slice(-10);
-            const humanWins = stats.human_win || 0;
-            const robotWins = stats.robot_win || 0;
-            const ties = stats.tie || 0;
-            const total = humanWins + robotWins + ties;
-            const humanWinRate = total > 0 ? (humanWins / total) * 100 : 0;
-            const robotWinRate = total > 0 ? (robotWins / total) * 100 : 0;
-            const tieRate = total > 0 ? (ties / total) * 100 : 0;
-
-            const recentHumanWins = recentSample.filter(w => w === 'human').length;
-            const recentRobotWins = recentSample.filter(w => w === 'robot').length;
-            const recentTotal = recentSample.length || 1;
-            const recentHumanWinRate = (recentHumanWins / recentTotal) * 100;
-            const recentRobotWinRate = (recentRobotWins / recentTotal) * 100;
-
-            let currentStreakOwner = 'tie';
-            let currentStreakLength = 0;
-            for (let i = winners.length - 1; i >= 0; i--) {
-                const w = winners[i];
-                if (w === 'unknown' || w === 'tie') break;
-                if (currentStreakOwner === 'tie') {
-                    currentStreakOwner = w;
-                    currentStreakLength = 1;
-                } else if (w === currentStreakOwner) {
-                    currentStreakLength += 1;
-                } else {
-                    break;
-                }
-            }
-            if (currentStreakOwner === 'tie') {
-                currentStreakLength = 0;
-            }
-
-            const recentMoves = humanHistory.slice(-10);
-            const recentCounts = recentMoves.reduce((acc, move) => {
-                if (!move) return acc;
-                const normalized = move.toLowerCase();
-                acc[normalized] = (acc[normalized] || 0) + 1;
-                return acc;
-            }, {});
-            let recentBiasMove = '—';
-            let recentBiasPercent = 0;
-            Object.entries(recentCounts).forEach(([move, count]) => {
-                const percent = (count / (recentMoves.length || 1)) * 100;
-                if (percent > recentBiasPercent) {
-                    recentBiasPercent = percent;
-                    recentBiasMove = formatMoveName(move);
-                }
-            });
-
-            let recommendation = 'Keep monitoring the robot’s shifts and respond with quick pattern changes.';
-            if (recentBiasPercent > 55) {
-                recommendation = 'Your play leans heavily on ' + recentBiasMove + '. Mix in other moves to stay unpredictable.';
-            } else if (recentHumanWinRate < 40) {
-                recommendation = 'Robot momentum is building. Consider switching to the move that counters its recent streak.';
-            } else if (humanWinRate > 60) {
-                recommendation = 'Great control! Maintain variation to protect your edge.';
-            }
-
+            
+            const currentStreak = calculateCurrentStreak(metrics.full_game_snapshot?.results);
+            
+            // Return insights object with ALL metrics from backend
             return {
-                totalRounds,
-                humanWins,
-                robotWins,
-                ties,
-                humanWinRate,
-                robotWinRate,
-                tieRate,
-                mostCommonMove,
-                mostCommonMovePercent,
-                scoreDifferentialSeries,
-                accuracySeries,
-                recentHumanWinRate,
-                recentRobotWinRate,
-                recentBiasMove,
-                recentBiasPercent,
-                currentStreakOwner,
-                currentStreakLength,
-                longestHumanStreak: bestHumanStreak,
-                longestRobotStreak: bestRobotStreak,
-                winners,
-                humanNumeric,
-                frequencyPreds,
-                markovPreds,
-                lstmPreds,
-                recommendation,
-                moveVariance: calculateMoveVariance(humanHistory),
-                aiAccuracy: total > 0 ? (robotWins / total * 100) : 0,
-                aiConfidence: data.difficulty === 'lstm' ? 85 : 
-                             data.difficulty === 'markov' ? 60 : 
-                             data.difficulty === 'frequency' ? 45 : 33
+                // Core metrics from backend unified calculation
+                totalRounds: metrics.full_game_snapshot?.human_moves?.length || 0,
+                humanWins: metrics.human_wins ?? 0,
+                robotWins: metrics.robot_wins ?? 0,
+                ties: metrics.ties ?? 0,
+                humanWinRate: metrics.human_win_rate ?? 0,
+                robotWinRate: metrics.robot_win_rate ?? 0,
+                tieRate: metrics.tie_rate ?? 0,
+                mostCommonMove: metrics.most_common_move ?? '—',
+                mostCommonMovePercent: null, // Could be added to backend if needed
+                
+                // Advanced metrics from backend
+                scoreDifferentialSeries: [metrics.score_differential ?? 0],
+                recentHumanWinRate: metrics.recent_win_rate ?? 0,
+                recentRobotWinRate: null, // Not currently calculated in backend
+                recentBiasMove: metrics.recent_momentum?.recent_bias_type ?? '—',
+                recentBiasPercent: metrics.recent_momentum?.recent_bias_percent ?? 0,
+                longestHumanStreak: metrics.longest_human_streak ?? 0,
+                longestRobotStreak: metrics.longest_robot_streak ?? 0,
+                
+                // UI-specific calculated fields
+                currentStreakOwner: currentStreak.owner,
+                currentStreakLength: currentStreak.length,
+                
+                // Backend predictability score (was moveVariance)
+                moveVariance: metrics.predictability_score ?? 0,
+                
+                // AI metrics from backend
+                aiConfidence: metrics.AI_confidence ?? '--',
+                aiAccuracy: null, // Could be derived if needed
+                
+                // Chart and visualization data (separate from core metrics)
+                winners: metrics.full_game_snapshot?.results || [],
+                accuracySeries: null, // Chart-specific, handled separately
+                humanNumeric: null,   // Chart-specific, handled separately
+                frequencyPreds: null, // Chart-specific, handled separately
+                markovPreds: null,    // Chart-specific, handled separately
+                lstmPreds: null,      // Chart-specific, handled separately
+                
+                // Static recommendation (could be moved to backend)
+                recommendation: 'Keep monitoring patterns and adapt your strategy.',
             };
         }
 
@@ -1160,15 +1069,19 @@
             // Update analytics dashboard
             updateAnalyticsDashboard(data, insights);
 
-            // Check if game should end based on game length limit
-            if (Number.isFinite(currentGameLimit) && data.round >= currentGameLimit) {
-                setTimeout(() => {
-                    freezeGame(data, insights);
-                }, 1000); // Delay to allow move animation to complete
-            }
-
             // Update charts
             updateCharts(data);
+
+            // Check if game should end based on game length limit
+            if (Number.isFinite(currentGameLimit) && data.round >= currentGameLimit) {
+                // Ensure all UI updates are complete before freezing
+                // Use longer delay to guarantee metrics are displayed
+                setTimeout(() => {
+                    // Recalculate insights with final data to ensure accuracy
+                    const finalInsights = deriveGameInsights(data);
+                    freezeGame(data, finalInsights);
+                }, 10); // Increased delay to ensure all updates are rendered
+            }
             
             // Update move display window
             updateMoveDisplay(lastHumanMove, robotMove, result);
@@ -1738,19 +1651,14 @@
             if (isGameFrozen) return;
             if (!data.human_history || data.human_history.length === 0) return;
 
-            // Check if game has ended based on round limit
-            if (currentGameLimit && data.round >= currentGameLimit) {
-                if (!isGameFrozen && !endgameSummaryShown) {
-                    const summaryInsights = insights || deriveGameInsights(data);
-                    freezeGame(data, summaryInsights);
-                }
-                return; // Don't update analytics if game has ended
-            }
-
+            // Always calculate and update insights first, even for final round
             insights = insights || deriveGameInsights(data);
 
-            // Update the overview panel with the latest insights
+            // Update the overview panel with the latest insights (including final round)
             updateOverviewPanel(insights);
+
+            // Note: Pattern View specific updates have been removed
+            // All pattern analysis elements were removed with the Pattern View cleanup
 
             // Note: Pattern View specific updates have been removed
             // All pattern analysis elements were removed with the Pattern View cleanup

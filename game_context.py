@@ -34,6 +34,103 @@ class GameContextBuilder:
     
     def __init__(self):
         self.build_count = 0  # For performance monitoring
+    
+    @staticmethod
+    def calculate_metrics(human_moves, robot_moves, results):
+        """
+        Unified metric calculation - single source of truth for all game metrics.
+        This ensures consistency between what's displayed and what's saved.
+        """
+        from collections import Counter
+        
+        # Win/tie counts
+        human_wins = results.count('human')
+        robot_wins = results.count('robot')
+        ties = results.count('tie')
+        total_rounds = len(results) if results else 0
+        human_win_rate = human_wins / total_rounds * 100 if total_rounds else 0.0
+        robot_win_rate = robot_wins / total_rounds * 100 if total_rounds else 0.0
+        tie_rate = ties / total_rounds * 100 if total_rounds else 0.0
+
+        # Longest streaks
+        def longest_streak(target):
+            max_streak = streak = 0
+            for r in results:
+                if r == target:
+                    streak += 1
+                    max_streak = max(max_streak, streak)
+                else:
+                    streak = 0
+            return max_streak
+        longest_human_streak = longest_streak('human')
+        longest_robot_streak = longest_streak('robot')
+
+        # Most common move
+        most_common_move = Counter(human_moves).most_common(1)[0][0] if human_moves else None
+
+        # Recent win rate (last 10 rounds)
+        recent_results = results[-10:]
+        recent_human_wins = recent_results.count('human')
+        recent_win_rate = recent_human_wins / len(recent_results) * 100 if recent_results else 0.0
+
+        # Score differential
+        score_differential = human_wins - robot_wins
+
+        # AI confidence (placeholder, can be enhanced with model-specific logic)
+        ai_confidence = None
+
+        # Predictability score (move variance)
+        def calculate_move_variance(move_history):
+            if not move_history or len(move_history) < 3:
+                return 0.0
+            move_counts = {'paper': 0, 'rock': 0, 'scissors': 0}
+            for move in move_history:
+                normalized = move.lower() if move else ''
+                if normalized in move_counts:
+                    move_counts[normalized] += 1
+            total = len(move_history)
+            expected_freq = total / 3
+            variance = sum((count - expected_freq) ** 2 for count in move_counts.values()) / 3
+            return min(100, (variance / expected_freq) * 50)
+        predictability_score = calculate_move_variance(human_moves)
+
+        # Recent momentum (last 10 moves)
+        recent_moves = human_moves[-10:]
+        recent_bias_type = None
+        recent_bias_percent = None
+        if recent_moves:
+            move_counts = Counter([m for m in recent_moves if m])
+            if move_counts:
+                bias_type, bias_count = move_counts.most_common(1)[0]
+                percent = (bias_count / len(recent_moves)) * 100
+                recent_bias_type = bias_type
+                recent_bias_percent = percent
+
+        return {
+            'full_game_snapshot': {
+                'human_moves': human_moves,
+                'robot_moves': robot_moves,
+                'results': results,
+            },
+            'recent_momentum': {
+                'last_10': recent_moves,
+                'recent_bias_type': recent_bias_type,
+                'recent_bias_percent': recent_bias_percent,
+            },
+            'predictability_score': predictability_score,
+            'human_wins': human_wins,
+            'robot_wins': robot_wins,
+            'ties': ties,
+            'human_win_rate': human_win_rate,
+            'robot_win_rate': robot_win_rate,
+            'tie_rate': tie_rate,
+            'longest_human_streak': longest_human_streak,
+            'longest_robot_streak': longest_robot_streak,
+            'most_common_move': most_common_move,
+            'recent_win_rate': recent_win_rate,
+            'score_differential': score_differential,
+            'AI_confidence': ai_confidence,
+        }
         
     def build_game_context(
         self,
@@ -82,99 +179,11 @@ class GameContextBuilder:
         in_game = valid_game_length and round_num < game_length_int
         end_game = valid_game_length and game_length_int is not None and round_num >= game_length_int and round_num > 0 and not in_game
 
-        # Metrics (Overview, Scoreboard, Snapshot, Momentum, Strategic Intelligence)
+        # Centralized metrics calculation - single source of truth
         human_moves = session.get('human_moves', [])
         robot_moves = session.get('robot_moves', [])
         results = session.get('results', [])
-
-        # Win/tie counts
-        human_wins = results.count('human')
-        robot_wins = results.count('robot')
-        ties = results.count('tie')
-        total_rounds = len(results) if results else 0
-        human_win_rate = human_wins / total_rounds if total_rounds else 0.0
-        robot_win_rate = robot_wins / total_rounds if total_rounds else 0.0
-        tie_rate = ties / total_rounds if total_rounds else 0.0
-
-        # Longest streaks
-        def longest_streak(target):
-            max_streak = streak = 0
-            for r in results:
-                if r == target:
-                    streak += 1
-                    max_streak = max(max_streak, streak)
-                else:
-                    streak = 0
-            return max_streak
-        longest_human_streak = longest_streak('human')
-        longest_robot_streak = longest_streak('robot')
-
-        # Most common move
-        from collections import Counter
-        most_common_move = Counter(human_moves).most_common(1)[0][0] if human_moves else None
-
-        # Recent win rate (last 10 rounds)
-        recent_results = results[-10:]
-        recent_human_wins = recent_results.count('human')
-        recent_win_rate = recent_human_wins / len(recent_results) if recent_results else 0.0
-
-        # Score differential
-        score_differential = human_wins - robot_wins
-
-        # AI confidence (placeholder, not yet defined)
-        ai_confidence = None
-
-        # Predictability score (ensure matches overview panel)
-        def calculate_move_variance(move_history):
-            if not move_history or len(move_history) < 3:
-                return 0.0
-            move_counts = {'paper': 0, 'rock': 0, 'scissors': 0}
-            for move in move_history:
-                normalized = move.lower() if move else ''
-                if normalized in move_counts:
-                    move_counts[normalized] += 1
-            total = len(move_history)
-            expected_freq = total / 3
-            variance = sum((count - expected_freq) ** 2 for count in move_counts.values()) / 3
-            return min(100, (variance / expected_freq) * 50)
-
-        predictability_score = calculate_move_variance(human_moves)
-
-        metrics = {
-            'full_game_snapshot': {
-                'human_moves': human_moves,
-                'robot_moves': robot_moves,
-                'results': results,
-            },
-            'recent_momentum': {
-                'last_10': human_moves[-10:],
-                'recent_bias_type': None,
-                'recent_bias_percent': None,
-            },
-            'predictability_score': predictability_score,
-            'human_wins': human_wins,
-            'robot_wins': robot_wins,
-            'ties': ties,
-            'human_win_rate': human_win_rate,
-            'robot_win_rate': robot_win_rate,
-            'tie_rate': tie_rate,
-            'longest_human_streak': longest_human_streak,
-            'longest_robot_streak': longest_robot_streak,
-            'most_common_move': most_common_move,
-            'recent_win_rate': recent_win_rate,
-            'score_differential': score_differential,
-            'AI_confidence': ai_confidence,
-        }
-        # Calculate recent bias type/percent
-        recent_moves = metrics['recent_momentum']['last_10']
-        if recent_moves:
-            from collections import Counter
-            move_counts = Counter([m for m in recent_moves if m])
-            if move_counts:
-                bias_type, bias_count = move_counts.most_common(1)[0]
-                percent = (bias_count / len(recent_moves)) * 100
-                metrics['recent_momentum']['recent_bias_type'] = bias_type
-                metrics['recent_momentum']['recent_bias_percent'] = percent
+        metrics = GameContextBuilder.calculate_metrics(human_moves, robot_moves, results)
 
         # Move histories and predictions (append per round)
         game_status = {
