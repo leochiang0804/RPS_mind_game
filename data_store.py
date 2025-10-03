@@ -18,4 +18,4 @@ class DataStore:
         if not os.path.exists(self.filename):
             return []
         with open(self.filename, 'r') as f:
-            return [line.strip() for line in f if line.strip() in ['paper', 'scissor', 'stone']]
+            return [line.strip() for line in f if line.strip() in ['paper', 'scissors', 'rock']]

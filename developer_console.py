@@ -362,8 +362,8 @@ if __name__ == "__main__":
     # Simulate some data
     test_predictions = {
         'random': 'paper',
-        'frequency': 'stone', 
-        'markov': 'scissor'
+        'frequency': 'rock', 
+        'markov': 'scissors'
     }
     
     test_confidences = {
@@ -374,7 +374,7 @@ if __name__ == "__main__":
     
     # Track a few moves
     for i in range(5):
-        track_move('paper', 'stone', 'human_win', test_predictions, test_confidences)
+        track_move('paper', 'rock', 'human_win', test_predictions, test_confidences)
         track_inference('markov', 0.012)
         
     # Generate report

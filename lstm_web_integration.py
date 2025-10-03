@@ -180,7 +180,7 @@ if __name__ == "__main__":
         print("✅ Model loaded successfully")
         
         # Test predictions
-        test_history = ['stone', 'stone', 'paper', 'paper', 'scissor']
+        test_history = ['rock', 'rock', 'paper', 'paper', 'scissors']
         
         probs = predictor.predict(test_history)
         print(f"Predictions: {probs}")

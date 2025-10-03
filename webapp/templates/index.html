@@ -168,12 +168,10 @@
                     </div>
                 </div>
                 <div class="header-actions">
-                    <button class="pill-button" onclick="window.open('/developer', '_blank')">🔧 Developer Console</button>
-                    <button class="pill-button gradient-danger" onclick="window.open('/performance', '_blank')">⚡ Performance Dashboard</button>
-                    <button class="pill-button gradient-danger" onclick="resetGame()">🔄 Reset Game</button>
-                    <button class="pill-button gradient-info" onclick="exportAnalytics()">📊 Export Data</button>
-                    <button class="pill-button outline" onclick="showDeveloperMetrics()">🔧 Developer Metrics</button>
-                    <button class="pill-button gradient-primary" onclick="window.open('/ai_coach_demo', '_blank')">🤖 AI Coach Demo</button>
+                    <button class="pill-button gradient-primary" onclick="window.open('/developer', '_blank')">Developer Console</button>
+                    <button class="pill-button gradient-info" onclick="window.open('/performance', '_blank')">Performance Dashboard</button>
+                    <button class="pill-button gradient-success" onclick="showDeveloperMetrics()">Developer Metrics</button>
+                    <button class="pill-button gradient-danger" onclick="resetGame()">Reset Game</button>
                 </div>
             </header>
 
@@ -1153,9 +1151,9 @@
             if (move && move !== 'unknown') {
                 // Set the correct image
                 const imageMap = {
-                    'rock': '/static/stone.png',    // Note: keeping image filename as stone.png
+                    'rock': '/static/rock.png',    // Note: keeping image filename as stone.png
                     'paper': '/static/paper.png',
-                    'scissors': '/static/scissor.png' // Note: keeping image filename as scissor.png
+                    'scissors': '/static/scissors.png' // Note: keeping image filename as scissor.png
                 };
                 
                 moveImg.src = imageMap[move.toLowerCase()] || '/static/paper.png';
@@ -1386,8 +1384,8 @@
 
             const dialogue = generatePersonalityDialogue(personality, eventType, data);
 
-            // Update speech with typing effect
-            typeMessage(speechElement, dialogue.message);
+            // Update speech by printing text directly
+            speechElement.textContent = dialogue.message;
 
             // Update mood and avatar
             moodElement.textContent = dialogue.mood;
