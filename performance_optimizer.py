@@ -432,16 +432,13 @@ class PerformanceOptimizer:
         }
         
         try:
-            # Bundle size analysis
-            print("🔍 Analyzing bundle sizes...")
+            # Bundle size analysis (silent unless error)
             analysis['bundle_analysis'] = self.bundle_analyzer.analyze_file_sizes()
             
-            # Timing analysis
-            print("⏱️ Analyzing inference timing...")
+            # Timing analysis (silent unless error)
             analysis['timing_analysis'] = self.timing_validator.get_all_models_summary()
             
-            # Resource analysis
-            print("📊 Analyzing resource usage...")
+            # Resource analysis (silent unless error)
             if self.resource_monitor.resource_history:
                 analysis['resource_analysis'] = self.resource_monitor.get_current_usage()
                 analysis['resource_trends'] = self.resource_monitor.get_resource_trends()

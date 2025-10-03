@@ -10,6 +10,10 @@ import psutil
 from datetime import datetime, timedelta
 from collections import defaultdict, Counter
 import numpy as np
+
+# Set matplotlib to use non-GUI backend to prevent threading issues
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for web applications
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.cm as cm
@@ -111,7 +115,6 @@ class ModelComparator:
                     accuracies.append(0)
                     
             from matplotlib.colors import ListedColormap
-            import matplotlib.pyplot as plt
             colors = plt.cm.get_cmap('Set3')(np.linspace(0, 1, len(model_names)))
             bars = ax1.bar(model_names, accuracies, color=colors)
             ax1.set_title('Model Accuracy Comparison')

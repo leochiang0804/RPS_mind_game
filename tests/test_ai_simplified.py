@@ -120,7 +120,7 @@ class SimplifiedAITester:
             # Convert game_history to the expected format (list of tuples)
             history_tuples = [(round_data['human_move'], round_data['robot_move']) 
                              for round_data in game_history if 'human_move' in round_data and 'robot_move' in round_data]
-            final_move = self.personality_engine.apply_personality_to_move(
+            final_move, modified_confidence = self.personality_engine.apply_personality_to_move(
                 base_move or random.choice(self.moves), 
                 confidence, 
                 human_history, 
@@ -129,6 +129,7 @@ class SimplifiedAITester:
         except Exception as e:
             print(f"Error applying personality {personality}: {e}")
             final_move = base_move or random.choice(self.moves)
+            modified_confidence = confidence
         
         return final_move, confidence
     

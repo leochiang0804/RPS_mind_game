@@ -270,7 +270,7 @@ class AdvancedPersonalityEngine:
             return base_move, confidence
         
         personality = self.current_personality
-        moves = ['paper', 'stone', 'scissor']
+        moves = ['paper', 'rock', 'scissors']
         
         # First modify confidence based on personality traits
         modified_confidence = self.modify_confidence_by_personality(confidence)
@@ -362,7 +362,7 @@ class AdvancedPersonalityEngine:
         
         # Find most common human move and aggressively counter it
         most_common = Counter(human_history[-memory_window:]).most_common(1)[0][0]
-        counter_moves = {'paper': 'scissor', 'stone': 'paper', 'scissor': 'stone'}
+        counter_moves = {'paper': 'scissors', 'rock': 'paper', 'scissors': 'rock'}
         
         # Aggression determines counter attack probability (minimum 40%, up to 95%)
         counter_probability = 0.4 + (aggression * 0.55)
@@ -440,7 +440,7 @@ class AdvancedPersonalityEngine:
                 if len(human_history) >= 3:
                     memory_window = max(3, int(memory_span * 5) + 2)
                     most_common = Counter(human_history[-memory_window:]).most_common(1)[0][0]
-                    counter_moves = {'paper': 'scissor', 'stone': 'paper', 'scissor': 'stone'}
+                    counter_moves = {'paper': 'scissors', 'rock': 'paper', 'scissors': 'rock'}
                     return counter_moves[most_common]
             
             # Good performance - maintain with slight variations
@@ -448,7 +448,7 @@ class AdvancedPersonalityEngine:
                 # Add unpredictability based on predictability trait
                 unpredictability_chance = 0.5 - (predictability * 0.4)  # 0.5 to 0.1
                 if random.random() < unpredictability_chance:
-                    moves = ['paper', 'stone', 'scissor']
+                    moves = ['paper', 'rock', 'scissors']
                     return random.choice(moves)
         
         return base_move
@@ -480,7 +480,7 @@ class AdvancedPersonalityEngine:
             
             if pattern_predictions:
                 predicted_move = max(pattern_predictions.keys(), key=lambda x: pattern_predictions[x])
-                counter_moves = {'paper': 'scissor', 'stone': 'paper', 'scissor': 'stone'}
+                counter_moves = {'paper': 'scissors', 'rock': 'paper', 'scissors': 'rock'}
                 
                 # Confidence sensitivity affects pattern confidence threshold
                 pattern_confidence_threshold = 0.4 + (confidence_sensitivity * 0.4)  # 0.4 to 0.8
@@ -490,7 +490,7 @@ class AdvancedPersonalityEngine:
         # Fallback to frequency analysis with memory span consideration
         memory_window = max(5, int(memory_span * 8) + 2)
         most_common = Counter(recent_moves[-memory_window:]).most_common(1)[0][0]
-        counter_moves = {'paper': 'scissor', 'stone': 'paper', 'scissor': 'stone'}
+        counter_moves = {'paper': 'scissors', 'rock': 'paper', 'scissors': 'rock'}
         
         # Predictability affects how often we use the analytical approach
         analytical_probability = 0.6 + (predictability * 0.3)  # 0.6 to 0.9
@@ -515,7 +515,7 @@ class AdvancedPersonalityEngine:
         
         # High chance of completely random move
         if random.random() < chaos_factor:
-            moves = ['paper', 'stone', 'scissor']
+            moves = ['paper', 'rock', 'scissors']
             return random.choice(moves)
         
         # Sometimes do the opposite of what makes sense (anti-logic)
@@ -524,7 +524,7 @@ class AdvancedPersonalityEngine:
             memory_window = max(2, int(memory_span * 5) + 2)
             most_common = Counter(human_history[-memory_window:]).most_common(1)[0][0]
             # Instead of countering, choose what loses to most common
-            lose_to_common = {'paper': 'stone', 'stone': 'scissor', 'scissor': 'paper'}
+            lose_to_common = {'paper': 'rock', 'rock': 'scissors', 'scissors': 'paper'}
             return lose_to_common[most_common]
         
         return base_move

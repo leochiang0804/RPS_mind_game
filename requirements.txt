@@ -1,40 +1,36 @@
 # Paper-Scissor-Stone: Advanced AI Mind Game
-# Core Dependencies for AI Coach Demo System
+# Core Dependencies based on current codebase analysis
 
 # Web Framework
 Flask==3.1.2
 Werkzeug==3.1.3
 
-# Machine Learning & AI
-torch==2.8.0
-scikit-learn==1.6.2
-numpy==2.3.3
+# Machine Learning & Deep Learning
+torch==2.5.0
+numpy==2.1.0
 
-# LangChain AI Coaching System
-langchain==0.3.27
-langchain-ollama==0.2.2
-
-# Ollama Integration (for Real LLM backend)
-ollama==0.6.0
+# Model Deployment & Optimization
+onnx==1.19.0
+onnxruntime==1.23.0
 
 # Data Visualization & Analytics
-matplotlib==3.10.6
-seaborn==0.13.2
+matplotlib==3.9.0
 
 # System Monitoring & Performance
-psutil==7.1.0
+psutil==6.0.0
 
-# Data Processing
-pandas==2.2.3
+# Testing & API Communication
+requests==2.32.3
 
-# Optional Dependencies for Enhanced Features
-# tiktoken==0.8.0  # For token counting in advanced LLM features
-# requests==2.32.3  # For API integrations
+# Core Python Libraries (built-in but specified for clarity)
+# json, time, os, sys, threading, webbrowser, math, random
+# collections, typing, dataclasses, pathlib, datetime, gzip
+# io, base64
 
-# Development & Testing
-# pytest==8.3.4  # For comprehensive testing
-# pytest-flask==1.3.0  # For Flask testing utilities
+# Development & Testing (optional)
+# pytest==8.3.0
+# pytest-flask==1.3.0
 
 # Note: Ensure Python 3.8+ for optimal compatibility
-# Install Ollama separately from: https://ollama.com/
-# Pull llama3.2:3b model: ollama pull llama3.2:3b
+# The codebase uses primarily PyTorch for LSTM, matplotlib for charts,
+# Flask for web framework, and psutil for system monitoring.

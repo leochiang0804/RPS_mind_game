@@ -1,23 +1,18 @@
 {
-  "model_type": "TinyLSTM",
   "vocab_size": 3,
-  "embed_dim": 8,
-  "hidden_dim": 24,
+  "embed_dim": 16,
+  "hidden_dim": 48,
   "num_layers": 2,
-  "move_mapping": {
-    "rock": 0,
-    "paper": 1,
-    "scissors": 2
+  "model_type": "enhanced_lstm_optimized",
+  "architecture_config": {
+    "embed_dim": 16,
+    "hidden_dim": 48,
+    "num_layers": 2
   },
-  "training_data_size": 700,
-  "created_at": "2025-10-02T18:30:41.007155",
-  "training_history": [
-    {
-      "timestamp": "2025-10-02T18:30:41.007163",
-      "data_size": 700,
-      "sequences": 1,
-      "epochs": 100,
-      "format": "rock/paper/scissors"
-    }
-  ]
+  "performance": {
+    "avg_win_rate": 58.666666666666664,
+    "avg_accuracy": 58.58585858585858,
+    "std_win_rate": 4.988876515698588
+  },
+  "optimization_timestamp": "2025-10-03T17:13:10.912789"
 }

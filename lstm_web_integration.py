@@ -13,8 +13,7 @@ import torch
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from lstm_model import TinyLSTM, LSTMTrainer
-from move_mapping import normalize_move, MOVE_TO_NUMBER, NUMBER_TO_MOVE
+from lstm_unified import LSTMManager
 
 import os
 import json
@@ -159,15 +158,29 @@ class LSTMPredictor:
         }
 
 # Global instance for web app
-lstm_predictor = LSTMPredictor()
+lstm_manager = LSTMManager()
 
-def get_lstm_predictor() -> LSTMPredictor:
-    """Get the global LSTM predictor instance"""
-    return lstm_predictor
+def get_lstm_predictor() -> LSTMManager:
+    """Get an instance of the unified LSTM manager for web integration"""
+    return lstm_manager
 
 def init_lstm_model() -> bool:
-    """Initialize LSTM model for web app"""
-    return lstm_predictor.load_model()
+    """Initialize LSTM model for web app (loads both PyTorch and ONNX if available)"""
+    try:
+        lstm_manager.load_model()
+        print("✅ PyTorch LSTM model loaded for web app")
+        
+        # Try to load ONNX for faster inference
+        try:
+            lstm_manager.load_onnx_model()
+            print("✅ ONNX LSTM model loaded for web app")
+        except Exception as e:
+            print(f"⚠️ ONNX not available, using PyTorch: {e}")
+        
+        return True
+    except Exception as e:
+        print(f"❌ Failed to initialize LSTM: {e}")
+        return False
 
 if __name__ == "__main__":
     # Test the web integration

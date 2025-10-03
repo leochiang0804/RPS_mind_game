@@ -157,7 +157,8 @@ class StrategyComparisonTester:
             # Convert game_history to expected format
             history_tuples = [(round_data['human_move'], round_data['robot_move']) 
                              for round_data in game_history if 'human_move' in round_data and 'robot_move' in round_data]
-            final_move = self.personality_engine.apply_personality_to_move(
+            # The personality engine now returns (move, modified_confidence)
+            final_move, modified_confidence = self.personality_engine.apply_personality_to_move(
                 base_move, confidence, human_history, history_tuples
             )
             return final_move
