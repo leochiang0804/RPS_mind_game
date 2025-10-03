@@ -130,6 +130,36 @@ Paper_Scissor_Stone/
 - **Developer Console**: Advanced debugging tools (optional)
 - **Performance Monitoring**: System optimization tracking (optional)
 
+## 🧪 Testing
+
+### Test Scripts
+All test scripts are located in the `tests/` directory:
+
+- **`strategy_comparison_test.py`**: Comprehensive analysis of AI strategy behavior and confidence scoring across different difficulties and personalities
+- **`test_ai_simplified.py`**: Simplified AI confidence and strategy testing with direct simulation of webapp robot_strategy function
+- **`api_baseline.py`**: API baseline testing for regression detection
+- **`capture_baseline.py`**: Captures baseline performance metrics
+- **`simple_baseline.py`**: Simple baseline performance testing
+
+### Running Tests
+```bash
+# Run strategy comparison analysis
+cd tests/
+python strategy_comparison_test.py
+
+# Run simplified AI testing
+python test_ai_simplified.py
+
+# Run baseline tests
+python api_baseline.py
+```
+
+### Test Features
+- **Confidence Score Analysis**: Tests AI confidence patterns across all personalities and difficulties
+- **Strategy Validation**: Verifies ToWin vs NotToLose strategy differentiation
+- **LSTM Integration Testing**: Validates neural network model integration
+- **Regression Testing**: Monitors for performance regressions
+
 ## 🚀 Recent Improvements
 
 ### Performance & Reliability

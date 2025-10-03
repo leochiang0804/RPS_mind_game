@@ -1,0 +1,1987 @@
+{
+  "random": {
+    "balanced": {
+      "error": "Unknown personality: balanced"
+    },
+    "aggressive": {
+      "error": "Unknown personality: aggressive"
+    },
+    "defensive": {
+      "error": "Unknown personality: defensive"
+    },
+    "adaptive": {
+      "error": "Unknown personality: adaptive"
+    },
+    "counter": {
+      "error": "Unknown personality: counter"
+    },
+    "mimic": {
+      "error": "Unknown personality: mimic"
+    },
+    "professor": {
+      "difficulty": "random",
+      "personality": "professor",
+      "game_history": [
+        {
+          "round": 1,
+          "human_move": "rock",
+          "robot_move": "paper",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 2,
+          "human_move": "rock",
+          "robot_move": "rock",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 3,
+          "human_move": "rock",
+          "robot_move": "scissors",
+          "result": "human",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 4,
+          "human_move": "rock",
+          "robot_move": "paper",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 5,
+          "human_move": "rock",
+          "robot_move": "rock",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 6,
+          "human_move": "paper",
+          "robot_move": "rock",
+          "result": "human",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 7,
+          "human_move": "paper",
+          "robot_move": "scissors",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 8,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 9,
+          "human_move": "paper",
+          "robot_move": "scissors",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 10,
+          "human_move": "paper",
+          "robot_move": "rock",
+          "result": "human",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 11,
+          "human_move": "scissors",
+          "robot_move": "rock",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 12,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 13,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 14,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 15,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 16,
+          "human_move": "paper",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 17,
+          "human_move": "rock",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 18,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 19,
+          "human_move": "rock",
+          "robot_move": "scissors",
+          "result": "human",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 20,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 21,
+          "human_move": "scissors",
+          "robot_move": "paper",
+          "result": "human",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 22,
+          "human_move": "scissors",
+          "robot_move": "paper",
+          "result": "human",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 23,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 24,
+          "human_move": "scissors",
+          "robot_move": "scissors",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 25,
+          "human_move": "scissors",
+          "robot_move": "scissors",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        }
+      ],
+      "final_metrics": {
+        "full_game_snapshot": {
+          "human_moves": [
+            "rock",
+            "rock",
+            "rock",
+            "rock",
+            "rock",
+            "paper",
+            "paper",
+            "paper",
+            "paper",
+            "paper",
+            "scissors",
+            "scissors",
+            "scissors",
+            "scissors",
+            "scissors",
+            "paper",
+            "rock",
+            "paper",
+            "rock",
+            "paper",
+            "scissors",
+            "scissors",
+            "paper",
+            "scissors",
+            "scissors"
+          ],
+          "robot_moves": [
+            "paper",
+            "rock",
+            "scissors",
+            "paper",
+            "rock",
+            "rock",
+            "scissors",
+            "paper",
+            "scissors",
+            "rock",
+            "rock",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "paper",
+            "scissors",
+            "paper",
+            "paper",
+            "paper",
+            "paper",
+            "scissors",
+            "scissors"
+          ],
+          "results": [
+            "robot",
+            "tie",
+            "human",
+            "robot",
+            "tie",
+            "human",
+            "robot",
+            "tie",
+            "robot",
+            "human",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "tie",
+            "human",
+            "tie",
+            "human",
+            "human",
+            "tie",
+            "tie",
+            "tie"
+          ]
+        },
+        "recent_momentum": {
+          "last_10": [
+            "paper",
+            "rock",
+            "paper",
+            "rock",
+            "paper",
+            "scissors",
+            "scissors",
+            "paper",
+            "scissors",
+            "scissors"
+          ],
+          "recent_bias_type": "paper",
+          "recent_bias_percent": 40.0
+        },
+        "predictability_score": 5.333333333333333,
+        "human_wins": 6,
+        "robot_wins": 11,
+        "ties": 8,
+        "human_win_rate": 24.0,
+        "robot_win_rate": 44.0,
+        "tie_rate": 32.0,
+        "longest_human_streak": 2,
+        "longest_robot_streak": 7,
+        "most_common_move": "paper",
+        "recent_win_rate": 30.0,
+        "score_differential": -5,
+        "current_confidence_score": 0,
+        "max_confidence_score": 0,
+        "min_confidence_score": 0,
+        "avg_confidence_score": 0,
+        "confidence_score_history": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "confidence_stats": {
+        "min": 0.0,
+        "max": 0.0,
+        "avg": 0.0,
+        "final": 0.0
+      },
+      "move_distribution": {
+        "human": {
+          "rock": 7,
+          "paper": 9,
+          "scissors": 9
+        },
+        "robot": {
+          "paper": 8,
+          "rock": 5,
+          "scissors": 6,
+          "scissor": 6
+        }
+      },
+      "results_summary": {
+        "robot": 11,
+        "tie": 8,
+        "human": 6
+      }
+    },
+    "unpredictable": {
+      "error": "Unknown personality: unpredictable"
+    }
+  },
+  "frequency": {
+    "balanced": {
+      "error": "Unknown personality: balanced"
+    },
+    "aggressive": {
+      "error": "Unknown personality: aggressive"
+    },
+    "defensive": {
+      "error": "Unknown personality: defensive"
+    },
+    "adaptive": {
+      "error": "Unknown personality: adaptive"
+    },
+    "counter": {
+      "error": "Unknown personality: counter"
+    },
+    "mimic": {
+      "error": "Unknown personality: mimic"
+    },
+    "professor": {
+      "difficulty": "frequency",
+      "personality": "professor",
+      "game_history": [
+        {
+          "round": 1,
+          "human_move": "rock",
+          "robot_move": "paper",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 2,
+          "human_move": "rock",
+          "robot_move": "rock",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 3,
+          "human_move": "rock",
+          "robot_move": "rock",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 4,
+          "human_move": "rock",
+          "robot_move": "paper",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 5,
+          "human_move": "rock",
+          "robot_move": "scissors",
+          "result": "human",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 6,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 7,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 8,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 9,
+          "human_move": "paper",
+          "robot_move": "scissors",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 10,
+          "human_move": "paper",
+          "robot_move": "scissors",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 11,
+          "human_move": "scissors",
+          "robot_move": "rock",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 12,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 13,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 14,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 15,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 16,
+          "human_move": "paper",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 17,
+          "human_move": "rock",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 18,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 19,
+          "human_move": "rock",
+          "robot_move": "paper",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 20,
+          "human_move": "paper",
+          "robot_move": "rock",
+          "result": "human",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 21,
+          "human_move": "scissors",
+          "robot_move": "rock",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 22,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 23,
+          "human_move": "rock",
+          "robot_move": "paper",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 24,
+          "human_move": "rock",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        },
+        {
+          "round": 25,
+          "human_move": "rock",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.0,
+          "confidence_percent": 0
+        }
+      ],
+      "final_metrics": {
+        "full_game_snapshot": {
+          "human_moves": [
+            "rock",
+            "rock",
+            "rock",
+            "rock",
+            "rock",
+            "paper",
+            "paper",
+            "paper",
+            "paper",
+            "paper",
+            "scissors",
+            "scissors",
+            "scissors",
+            "scissors",
+            "scissors",
+            "paper",
+            "rock",
+            "paper",
+            "rock",
+            "paper",
+            "scissors",
+            "paper",
+            "rock",
+            "rock",
+            "rock"
+          ],
+          "robot_moves": [
+            "paper",
+            "rock",
+            "rock",
+            "paper",
+            "scissors",
+            "paper",
+            "paper",
+            "paper",
+            "scissors",
+            "scissors",
+            "rock",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "paper",
+            "paper",
+            "rock",
+            "rock",
+            "paper",
+            "paper",
+            "scissor",
+            "scissor"
+          ],
+          "results": [
+            "robot",
+            "tie",
+            "tie",
+            "robot",
+            "human",
+            "tie",
+            "tie",
+            "tie",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "tie",
+            "robot",
+            "human",
+            "robot",
+            "tie",
+            "robot",
+            "robot",
+            "robot"
+          ]
+        },
+        "recent_momentum": {
+          "last_10": [
+            "paper",
+            "rock",
+            "paper",
+            "rock",
+            "paper",
+            "scissors",
+            "paper",
+            "rock",
+            "rock",
+            "rock"
+          ],
+          "recent_bias_type": "rock",
+          "recent_bias_percent": 50.0
+        },
+        "predictability_score": 17.333333333333332,
+        "human_wins": 2,
+        "robot_wins": 16,
+        "ties": 7,
+        "human_win_rate": 8.0,
+        "robot_win_rate": 64.0,
+        "tie_rate": 28.000000000000004,
+        "longest_human_streak": 1,
+        "longest_robot_streak": 9,
+        "most_common_move": "rock",
+        "recent_win_rate": 10.0,
+        "score_differential": -14,
+        "current_confidence_score": 0,
+        "max_confidence_score": 0,
+        "min_confidence_score": 0,
+        "avg_confidence_score": 0,
+        "confidence_score_history": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "confidence_stats": {
+        "min": 0.0,
+        "max": 0.0,
+        "avg": 0.0,
+        "final": 0.0
+      },
+      "move_distribution": {
+        "human": {
+          "rock": 10,
+          "paper": 9,
+          "scissors": 6
+        },
+        "robot": {
+          "paper": 9,
+          "rock": 5,
+          "scissors": 3,
+          "scissor": 8
+        }
+      },
+      "results_summary": {
+        "robot": 16,
+        "tie": 7,
+        "human": 2
+      }
+    },
+    "unpredictable": {
+      "error": "Unknown personality: unpredictable"
+    }
+  },
+  "easy": {
+    "balanced": {
+      "error": "Unknown personality: balanced"
+    },
+    "aggressive": {
+      "error": "Unknown personality: aggressive"
+    },
+    "defensive": {
+      "error": "Unknown personality: defensive"
+    },
+    "adaptive": {
+      "error": "Unknown personality: adaptive"
+    },
+    "counter": {
+      "error": "Unknown personality: counter"
+    },
+    "mimic": {
+      "error": "Unknown personality: mimic"
+    },
+    "professor": {
+      "difficulty": "easy",
+      "personality": "professor",
+      "game_history": [
+        {
+          "round": 1,
+          "human_move": "rock",
+          "robot_move": "scissors",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 2,
+          "human_move": "rock",
+          "robot_move": "scissors",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 3,
+          "human_move": "rock",
+          "robot_move": "rock",
+          "result": "tie",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 4,
+          "human_move": "rock",
+          "robot_move": "rock",
+          "result": "tie",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 5,
+          "human_move": "rock",
+          "robot_move": "scissors",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 6,
+          "human_move": "paper",
+          "robot_move": "scissors",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 7,
+          "human_move": "paper",
+          "robot_move": "rock",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 8,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 9,
+          "human_move": "paper",
+          "robot_move": "rock",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 10,
+          "human_move": "paper",
+          "robot_move": "scissors",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 11,
+          "human_move": "scissors",
+          "robot_move": "paper",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 12,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 13,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 14,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 15,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 16,
+          "human_move": "paper",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 17,
+          "human_move": "rock",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 18,
+          "human_move": "paper",
+          "robot_move": "rock",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 19,
+          "human_move": "rock",
+          "robot_move": "scissors",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 20,
+          "human_move": "paper",
+          "robot_move": "scissors",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 21,
+          "human_move": "paper",
+          "robot_move": "rock",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 22,
+          "human_move": "paper",
+          "robot_move": "scissors",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 23,
+          "human_move": "paper",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 24,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 25,
+          "human_move": "paper",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        }
+      ],
+      "final_metrics": {
+        "full_game_snapshot": {
+          "human_moves": [
+            "rock",
+            "rock",
+            "rock",
+            "rock",
+            "rock",
+            "paper",
+            "paper",
+            "paper",
+            "paper",
+            "paper",
+            "scissors",
+            "scissors",
+            "scissors",
+            "scissors",
+            "scissors",
+            "paper",
+            "rock",
+            "paper",
+            "rock",
+            "paper",
+            "paper",
+            "paper",
+            "paper",
+            "scissors",
+            "paper"
+          ],
+          "robot_moves": [
+            "scissors",
+            "scissors",
+            "rock",
+            "rock",
+            "scissors",
+            "scissors",
+            "rock",
+            "paper",
+            "rock",
+            "scissors",
+            "paper",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "rock",
+            "scissors",
+            "scissors",
+            "rock",
+            "scissors",
+            "scissor",
+            "scissor",
+            "scissor"
+          ],
+          "results": [
+            "human",
+            "human",
+            "tie",
+            "tie",
+            "human",
+            "robot",
+            "human",
+            "tie",
+            "human",
+            "robot",
+            "human",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "human",
+            "human",
+            "robot",
+            "human",
+            "robot",
+            "robot",
+            "robot",
+            "robot"
+          ]
+        },
+        "recent_momentum": {
+          "last_10": [
+            "paper",
+            "rock",
+            "paper",
+            "rock",
+            "paper",
+            "paper",
+            "paper",
+            "paper",
+            "scissors",
+            "paper"
+          ],
+          "recent_bias_type": "paper",
+          "recent_bias_percent": 70.0
+        },
+        "predictability_score": 41.33333333333333,
+        "human_wins": 9,
+        "robot_wins": 13,
+        "ties": 3,
+        "human_win_rate": 36.0,
+        "robot_win_rate": 52.0,
+        "tie_rate": 12.0,
+        "longest_human_streak": 2,
+        "longest_robot_streak": 6,
+        "most_common_move": "paper",
+        "recent_win_rate": 30.0,
+        "score_differential": -4,
+        "current_confidence_score": 33,
+        "max_confidence_score": 33,
+        "min_confidence_score": 33,
+        "avg_confidence_score": 33,
+        "confidence_score_history": [
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33
+        ]
+      },
+      "confidence_stats": {
+        "min": 0.33,
+        "max": 0.33,
+        "avg": 0.33,
+        "final": 0.33
+      },
+      "move_distribution": {
+        "human": {
+          "rock": 7,
+          "paper": 12,
+          "scissors": 6
+        },
+        "robot": {
+          "scissors": 8,
+          "rock": 6,
+          "paper": 2,
+          "scissor": 9
+        }
+      },
+      "results_summary": {
+        "human": 9,
+        "tie": 3,
+        "robot": 13
+      }
+    },
+    "unpredictable": {
+      "error": "Unknown personality: unpredictable"
+    }
+  },
+  "hard": {
+    "balanced": {
+      "error": "Unknown personality: balanced"
+    },
+    "aggressive": {
+      "error": "Unknown personality: aggressive"
+    },
+    "defensive": {
+      "error": "Unknown personality: defensive"
+    },
+    "adaptive": {
+      "error": "Unknown personality: adaptive"
+    },
+    "counter": {
+      "error": "Unknown personality: counter"
+    },
+    "mimic": {
+      "error": "Unknown personality: mimic"
+    },
+    "professor": {
+      "difficulty": "hard",
+      "personality": "professor",
+      "game_history": [
+        {
+          "round": 1,
+          "human_move": "rock",
+          "robot_move": "scissors",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 2,
+          "human_move": "rock",
+          "robot_move": "scissors",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 3,
+          "human_move": "rock",
+          "robot_move": "rock",
+          "result": "tie",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 4,
+          "human_move": "rock",
+          "robot_move": "scissors",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 5,
+          "human_move": "rock",
+          "robot_move": "scissors",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 6,
+          "human_move": "paper",
+          "robot_move": "rock",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 7,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 8,
+          "human_move": "paper",
+          "robot_move": "scissors",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 9,
+          "human_move": "paper",
+          "robot_move": "rock",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 10,
+          "human_move": "paper",
+          "robot_move": "rock",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 11,
+          "human_move": "scissors",
+          "robot_move": "rock",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 12,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 13,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 14,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 15,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 16,
+          "human_move": "paper",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 17,
+          "human_move": "rock",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 18,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 19,
+          "human_move": "rock",
+          "robot_move": "paper",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 20,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 21,
+          "human_move": "rock",
+          "robot_move": "paper",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 22,
+          "human_move": "paper",
+          "robot_move": "rock",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 23,
+          "human_move": "paper",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 24,
+          "human_move": "rock",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 25,
+          "human_move": "paper",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        }
+      ],
+      "final_metrics": {
+        "full_game_snapshot": {
+          "human_moves": [
+            "rock",
+            "rock",
+            "rock",
+            "rock",
+            "rock",
+            "paper",
+            "paper",
+            "paper",
+            "paper",
+            "paper",
+            "scissors",
+            "scissors",
+            "scissors",
+            "scissors",
+            "scissors",
+            "paper",
+            "rock",
+            "paper",
+            "rock",
+            "paper",
+            "rock",
+            "paper",
+            "paper",
+            "rock",
+            "paper"
+          ],
+          "robot_moves": [
+            "scissors",
+            "scissors",
+            "rock",
+            "scissors",
+            "scissors",
+            "rock",
+            "paper",
+            "scissors",
+            "rock",
+            "rock",
+            "rock",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "paper",
+            "paper",
+            "paper",
+            "paper",
+            "rock",
+            "scissor",
+            "scissor",
+            "scissor"
+          ],
+          "results": [
+            "human",
+            "human",
+            "tie",
+            "human",
+            "human",
+            "human",
+            "tie",
+            "robot",
+            "human",
+            "human",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "tie",
+            "robot",
+            "tie",
+            "robot",
+            "human",
+            "robot",
+            "robot",
+            "robot"
+          ]
+        },
+        "recent_momentum": {
+          "last_10": [
+            "paper",
+            "rock",
+            "paper",
+            "rock",
+            "paper",
+            "rock",
+            "paper",
+            "paper",
+            "rock",
+            "paper"
+          ],
+          "recent_bias_type": "paper",
+          "recent_bias_percent": 60.0
+        },
+        "predictability_score": 37.33333333333332,
+        "human_wins": 8,
+        "robot_wins": 13,
+        "ties": 4,
+        "human_win_rate": 32.0,
+        "robot_win_rate": 52.0,
+        "tie_rate": 16.0,
+        "longest_human_streak": 3,
+        "longest_robot_streak": 7,
+        "most_common_move": "paper",
+        "recent_win_rate": 10.0,
+        "score_differential": -5,
+        "current_confidence_score": 33,
+        "max_confidence_score": 33,
+        "min_confidence_score": 33,
+        "avg_confidence_score": 33,
+        "confidence_score_history": [
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33
+        ]
+      },
+      "confidence_stats": {
+        "min": 0.33,
+        "max": 0.33,
+        "avg": 0.33,
+        "final": 0.33
+      },
+      "move_distribution": {
+        "human": {
+          "rock": 9,
+          "paper": 11,
+          "scissors": 5
+        },
+        "robot": {
+          "scissors": 5,
+          "rock": 6,
+          "paper": 5,
+          "scissor": 9
+        }
+      },
+      "results_summary": {
+        "human": 8,
+        "tie": 4,
+        "robot": 13
+      }
+    },
+    "unpredictable": {
+      "error": "Unknown personality: unpredictable"
+    }
+  },
+  "expert": {
+    "balanced": {
+      "error": "Unknown personality: balanced"
+    },
+    "aggressive": {
+      "error": "Unknown personality: aggressive"
+    },
+    "defensive": {
+      "error": "Unknown personality: defensive"
+    },
+    "adaptive": {
+      "error": "Unknown personality: adaptive"
+    },
+    "counter": {
+      "error": "Unknown personality: counter"
+    },
+    "mimic": {
+      "error": "Unknown personality: mimic"
+    },
+    "professor": {
+      "difficulty": "expert",
+      "personality": "professor",
+      "game_history": [
+        {
+          "round": 1,
+          "human_move": "rock",
+          "robot_move": "paper",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 2,
+          "human_move": "rock",
+          "robot_move": "paper",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 3,
+          "human_move": "rock",
+          "robot_move": "paper",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 4,
+          "human_move": "rock",
+          "robot_move": "rock",
+          "result": "tie",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 5,
+          "human_move": "rock",
+          "robot_move": "paper",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 6,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 7,
+          "human_move": "paper",
+          "robot_move": "scissors",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 8,
+          "human_move": "paper",
+          "robot_move": "scissors",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 9,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 10,
+          "human_move": "paper",
+          "robot_move": "paper",
+          "result": "tie",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 11,
+          "human_move": "scissors",
+          "robot_move": "rock",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 12,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 13,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 14,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 15,
+          "human_move": "scissors",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 16,
+          "human_move": "paper",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 17,
+          "human_move": "rock",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 18,
+          "human_move": "paper",
+          "robot_move": "rock",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 19,
+          "human_move": "rock",
+          "robot_move": "scissors",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 20,
+          "human_move": "paper",
+          "robot_move": "scissors",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 21,
+          "human_move": "scissors",
+          "robot_move": "paper",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 22,
+          "human_move": "paper",
+          "robot_move": "rock",
+          "result": "human",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 23,
+          "human_move": "paper",
+          "robot_move": "scissors",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 24,
+          "human_move": "paper",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        },
+        {
+          "round": 25,
+          "human_move": "rock",
+          "robot_move": "scissor",
+          "result": "robot",
+          "confidence": 0.33,
+          "confidence_percent": 33
+        }
+      ],
+      "final_metrics": {
+        "full_game_snapshot": {
+          "human_moves": [
+            "rock",
+            "rock",
+            "rock",
+            "rock",
+            "rock",
+            "paper",
+            "paper",
+            "paper",
+            "paper",
+            "paper",
+            "scissors",
+            "scissors",
+            "scissors",
+            "scissors",
+            "scissors",
+            "paper",
+            "rock",
+            "paper",
+            "rock",
+            "paper",
+            "scissors",
+            "paper",
+            "paper",
+            "paper",
+            "rock"
+          ],
+          "robot_moves": [
+            "paper",
+            "paper",
+            "paper",
+            "rock",
+            "paper",
+            "paper",
+            "scissors",
+            "scissors",
+            "paper",
+            "paper",
+            "rock",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "scissor",
+            "rock",
+            "scissors",
+            "scissors",
+            "paper",
+            "rock",
+            "scissors",
+            "scissor",
+            "scissor"
+          ],
+          "results": [
+            "robot",
+            "robot",
+            "robot",
+            "tie",
+            "robot",
+            "tie",
+            "robot",
+            "robot",
+            "tie",
+            "tie",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "robot",
+            "human",
+            "human",
+            "robot",
+            "human",
+            "human",
+            "robot",
+            "robot",
+            "robot"
+          ]
+        },
+        "recent_momentum": {
+          "last_10": [
+            "paper",
+            "rock",
+            "paper",
+            "rock",
+            "paper",
+            "scissors",
+            "paper",
+            "paper",
+            "paper",
+            "rock"
+          ],
+          "recent_bias_type": "paper",
+          "recent_bias_percent": 60.0
+        },
+        "predictability_score": 25.33333333333333,
+        "human_wins": 4,
+        "robot_wins": 17,
+        "ties": 4,
+        "human_win_rate": 16.0,
+        "robot_win_rate": 68.0,
+        "tie_rate": 16.0,
+        "longest_human_streak": 2,
+        "longest_robot_streak": 7,
+        "most_common_move": "paper",
+        "recent_win_rate": 40.0,
+        "score_differential": -13,
+        "current_confidence_score": 33,
+        "max_confidence_score": 33,
+        "min_confidence_score": 33,
+        "avg_confidence_score": 33,
+        "confidence_score_history": [
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33,
+          0.33
+        ]
+      },
+      "confidence_stats": {
+        "min": 0.33,
+        "max": 0.33,
+        "avg": 0.33,
+        "final": 0.33
+      },
+      "move_distribution": {
+        "human": {
+          "rock": 8,
+          "paper": 11,
+          "scissors": 6
+        },
+        "robot": {
+          "paper": 8,
+          "rock": 4,
+          "scissors": 5,
+          "scissor": 8
+        }
+      },
+      "results_summary": {
+        "robot": 17,
+        "tie": 4,
+        "human": 4
+      }
+    },
+    "unpredictable": {
+      "error": "Unknown personality: unpredictable"
+    }
+  }
+}

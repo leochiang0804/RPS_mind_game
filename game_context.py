@@ -36,10 +36,17 @@ class GameContextBuilder:
         self.build_count = 0  # For performance monitoring
     
     @staticmethod
-    def calculate_metrics(human_moves, robot_moves, results):
+    def calculate_metrics(human_moves, robot_moves, results, confidence_history=None, personality_modified_confidence_history=None):
         """
         Unified metric calculation - single source of truth for all game metrics.
         This ensures consistency between what's displayed and what's saved.
+        
+        Args:
+            human_moves: List of human moves
+            robot_moves: List of robot moves  
+            results: List of game results
+            confidence_history: List of AI confidence scores for each round
+            personality_modified_confidence_history: List of personality-modified confidence scores for each round
         """
         from collections import Counter
         
@@ -76,8 +83,36 @@ class GameContextBuilder:
         # Score differential
         score_differential = human_wins - robot_wins
 
-        # AI confidence (placeholder, can be enhanced with model-specific logic)
-        ai_confidence = None
+        # AI confidence tracking
+        confidence_score_history = confidence_history or []
+        
+        # Calculate confidence statistics
+        if confidence_score_history:
+            current_confidence_score = int(confidence_score_history[-1] * 100)  # Convert to percentage as int
+            max_confidence_score = int(max(confidence_score_history) * 100)
+            min_confidence_score = int(min(confidence_score_history) * 100)
+            avg_confidence_score = int(sum(confidence_score_history) / len(confidence_score_history) * 100)
+        else:
+            current_confidence_score = 33  # Default confidence as percentage
+            max_confidence_score = 33
+            min_confidence_score = 33
+            avg_confidence_score = 33
+
+        # Personality-modified confidence tracking
+        personality_modified_confidence_score_history = personality_modified_confidence_history or []
+        
+        # Calculate personality-modified confidence statistics
+        if personality_modified_confidence_score_history:
+            current_confidence_score_modified_by_personality = int(personality_modified_confidence_score_history[-1] * 100)
+            max_confidence_score_modified_by_personality = int(max(personality_modified_confidence_score_history) * 100)
+            min_confidence_score_modified_by_personality = int(min(personality_modified_confidence_score_history) * 100)
+            avg_confidence_score_modified_by_personality = int(sum(personality_modified_confidence_score_history) / len(personality_modified_confidence_score_history) * 100)
+        else:
+            # For random/frequency models or when personality modification isn't applicable
+            current_confidence_score_modified_by_personality = current_confidence_score
+            max_confidence_score_modified_by_personality = max_confidence_score
+            min_confidence_score_modified_by_personality = min_confidence_score
+            avg_confidence_score_modified_by_personality = avg_confidence_score
 
         # Predictability score (move variance)
         def calculate_move_variance(move_history):
@@ -129,7 +164,17 @@ class GameContextBuilder:
             'most_common_move': most_common_move,
             'recent_win_rate': recent_win_rate,
             'score_differential': score_differential,
-            'AI_confidence': ai_confidence,
+            'current_confidence_score': current_confidence_score,
+            'max_confidence_score': max_confidence_score,
+            'min_confidence_score': min_confidence_score,
+            'avg_confidence_score': avg_confidence_score,
+            'confidence_score_history': confidence_score_history,
+            # Personality-modified confidence metrics
+            'current_confidence_score_modified_by_personality': current_confidence_score_modified_by_personality,
+            'max_confidence_score_modified_by_personality': max_confidence_score_modified_by_personality,
+            'min_confidence_score_modified_by_personality': min_confidence_score_modified_by_personality,
+            'avg_confidence_score_modified_by_personality': avg_confidence_score_modified_by_personality,
+            'confidence_score_modified_by_personality_history': personality_modified_confidence_score_history,
         }
         
     def build_game_context(
@@ -155,12 +200,30 @@ class GameContextBuilder:
                 game_length_int = int(match.group(1))
         elif isinstance(raw_game_length, int):
             game_length_int = raw_game_length
+        # Get personality traits from personality engine
+        personality_traits = {}
+        personality_name = session.get('personality', 'unknown')
+        if personality_name != 'unknown' and personality_name != 'neutral':
+            from personality_engine import get_personality_engine
+            engine = get_personality_engine()
+            personality_info = engine.get_personality_info(personality_name)
+            if personality_info and 'traits' in personality_info:
+                personality_traits = personality_info['traits']
+        
         opponent_info = {
             'ai_difficulty': session.get('ai_difficulty', 'unknown'),
             'ai_strategy': session.get('strategy_preference', 'unknown'),
-            'ai_personality': session.get('personality', 'unknown'),
+            'ai_personality': personality_name,
             # Store as integer if possible
             'game_length': game_length_int,
+            # Personality traits (7 core traits)
+            'personality_aggression': personality_traits.get('aggression', 0.0),
+            'personality_defensiveness': personality_traits.get('defensiveness', 0.0),
+            'personality_adaptability': personality_traits.get('adaptability', 0.0),
+            'personality_predictability': personality_traits.get('predictability', 0.0),
+            'personality_risk_tolerance': personality_traits.get('risk_tolerance', 0.0),
+            'personality_memory_span': personality_traits.get('memory_span', 0.0),
+            'personality_confidence_sensitivity': personality_traits.get('confidence_sensitivity', 0.0),
         }
 
         # Game Status
@@ -183,7 +246,9 @@ class GameContextBuilder:
         human_moves = session.get('human_moves', [])
         robot_moves = session.get('robot_moves', [])
         results = session.get('results', [])
-        metrics = GameContextBuilder.calculate_metrics(human_moves, robot_moves, results)
+        confidence_history = session.get('confidence_score_history', [])
+        personality_modified_confidence_history = session.get('confidence_score_modified_by_personality_history', [])
+        metrics = GameContextBuilder.calculate_metrics(human_moves, robot_moves, results, confidence_history, personality_modified_confidence_history)
 
         # Move histories and predictions (append per round)
         game_status = {

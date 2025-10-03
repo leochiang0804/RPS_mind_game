@@ -130,6 +130,8 @@ game_state = {
         'to_win': [],
         'not_to_lose': [],
     },
+    'confidence_score_history': [],  # Track confidence for each round based on active strategy
+    'confidence_score_modified_by_personality_history': [],  # Track personality-modified confidence
 }
 
 # Game constants - using standard rock/paper/scissors terminology
@@ -423,35 +425,75 @@ def play():
         # Predict next human move, then counter it
         predicted = None
         confidence = 0.33
+        base_move = None  # Initialize base_move
+        personality_modified_confidence = confidence  # Initialize as same as original
+        
+        # For random and frequency models, personality doesn't affect confidence
+        use_personality_for_confidence = difficulty in ['markov', 'lstm']
         
         # Apply strategy preference to determine which approach to use
-        if strategy_preference == 'to_win' and difficulty in ['markov', 'frequency', 'random', 'lstm']:
+        if strategy_preference == 'to_win' and difficulty in ['markov', 'lstm']:
             # Force the AI to use the aggressive "to win" approach
-            predicted = to_win_strategy.predict(history)
-            confidence = to_win_strategy.get_confidence()
-            # Convert to robot counter move
-            counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
-            base_move = counter.get(predicted) if predicted else random.choice(MOVES)
+            if len(history) >= 3:
+                if difficulty == 'lstm' and LSTM_AVAILABLE and lstm_predictor:
+                    # LSTM with TO_WIN strategy: confidence = abs(2 * highest_prob - 1)
+                    try:
+                        lstm_probs = lstm_predictor.predict(history)
+                        highest_prob = max(lstm_probs.values())
+                        confidence = abs(2 * highest_prob - 1)
+                        base_move = lstm_predictor.get_counter_move(history)
+                    except Exception as e:
+                        print(f"LSTM prediction error in TO_WIN: {e}")
+                        base_move = random.choice(MOVES)
+                        confidence = 0.33
+                else:
+                    # Use ToWinStrategy for MARKOV or fallback
+                    human_pred = to_win_strategy.predict(history)
+                    confidence = to_win_strategy.get_confidence()
+                    # Convert human prediction to robot counter move
+                    counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
+                    base_move = counter.get(human_pred) if human_pred else random.choice(MOVES)
+            else:
+                base_move = random.choice(MOVES)
+                confidence = 0.33
             
-        elif strategy_preference == 'not_to_lose' and difficulty in ['markov', 'frequency', 'random', 'lstm']:
+        elif strategy_preference == 'not_to_lose' and difficulty in ['markov', 'lstm']:
             # Force the AI to use the defensive "not to lose" approach
-            predicted = not_to_lose_strategy.predict(history)
-            confidence = not_to_lose_strategy.get_confidence()
-            # Convert to robot counter move
-            counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
-            base_move = counter.get(predicted) if predicted else random.choice(MOVES)
+            if len(history) >= 3:
+                if difficulty == 'lstm' and LSTM_AVAILABLE and lstm_predictor:
+                    # LSTM with NOT_TO_LOSE strategy: confidence = abs(2 * (sum of highest two probs) - 1)
+                    try:
+                        lstm_probs = lstm_predictor.predict(history)
+                        sorted_probs = sorted(lstm_probs.values(), reverse=True)
+                        highest_two_sum = sorted_probs[0] + sorted_probs[1]
+                        confidence = abs(2 * highest_two_sum - 1)
+                        base_move = lstm_predictor.get_counter_move(history)
+                    except Exception as e:
+                        print(f"LSTM prediction error in NOT_TO_LOSE: {e}")
+                        base_move = random.choice(MOVES)
+                        confidence = 0.33
+                else:
+                    # Use NotToLoseStrategy for MARKOV or fallback
+                    human_pred = not_to_lose_strategy.predict(history)
+                    confidence = not_to_lose_strategy.get_confidence()
+                    # Convert human prediction to robot counter move
+                    counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
+                    base_move = counter.get(human_pred) if human_pred else random.choice(MOVES)
+            else:
+                base_move = random.choice(MOVES)
+                confidence = 0.33
             
         else:
             # Regular difficulty-based strategy
             if difficulty == 'random':
                 predicted = random.choice(MOVES)
-                confidence = 0.33
+                confidence = 0.0  # Random strategy has no confidence
             elif difficulty == 'frequency':
                 predicted_counter = frequency_strategy.predict(history)
                 # Convert back to predicted human move
                 reverse_counter = {'scissors': 'paper', 'rock': 'scissors', 'paper': 'rock'}
                 predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
-                confidence = 0.5
+                confidence = 0.0  # Frequency strategy has no confidence
             elif difficulty == 'markov':
                 markov_strategy.train(history)
                 predicted_counter = markov_strategy.predict(history)
@@ -459,28 +501,47 @@ def play():
                 predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
                 confidence = 0.6
             elif difficulty == 'lstm' and LSTM_AVAILABLE and lstm_predictor:
-                # LSTM prediction
+                # LSTM prediction with strategy-specific confidence calculation
                 try:
+                    # Get LSTM probabilities for human moves
+                    lstm_probs = lstm_predictor.predict(history)
+                    
+                    # Calculate strategy-specific confidence
+                    if strategy_preference == 'to_win':
+                        # ToWin strategy: confidence = abs(2 * highest_prob - 1)
+                        highest_prob = max(lstm_probs.values())
+                        confidence = abs(2 * highest_prob - 1)
+                    elif strategy_preference == 'not_to_lose':
+                        # NotToLose strategy: confidence = abs(2 * (sum of highest two probs) - 1)
+                        sorted_probs = sorted(lstm_probs.values(), reverse=True)
+                        highest_two_sum = sorted_probs[0] + sorted_probs[1]
+                        confidence = abs(2 * highest_two_sum - 1)
+                    else:
+                        # Default to original LSTM confidence
+                        confidence = max(lstm_probs.values())
+                    
+                    # Get the counter move
                     base_move = lstm_predictor.get_counter_move(history)
-                    confidence = lstm_predictor.get_confidence(history)
                     
                     # Track LSTM inference time
                     inference_duration = time.time() - start_time
                     if DEVELOPER_CONSOLE_AVAILABLE:
                         track_inference('lstm', inference_duration)
                     
-                    return base_move, confidence
+                    # Don't return early - continue to personality application
+                    predicted = None  # Set to None since we have base_move
                 except Exception as e:
                     print(f"LSTM prediction error: {e}")
                     predicted = random.choice(MOVES)
                     confidence = 0.33
             else:
                 predicted = random.choice(MOVES)
-                confidence = 0.33
+                confidence = 0.0  # Default to no confidence
             
-            # Convert prediction to robot move
-            counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
-            base_move = counter.get(predicted) if predicted else random.choice(MOVES)
+            # Convert prediction to robot move (skip for LSTM as it already has base_move)
+            if difficulty != 'lstm' or not base_move:
+                counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
+                base_move = counter.get(predicted) if predicted else random.choice(MOVES)
         
         # Track inference time for non-LSTM models
         inference_duration = time.time() - start_time
@@ -488,41 +549,52 @@ def play():
             track_inference(difficulty, inference_duration)
         
         # Apply personality modifications using the advanced engine
-        if personality in advanced_personalities:
+        if personality in advanced_personalities and use_personality_for_confidence:
             # Create game history in the format expected by personality engine
             game_history = []
             if len(game_state['human_history']) == len(game_state['robot_history']):
                 game_history = list(zip(game_state['human_history'], game_state['robot_history']))
             
-            final_move = personality_engine.apply_personality_to_move(
+            final_move, personality_modified_confidence = personality_engine.apply_personality_to_move(
                 base_move or random.choice(MOVES), confidence, history, game_history
             )
-            return final_move, confidence
+            return final_move, confidence, personality_modified_confidence
+        elif personality in advanced_personalities and not use_personality_for_confidence:
+            # For random/frequency models, apply personality to move but not confidence
+            game_history = []
+            if len(game_state['human_history']) == len(game_state['robot_history']):
+                game_history = list(zip(game_state['human_history'], game_state['robot_history']))
+            
+            final_move, _ = personality_engine.apply_personality_to_move(
+                base_move or random.choice(MOVES), confidence, history, game_history
+            )
+            # For random/frequency, personality-modified confidence equals original confidence
+            return final_move, confidence, confidence
         
         # Legacy personality modifiers for backwards compatibility
         elif personality == 'aggressive':
             confidence = min(1.0, confidence * 1.2)  # More confident
-            return base_move, confidence
+            return base_move, confidence, confidence  # Legacy personalities don't modify confidence differently
         elif personality == 'defensive':
             confidence = max(0.1, confidence * 0.8)  # Less confident
-            return base_move, confidence
+            return base_move, confidence, confidence
         elif personality == 'chaotic':
             if random.random() < 0.3:  # 30% chance to be completely random
-                return random.choice(MOVES), 0.33
-            return base_move, confidence
+                return random.choice(MOVES), 0.33, 0.33
+            return base_move, confidence, confidence
         elif personality == 'adaptive':
             # Simple adaptive logic for legacy support
             if len(game_state['result_history']) >= 5:
                 recent_results = game_state['result_history'][-5:]
                 robot_wins = recent_results.count('robot')
                 if robot_wins <= 1:  # Losing, be more aggressive
-                    return base_move, min(1.0, confidence * 1.3)
-            return base_move, confidence
+                    return base_move, min(1.0, confidence * 1.3), min(1.0, confidence * 1.3)
+            return base_move, confidence, confidence
         
-        return base_move, confidence
+        return base_move, confidence, confidence  # No personality modification
 
     results = []
-    robot_move, confidence = robot_strategy(
+    robot_move, confidence, personality_modified_confidence = robot_strategy(
         game_state['human_history'], 
         difficulty, 
         strategy_preference, 
@@ -635,6 +707,10 @@ def play():
         game_state['robot_history'].append(robot_move)
         game_state['result_history'].append(result1)
         game_state['result_history'].append(result2)
+        game_state['confidence_score_history'].append(confidence)  # Same confidence for both moves
+        game_state['confidence_score_history'].append(confidence)
+        game_state['confidence_score_modified_by_personality_history'].append(personality_modified_confidence)  # Track personality-modified confidence for both moves
+        game_state['confidence_score_modified_by_personality_history'].append(personality_modified_confidence)
         game_state['round_history'].append({'round': game_state['round']+1, 'human': move, 'robot': robot_move})
         game_state['round_history'].append({'round': game_state['round']+2, 'human': move2, 'robot': robot_move})
         game_state['round'] += 2
@@ -656,6 +732,8 @@ def play():
         game_state['human_history'].append(move)
         game_state['robot_history'].append(robot_move)
         game_state['result_history'].append(result)
+        game_state['confidence_score_history'].append(confidence)  # Track confidence for each round
+        game_state['confidence_score_modified_by_personality_history'].append(personality_modified_confidence)  # Track personality-modified confidence
         game_state['round_history'].append({'round': game_state['round']+1, 'human': move, 'robot': robot_move})
         game_state['round'] += 1
         
@@ -730,6 +808,8 @@ def play():
     session['human_moves'] = game_state['human_history']
     session['robot_moves'] = game_state['robot_history']
     session['results'] = game_state['result_history']
+    session['confidence_score_history'] = game_state['confidence_score_history']
+    session['confidence_score_modified_by_personality_history'] = game_state['confidence_score_modified_by_personality_history']
     session['difficulty'] = game_state['difficulty']
     session['ai_difficulty'] = game_state.get('ai_difficulty', game_state['difficulty'])
     session['current_strategy'] = game_state.get('current_strategy', 'unknown')
@@ -973,11 +1053,15 @@ def reset_game():
     game_state['round'] = 0
     game_state['stats'] = {'human_win': 0, 'robot_win': 0, 'tie': 0}
     game_state['change_points'] = []
+    game_state['confidence_score_history'] = []
+    game_state['confidence_score_modified_by_personality_history'] = []
 
     # Reset session game context and recording flag
     session['human_moves'] = []
     session['robot_moves'] = []
     session['results'] = []
+    session['confidence_score_history'] = []
+    session['confidence_score_modified_by_personality_history'] = []
     session['round_count'] = 0
     session['stats'] = {'human_win': 0, 'robot_win': 0, 'tie': 0}
     session['change_points'] = []

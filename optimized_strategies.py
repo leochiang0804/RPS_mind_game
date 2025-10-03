@@ -42,16 +42,7 @@ class OptimizedStrategy:
             'scissors': human_probs['paper']    # Scissors beats Paper
         }
         return win_probs
-    
-    def get_not_lose_probabilities(self, human_probs: Dict[str, float]) -> Dict[str, float]:
-        """Calculate not-lose probabilities for each robot move (win + tie)"""
-        # Robot move -> probability of not losing (winning + tying)
-        not_lose_probs = {
-            'paper': human_probs['rock'] + human_probs['paper'],       # Win vs Rock + Tie vs Paper
-            'rock': human_probs['scissors'] + human_probs['rock'],     # Win vs Scissors + Tie vs Rock
-            'scissors': human_probs['paper'] + human_probs['scissors'] # Win vs Paper + Tie vs Scissors
-        }
-        return not_lose_probs
+
 
 class ToWinStrategy(OptimizedStrategy):
     """Strategy focused on maximizing wins"""
