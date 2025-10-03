@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 import os
 import sys
@@ -1668,6 +1669,12 @@ def ai_coach_llm_comparison():
             'error': 'Failed to get coaching style information'
         }), 500
 
+# This is for Debug only
+@app.route('/download_game_context')
+def download_game_context():
+    from game_context import build_game_context
+    context = build_game_context(session)
+    return jsonify(context)
 
 import threading
 import webbrowser

@@ -172,6 +172,8 @@
                     <button class="pill-button gradient-info" onclick="window.open('/performance', '_blank')">Performance Dashboard</button>
                     <button class="pill-button gradient-success" onclick="showDeveloperMetrics()">Developer Metrics</button>
                     <button class="pill-button gradient-danger" onclick="resetGame()">Reset Game</button>
+                    <!-- This is for Debug only -->
+                    <button class="pill-button gradient-info" onclick="downloadGameContext()">Download Game Context (Debug)</button>
                 </div>
             </header>
 
@@ -346,6 +348,10 @@
                                             <option value="infinite">Infinite</option>
                                         </select>
                                     </div>
+                                    <!-- This is for Debug only -->
+                                    <div class="select-card">
+                                        <button id="start-lock-controls" class="pill-button gradient-danger" style="display: flex; justify-content: center; align-items: center; width: 100%;" onclick="lockControls()"><span style="margin: 0 auto;">Start</span></button>
+                                    </div>
                                 </div>
                             </div>
                             <!-- Buttons moved to header-actions -->
@@ -415,9 +421,9 @@
                             </div>
                             <div id="endgame-summary-panel" class="endgame-summary" aria-live="polite"></div>
                             <div class="move-pad">
-                                <button type="button" id="move-paper" class="move-btn" onclick="submitMove('paper')">Paper (P)</button>
-                                <button type="button" id="move-rock" class="move-btn" onclick="submitMove('rock')">Rock (R)</button>
-                                <button type="button" id="move-scissors" class="move-btn" onclick="submitMove('scissors')">Scissors (S)</button>
+                                <button type="button" id="move-paper" class="move-btn" onclick="submitMove('paper')" disabled>Paper (P)</button>
+                                <button type="button" id="move-rock" class="move-btn" onclick="submitMove('rock')" disabled>Rock (R)</button>
+                                <button type="button" id="move-scissors" class="move-btn" onclick="submitMove('scissors')" disabled>Scissors (S)</button>
                             </div>
                         </div>
                     </section>
@@ -464,6 +470,61 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+    // This is for Debug only
+    let gameStarted = false;
+    function lockControls() {
+        document.getElementById('difficulty').disabled = true;
+        document.getElementById('strategy').disabled = true;
+        document.getElementById('personality').disabled = true;
+        document.getElementById('game-length').disabled = true;
+        document.getElementById('start-lock-controls').disabled = true;
+        document.getElementById('start-lock-controls').classList.remove('gradient-danger');
+        document.getElementById('start-lock-controls').classList.add('gradient-success');
+        // Enable move buttons
+        document.getElementById('move-paper').disabled = false;
+        document.getElementById('move-rock').disabled = false;
+        document.getElementById('move-scissors').disabled = false;
+        gameStarted = true;
+    }
+    // On page load, ensure move buttons are disabled until Start is clicked
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('move-paper').disabled = true;
+        document.getElementById('move-rock').disabled = true;
+        document.getElementById('move-scissors').disabled = true;
+        gameStarted = false;
+        document.getElementById('start-lock-controls').classList.remove('gradient-success');
+        document.getElementById('start-lock-controls').classList.add('gradient-danger');
+    });
+    // Only allow keyboard move input after Start is clicked
+    document.addEventListener('keydown', function(e) {
+        if (gameStarted) {
+            if (e.key === 'p' || e.key === 'P') submitMove('paper');
+            if (e.key === 'r' || e.key === 'R') submitMove('rock');
+            if (e.key === 's' || e.key === 'S') submitMove('scissors');
+        }
+    });
+    // Gate submitMove so it cannot be called before gameStarted
+    const originalSubmitMove = window.submitMove;
+    window.submitMove = function(move) {
+        if (!gameStarted) return;
+        originalSubmitMove(move);
+    }
+    // This is for Debug only
+    function downloadGameContext() {
+        fetch('/download_game_context')
+            .then(response => response.json())
+            .then(data => {
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'game_context.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+    }
         console.log('Main page script loading...');
         
         // Global variables (will be updated from dropdown values on page load)
