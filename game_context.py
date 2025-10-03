@@ -125,7 +125,20 @@ class GameContextBuilder:
         ai_confidence = None
 
         # Predictability score (ensure matches overview panel)
-        predictability_score = session.get('predictability_score', 0.0)
+        def calculate_move_variance(move_history):
+            if not move_history or len(move_history) < 3:
+                return 0.0
+            move_counts = {'paper': 0, 'rock': 0, 'scissors': 0}
+            for move in move_history:
+                normalized = move.lower() if move else ''
+                if normalized in move_counts:
+                    move_counts[normalized] += 1
+            total = len(move_history)
+            expected_freq = total / 3
+            variance = sum((count - expected_freq) ** 2 for count in move_counts.values()) / 3
+            return min(100, (variance / expected_freq) * 50)
+
+        predictability_score = calculate_move_variance(human_moves)
 
         metrics = {
             'full_game_snapshot': {
@@ -138,7 +151,7 @@ class GameContextBuilder:
                 'recent_bias_type': None,
                 'recent_bias_percent': None,
             },
-            'strategic_intelligence': predictability_score,
+            'predictability_score': predictability_score,
             'human_wins': human_wins,
             'robot_wins': robot_wins,
             'ties': ties,
@@ -148,7 +161,6 @@ class GameContextBuilder:
             'longest_human_streak': longest_human_streak,
             'longest_robot_streak': longest_robot_streak,
             'most_common_move': most_common_move,
-            # 'AI_prediction_accuracy': ai_accuracy,  # Removed as requested
             'recent_win_rate': recent_win_rate,
             'score_differential': score_differential,
             'AI_confidence': ai_confidence,
