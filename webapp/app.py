@@ -5,7 +5,6 @@ import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from strategy import FrequencyStrategy, MarkovStrategy
 from change_point_detector import ChangePointDetector
-from coach_tips import CoachTipsGenerator
 from optimized_strategies import ToWinStrategy, NotToLoseStrategy
 from personality_engine import get_personality_engine
 from move_mapping import normalize_move, get_counter_move, MOVES
@@ -82,9 +81,6 @@ personality_engine = get_personality_engine()
 
 # Initialize strategies and change detector with balanced settings for web gameplay
 change_detector = ChangePointDetector(window_size=6, chi2_threshold=3.5, min_segment_length=4)
-
-# Initialize coach tips generator
-coach = CoachTipsGenerator()
 
 game_state = {
     'human_history': [],
