@@ -6,22 +6,36 @@
     <title>RPS ML Game</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/experimental-theme.css') }}">
     <style>
-        /* Disabled Tournament Button Styling */
-        .disabled-tournament {
-            opacity: 0.5 !important;
-            cursor: not-allowed !important;
-            background: #666 !important;
-            border-color: #555 !important;
-        }
-        .disabled-tournament:hover {
-            background: #666 !important;
-            transform: none !important;
-        }
         .disabled-notification {
             position: fixed; top: 20px; right: 20px; z-index: 9999;
             background: #ff6b6b; color: white; padding: 12px 20px;
             border-radius: 8px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             animation: slideInRight 0.3s ease;
+        }
+        
+        /* Confidence Toggle Styling */
+        .confidence-toggle {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+        .confidence-info {
+            color: #e2e8f0;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .confidence-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #f8fafc;
+            cursor: pointer;
+        }
+        .confidence-option input[type="checkbox"] {
+            margin: 0;
+            cursor: pointer;
         }
         @keyframes slideInRight {
             from { transform: translateX(100%); opacity: 0; }
@@ -151,18 +165,13 @@
                         <span class="badge">🧠 Adaptive ML</span>
                         <span class="badge">📈 Live Analytics</span>
                         <span class="badge">🤖 Personality Engine</span>
-                        <span class="badge">🏆 Tournament Ready</span>
                     </div>
                 </div>
                 <div class="header-actions">
-                    <button class="pill-button gradient-success" onclick="saveCurrentReplay()">💾 Save Current Replay</button>
-                    <button class="pill-button gradient-info" onclick="window.open('/replay/dashboard', '_blank')">🎬 View All Replays</button>
                     <button class="pill-button" onclick="window.open('/developer', '_blank')">🔧 Developer Console</button>
                     <button class="pill-button gradient-danger" onclick="window.open('/performance', '_blank')">⚡ Performance Dashboard</button>
-                    <button class="pill-button outline" onclick="testRobotUpdate()">🔧 Test Update</button>
                     <button class="pill-button gradient-danger" onclick="resetGame()">🔄 Reset Game</button>
                     <button class="pill-button gradient-info" onclick="exportAnalytics()">📊 Export Data</button>
-                    <button class="pill-button gradient-success disabled-tournament" disabled onclick="showDisabledMessage('Tournament feature is temporarily disabled for maintenance')">🏆 Tournament</button>
                     <button class="pill-button outline" onclick="showDeveloperMetrics()">🔧 Developer Metrics</button>
                     <button class="pill-button gradient-primary" onclick="window.open('/ai_coach_demo', '_blank')">🤖 AI Coach Demo</button>
                 </div>
@@ -278,10 +287,6 @@
                                             <span class="value" id="overview-score-diff">0</span>
                                         </div>
                                         <div class="overview-card">
-                                            <span class="label">Pattern Changes</span>
-                                            <span class="value" id="overview-pattern-changes">0</span>
-                                        </div>
-                                        <div class="overview-card">
                                             <span class="label">AI Confidence</span>
                                             <span class="value" id="overview-ai-confidence">--%</span>
                                         </div>
@@ -294,11 +299,6 @@
                                             <span class="label">Predictability Score</span>
                                             <span class="value" id="overview-predictability">--</span>
                                             <span class="hint">Lower is better for humans</span>
-                                        </div>
-                                        <div class="overview-card wide">
-                                            <span class="label">Adaptation Rate</span>
-                                            <span class="value" id="overview-adaptation">--</span>
-                                            <span class="hint">How quickly you adjust</span>
                                         </div>
                                     </div>
                                 </div>
@@ -314,15 +314,13 @@
                                             <option value="random" selected>Random</option>
                                             <option value="frequency">Frequency</option>
                                             <option value="markov">Markov</option>
-                                            <option value="enhanced">Enhanced ML</option>
                                             <option value="lstm">LSTM Neural</option>
                                         </select>
                                     </div>
                                     <div class="select-card">
                                         <label for="strategy">⚔️ AI Strategy</label>
                                         <select id="strategy" onchange="setStrategy()">
-                                            <option value="balanced" selected>🎯 Balanced</option>
-                                            <option value="to_win">🗡️ To Win (Aggressive)</option>
+                                            <option value="to_win" selected>🗡️ To Win (Aggressive)</option>
                                             <option value="not_to_lose">🛡️ Not to Lose (Defensive)</option>
                                         </select>
                                     </div>
@@ -428,171 +426,20 @@
 
                     <section class="panel intel-cluster">
                         <nav class="mode-switcher intel-switcher" aria-label="Insight Switcher">
-                            <button class="mode-tab active" data-mode="pattern">🔄 Pattern View</button>
-                            <button class="mode-tab" data-mode="analytics">📈 Analytics View</button>
+                            <button class="mode-tab active" data-mode="analytics">📈 Analytics View</button>
                             <button class="mode-tab" data-mode="coach">🎓 Coach View</button>
                         </nav>
                         <div class="mode-panels intel-panels">
-                            <div class="mode-panel active" data-mode="pattern">
-                                <section class="panel pattern-overview">
-                                    <div class="panel-heading">
-                                        <h2 class="panel-title">Pattern Awareness</h2>
-                                        <span class="panel-subtitle">Spot the human tendencies the AI is tracking.</span>
-                                    </div>
-                                    <div class="pattern-metric-grid">
-                                        <div class="analytics-card">
-                                            <h4>🎯 Predictability Score</h4>
-                                            <div id="predictability-score" class="metric-value">--</div>
-                                            <div id="predictability-status" class="metric-caption">Analyzing...</div>
-                                        </div>
-                                        <div class="analytics-card">
-                                            <h4>🏆 Win Rate Trend</h4>
-                                            <div id="win-rate-trend" class="metric-value">--</div>
-                                            <div id="trend-status" class="metric-caption">Recent 10 games</div>
-                                        </div>
-                                        <div class="analytics-card">
-                                            <h4>🔄 Strategy Changes</h4>
-                                            <div id="strategy-changes-count" class="metric-value">--</div>
-                                            <div id="changes-status" class="metric-caption">Adaptability</div>
-                                        </div>
-                                        <div class="analytics-card">
-                                            <h4>🎲 Randomness Level</h4>
-                                            <div id="randomness-level" class="metric-value">--</div>
-                                            <div id="randomness-status" class="metric-caption">Unpredictability</div>
-                                        </div>
-                                    </div>
-                                </section>
-                                <section class="panel move-distribution-panel">
-                                    <div class="panel-heading">
-                                        <h2 class="panel-title">📈 Move Distribution Analysis</h2>
-                                        <span class="panel-subtitle">Where your habits are clustering right now.</span>
-                                    </div>
-                                    <div class="distribution-grid">
-                                        <div class="move-bar">
-                                            <div class="move-label">Paper (P)</div>
-                                            <div class="bar-container">
-                                                <div class="bar-fill paper" id="paper-fill"></div>
-                                            </div>
-                                            <div class="bar-percentage" id="paper-percent">0%</div>
-                                        </div>
-                                        <div class="move-bar">
-                                            <div class="move-label">Rock (R)</div>
-                                            <div class="bar-container">
-                                                <div class="bar-fill rock" id="rock-fill"></div>
-                                            </div>
-                                            <div class="bar-percentage" id="rock-percent">0%</div>
-                                        </div>
-                                        <div class="move-bar">
-                                            <div class="move-label">Scissor (S)</div>
-                                            <div class="bar-container">
-                                                <div class="bar-fill scissors" id="scissors-fill"></div>
-                                            </div>
-                                            <div class="bar-percentage" id="scissors-percent">0%</div>
-                                        </div>
-                                    </div>
-                                </section>
-                                <section class="panel history-panel compact-history">
-                                    <div class="panel-heading">
-                                        <h2 class="panel-title">Recent History</h2>
-                                        <span class="panel-subtitle">Last ten moves at a glance.</span>
-                                    </div>
-                                    <p><strong>Your moves:</strong> <span id="recent-human">{{ human_history[-10:]|join(', ') }}</span></p>
-                                    <p><strong>Computer moves:</strong> <span id="recent-robot">{{ robot_history[-10:]|join(', ') }}</span></p>
-                                </section>
-                            </div>
-
-                            <div class="mode-panel" data-mode="analytics">
+                            <div class="mode-panel active" data-mode="analytics">
                                 <section class="panel analytics-panel">
                                     <div class="panel-heading">
-                                        <h2 class="panel-title">Visual Analytics</h2>
-                                        <span class="panel-subtitle">Real-time visuals of strategy performance.</span>
+                                        <h2 class="panel-title">📈 Analytics View</h2>
+                                        <span class="panel-subtitle">Analytics functionality has been simplified.</span>
                                     </div>
-                                    <div class="charts-grid two-column">
-                                        <div class="chart-card">
-                                            <h4>Move Distribution</h4>
-                                            <div id="moveDistributionPercentages" class="chart-percentage-display" style="text-align:center; color:#f8fafc; font-size:1.1em; margin-bottom:4px;"></div>
-                                            <canvas id="moveDistributionChart"></canvas>
-                                        </div>
-                                        <div class="chart-card">
-                                            <h4>Win Rate Trend</h4>
-                                            <canvas id="winRateTrendChart"></canvas>
-                                        </div>
-                                        <div class="chart-card">
-                                            <h4>Score Differential</h4>
-                                            <canvas id="scoreDifferentialChart"></canvas>
-                                        </div>
-                                    </div>
-                                    <div class="chart-card">
-                                        <h4>Model Confidence Trends</h4>
-                                        <canvas id="confidenceTrendChart"></canvas>
-                                    </div>
-                                    <div class="chart-card wide">
-                                        <h4>🤖 Model Prediction Tracking</h4>
-                                        <p class="chart-hint">Compare human moves vs robot moves vs optional model predictions (Axis shows S=Scissors, R=Rock, P=Paper)</p>
-                                        <div class="prediction-toggle">
-                                            <div class="prediction-info">Human Move (always on)</div>
-                                            <label class="prediction-option">
-                                                <input type="checkbox" data-dataset-index="1">
-                                                Robot Move
-                                            </label>
-                                            <label class="prediction-option">
-                                                <input type="checkbox" data-dataset-index="2">
-                                                Random Prediction
-                                            </label>
-                                            <label class="prediction-option">
-                                                <input type="checkbox" data-dataset-index="3">
-                                                Frequency Prediction
-                                            </label>
-                                            <label class="prediction-option">
-                                                <input type="checkbox" data-dataset-index="4">
-                                                Markov Prediction
-                                            </label>
-                                            <label class="prediction-option">
-                                                <input type="checkbox" data-dataset-index="5">
-                                                Enhanced Prediction
-                                            </label>
-                                            <label class="prediction-option">
-                                                <input type="checkbox" data-dataset-index="6">
-                                                LSTM Prediction
-                                            </label>
-                                            <label class="prediction-option">
-                                                <input type="checkbox" id="prediction-range-toggle">
-                                                Show Full History
-                                            </label>
-                                        </div>
-                                        <canvas id="modelPredictionChart"></canvas>
-                                    </div>
-                                </section>
-                                
-                                <section class="panel analytics-quick">
-                                    <div class="panel-heading">
-                                        <h2 class="panel-title">Performance Snapshots</h2>
-                                        <span class="panel-subtitle">Key metrics from the analytical models.</span>
-                                    </div>
-                                    <div class="metric-board">
-                                        <h5 class="metric-title">🎯 AI Strategy Accuracy</h5>
-                                        <p style="color: #e2e8f0; font-size: 13px; margin: 5px 0 15px 0; line-height: 1.4;">
-                                            Shows how often each AI model correctly predicts your next move. Higher percentages mean the AI is learning your patterns better.
-                                        </p>
-                                        <div id="modelMetricsTable" class="metric-grid"></div>
-                                        <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 6px; border-left: 3px solid #64748b;">
-                                            <div style="color: #e2e8f0; font-size: 12px; line-height: 1.4;">
-                                                <strong>Status Levels:</strong><br>
-                                                🟢 Excellent (>50%): AI has learned your patterns well<br>
-                                                🟡 Good (33-50%): AI is moderately successful at predictions<br>
-                                                🔴 Needs Improvement (<33%): AI struggles to predict your moves
-                                            </div>
-                                        </div>
-                                        <div class="recommended-strategy" id="recommendedStrategy">Analyzing performance...</div>
-                                    </div>
-                                </section>
-                                <section class="panel analytics-actions">
-                                    <div class="panel-heading">
-                                        <h2 class="panel-title">Analytics Actions</h2>
-                                        <span class="panel-subtitle">Take snapshots or refresh the data stream.</span>
-                                    </div>
-                                    <div class="advanced-actions">
-                                        <button class="btn primary" onclick="exportAnalytics('json')">📄 Export JSON Report</button>
+                                    <div style="text-align: center; padding: 40px; color: #94a3b8;">
+                                        <h3>🚧 Analytics Under Maintenance</h3>
+                                        <p>Analytics objects and chart metrics have been temporarily removed for system optimization.</p>
+                                        <p>Basic game functionality remains fully operational.</p>
                                     </div>
                                 </section>
                             </div>
@@ -600,32 +447,13 @@
                             <div class="mode-panel" data-mode="coach">
                                 <section class="panel coach-panel">
                                     <div class="panel-heading">
-                                        <h2 class="panel-title">🎓 AI Coach</h2>
-                                        <span class="panel-subtitle">Personalized insights and experiments.</span>
+                                        <h2 class="panel-title">🎓 Coach View</h2>
+                                        <span class="panel-subtitle">Coaching functionality has been simplified.</span>
                                     </div>
-                                    <div class="secondary-panel">
-                                        <div class="panel coach-card">
-                                            <div class="panel-heading">
-                                                <h4 class="panel-title">💡 Your Strategy Tips</h4>
-                                                <div style="display: flex; align-items: center; gap: 10px;">
-                                                    <select id="llm-type-selector" onchange="updateLLMType()">
-                                                        <option value="mock">Basic</option>
-                                                        <option value="trained">Light-weight LLM</option>
-                                                        <option value="real">Advanced LLM</option>
-                                                    </select>
-                                                    <button class="btn primary" onclick="refreshCoachingTips()">🔄 Get New Tips</button>
-                                                </div>
-                                            </div>
-                                            <div id="coaching-tips-list" class="coach-content">
-                                                <p>Play a few rounds to get personalized coaching tips!</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div id="insights-summary" class="panel insights-panel" style="display: none;">
-                                        <div class="panel-heading">
-                                            <h4 class="panel-title">📊 Pattern Analysis</h4>
-                                        </div>
-                                        <div id="insights-content" class="coach-content"></div>
+                                    <div style="text-align: center; padding: 40px; color: #94a3b8;">
+                                        <h3>🚧 Coaching Under Maintenance</h3>
+                                        <p>Coach objects and AI strategy tips have been temporarily removed for system optimization.</p>
+                                        <p>Basic game functionality remains fully operational.</p>
                                     </div>
                                 </section>
                             </div>
@@ -636,51 +464,6 @@
         </div>
     </div>
 
-    <div id="tournamentModal" class="tournament-modal" style="display: none;">
-        <div class="tournament-content">
-            <div class="tournament-header">
-                <h2>🏆 Tournament Dashboard</h2>
-                <button class="btn destructive" onclick="document.getElementById('tournamentModal').style.display='none'">✕</button>
-            </div>
-            <div class="tournament-grid">
-                <div class="tournament-card">
-                    <h3>📊 Tournament Stats</h3>
-                    <div class="tournament-stats">
-                        <div class="stat-block">
-                            <div id="totalPlayers" class="stat-value">0</div>
-                            <div class="stat-label">Total Players</div>
-                        </div>
-                        <div class="stat-block">
-                            <div id="totalMatches" class="stat-value">0</div>
-                            <div class="stat-label">Completed Matches</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="tournament-card">
-                    <h3>➕ Create Player</h3>
-                    <div class="create-player">
-                        <input type="text" id="newPlayerName" placeholder="Enter player name">
-                        <button class="btn primary" onclick="createTournamentPlayer()">Create</button>
-                    </div>
-                </div>
-            </div>
-            <div class="tournament-grid">
-                <div class="tournament-card">
-                    <h3>🏅 Leaderboard</h3>
-                    <div id="leaderboard" class="leaderboard"></div>
-                </div>
-                <div class="tournament-card">
-                    <h3>⚔️ Quick Match</h3>
-                    <p>Select two players for a quick match</p>
-                    <div class="quick-match">
-                        <input type="text" id="player1Name" placeholder="Player 1 name">
-                        <input type="text" id="player2Name" placeholder="Player 2 name">
-                    </div>
-                    <button class="btn primary" onclick="createQuickMatch()">🎮 Start Match</button>
-                </div>
-            </div>
-        </div>
-    </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         console.log('Main page script loading...');
@@ -719,6 +502,9 @@
             });
             
             setTimeout(initializeCharts, 100); // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                updateSelectedModelVisibility(); // Show only selected model by default
+            }, 200);
             updateStatusDisplay();
             applyPersonalityTheme(currentPersonality);
             updateRobotCharacter(currentDifficulty, currentStrategy, currentPersonality);
@@ -769,6 +555,64 @@
                     return value !== null && value === humanValue ? '#4ade80' : activeDataset.borderColor;
                 });
             }
+        }
+
+        function initializeConfidenceToggle() {
+            const toggleContainer = document.querySelector('.confidence-toggle');
+            if (!toggleContainer) return;
+            const inputs = toggleContainer.querySelectorAll('input[data-dataset-index]');
+
+            inputs.forEach(input => {
+                const idx = parseInt(input.dataset.datasetIndex, 10);
+                if (!Number.isNaN(idx) && confidenceTrendChart && confidenceTrendChart.data.datasets[idx]) {
+                    input.checked = !confidenceTrendChart.data.datasets[idx].hidden;
+                }
+
+                input.addEventListener('change', () => {
+                    if (!confidenceTrendChart) return;
+                    const index = parseInt(input.dataset.datasetIndex, 10);
+                    if (Number.isNaN(index) || !confidenceTrendChart.data.datasets[index]) return;
+                    confidenceTrendChart.data.datasets[index].hidden = !input.checked;
+                    confidenceTrendChart.update();
+                });
+            });
+        }
+
+        function updateSelectedModelVisibility() {
+            // Show only the selected model by default in confidence chart
+            if (!confidenceTrendChart) return;
+            
+            const currentDifficulty = document.getElementById('difficulty').value;
+            const difficultyToIndex = {
+                'random': 0,
+                'frequency': 1,
+                'markov': 2,
+                'lstm': 3
+            };
+            
+            const selectedIndex = difficultyToIndex[currentDifficulty];
+            
+            // Hide all datasets first
+            confidenceTrendChart.data.datasets.forEach((dataset, idx) => {
+                dataset.hidden = true;
+            });
+            
+            // Show only the selected model
+            if (selectedIndex !== undefined && confidenceTrendChart.data.datasets[selectedIndex]) {
+                confidenceTrendChart.data.datasets[selectedIndex].hidden = false;
+            }
+            
+            // Update checkbox states
+            const toggleContainer = document.querySelector('.confidence-toggle');
+            if (toggleContainer) {
+                const inputs = toggleContainer.querySelectorAll('input[data-dataset-index]');
+                inputs.forEach(input => {
+                    const idx = parseInt(input.dataset.datasetIndex, 10);
+                    input.checked = (idx === selectedIndex);
+                });
+            }
+            
+            confidenceTrendChart.update();
         }
 
         function initializePredictionToggle() {
@@ -992,13 +836,11 @@
 
             const frequencyPreds = padPredictions(data.model_predictions_history?.frequency || []);
             const markovPreds = padPredictions(data.model_predictions_history?.markov || []);
-            const enhancedPreds = padPredictions(data.model_predictions_history?.enhanced || []);
             const lstmPreds = padPredictions(data.model_predictions_history?.lstm || []);
 
             const accuracySeries = {
                 frequency: computeRollingAccuracy(frequencyPreds, humanNumeric),
                 markov: computeRollingAccuracy(markovPreds, humanNumeric),
-                enhanced: computeRollingAccuracy(enhancedPreds, humanNumeric),
                 lstm: computeRollingAccuracy(lstmPreds, humanNumeric)
             };
 
@@ -1085,14 +927,11 @@
                 humanNumeric,
                 frequencyPreds,
                 markovPreds,
-                enhancedPreds,
                 lstmPreds,
                 recommendation,
                 moveVariance: calculateMoveVariance(humanHistory),
-                patternChanges: calculatePatternChanges(humanHistory),
                 aiAccuracy: total > 0 ? (robotWins / total * 100) : 0,
                 aiConfidence: data.difficulty === 'lstm' ? 85 : 
-                             data.difficulty === 'enhanced' ? 70 : 
                              data.difficulty === 'markov' ? 60 : 
                              data.difficulty === 'frequency' ? 45 : 33
             };
@@ -1120,26 +959,6 @@
             return Math.min(100, (variance / expectedFreq) * 50);
         }
 
-        function calculatePatternChanges(moveHistory) {
-            if (!moveHistory || moveHistory.length < 5) return 0;
-            
-            let changes = 0;
-            let consecutiveCount = 1;
-            
-            for (let i = 1; i < moveHistory.length; i++) {
-                if (moveHistory[i] === moveHistory[i-1]) {
-                    consecutiveCount++;
-                } else {
-                    if (consecutiveCount >= 2) changes++; // Pattern break detected
-                    consecutiveCount = 1;
-                }
-            }
-            
-            // Calculate adaptation rate (higher = more adaptive)
-            const totalPossibleChanges = Math.max(1, moveHistory.length - 1);
-            return Math.min(100, (changes / totalPossibleChanges) * 200);
-        }
-
         function updateOverviewPanel(insights) {
             document.getElementById('overview-total-rounds').textContent = insights.totalRounds;
             document.getElementById('overview-human-winrate').textContent = insights.humanWinRate.toFixed(1) + '%';
@@ -1157,16 +976,11 @@
             
             // New metrics for Strategic Intelligence
             document.getElementById('overview-ai-accuracy').textContent = insights.aiAccuracy.toFixed(1) + '%';
-            document.getElementById('overview-pattern-changes').textContent = Math.round(insights.patternChanges);
             document.getElementById('overview-ai-confidence').textContent = insights.aiConfidence + '%';
             
             // Calculate predictability (higher moveVariance = more predictable)
             const predictabilityScore = insights.moveVariance || 33.3;
             document.getElementById('overview-predictability').textContent = predictabilityScore.toFixed(1) + '%';
-            
-            // Calculate adaptation rate (pattern changes)
-            const adaptationRate = insights.patternChanges || 0;
-            document.getElementById('overview-adaptation').textContent = adaptationRate.toFixed(1) + '%';
             
             document.getElementById('overview-recommendation').textContent = insights.recommendation;
         }
@@ -1275,12 +1089,6 @@
             document.getElementById('robot-wins').textContent = stats.robot_win || 0;
             document.getElementById('ties').textContent = stats.tie || 0;
             
-            // Update recent history safely
-            const recentHuman = data.human_history ? data.human_history.slice(-10).join(', ') : '';
-            const recentRobot = data.robot_history ? data.robot_history.slice(-10).join(', ') : '';
-            document.getElementById('recent-human').textContent = recentHuman;
-            document.getElementById('recent-robot').textContent = recentRobot;
-            
             // Update strategy display
             if (data.current_strategy) {
                 const strategy = String(data.current_strategy);
@@ -1288,10 +1096,7 @@
                     strategy.charAt(0).toUpperCase() + strategy.slice(1);
             }
             
-            // Auto-refresh coaching tips every 5 rounds
-            if (data.round && data.round > 0 && data.round % 5 === 0) {
-                setTimeout(refreshCoachingTips, 500); // Small delay to ensure data is processed
-            }
+            // Note: Auto-refresh coaching tips removed with Coach View cleanup
 
             // Update analytics dashboard
             updateAnalyticsDashboard(data, insights);
@@ -1457,10 +1262,6 @@
                     background: 'linear-gradient(135deg, #f8d7da, #f5b7b1)',
                     border: '3px solid #dc3545'
                 },
-                'enhanced': {
-                    background: 'linear-gradient(135deg, #f3e5f5, #e1bee7)',
-                    border: '3px solid #9c27b0'
-                },
                 'lstm': {
                     background: 'linear-gradient(135deg, #2c2c2c, #1a1a1a)',
                     border: '3px solid #6f42c1'
@@ -1527,7 +1328,6 @@
                 'random': 'Basic',
                 'frequency': 'Junior', 
                 'markov': 'Advanced',
-                'enhanced': 'Master',
                 'lstm': 'Legendary'
             };
             
@@ -1535,7 +1335,6 @@
                 'random': 'Random',
                 'frequency': 'Frequency Analysis',
                 'markov': 'Markov Chain',
-                'enhanced': 'Enhanced ML',
                 'lstm': 'LSTM Neural Network'
             };
             
@@ -1825,7 +1624,6 @@
                     'random': 'Random Baseline',
                     'frequency': 'Frequency Counter',
                     'markov': 'Markov Predictor',
-                    'enhanced': 'Enhanced ML',
                     'lstm': 'LSTM Neural'
                 };
                 const label = strategyLabels[data.current_strategy] || data.current_strategy;
@@ -1895,59 +1693,8 @@
             // Update the overview panel with the latest insights
             updateOverviewPanel(insights);
 
-            const history = data.human_history;
-            const totalMoves = history.length;
-
-            const paperCount = history.filter(m => m === 'paper').length;
-            const rockCount = history.filter(m => m === 'rock').length;
-            const scissorsCount = history.filter(m => m === 'scissors').length;
-
-            const paperPercent = totalMoves ? ((paperCount / totalMoves) * 100).toFixed(1) : '0.0';
-            const rockPercent = totalMoves ? ((rockCount / totalMoves) * 100).toFixed(1) : '0.0';
-            const scissorsPercent = totalMoves ? ((scissorsCount / totalMoves) * 100).toFixed(1) : '0.0';
-
-            document.getElementById('paper-fill').style.width = paperPercent + '%';
-            document.getElementById('rock-fill').style.width = rockPercent + '%';
-            document.getElementById('scissors-fill').style.width = scissorsPercent + '%';
-
-            document.getElementById('paper-percent').textContent = paperPercent + '%';
-            document.getElementById('rock-percent').textContent = rockPercent + '%';
-            document.getElementById('scissors-percent').textContent = scissorsPercent + '%';
-
-            const predictabilityScore = Math.max(parseFloat(paperPercent), parseFloat(rockPercent), parseFloat(scissorsPercent)) || 0;
-            document.getElementById('predictability-score').textContent = predictabilityScore.toFixed(1) + '%';
-
-            let predictabilityStatus = 'Highly Unpredictable';
-            if (predictabilityScore > 50) predictabilityStatus = 'Somewhat Predictable';
-            if (predictabilityScore > 70) predictabilityStatus = 'Very Predictable';
-            document.getElementById('predictability-status').textContent = predictabilityStatus;
-
-            const winRate = insights.humanWinRate.toFixed(1);
-            document.getElementById('win-rate-trend').textContent = winRate + '%';
-
-            const p1 = totalMoves ? paperCount / totalMoves : 0;
-            const p2 = totalMoves ? rockCount / totalMoves : 0;
-            const p3 = totalMoves ? scissorsCount / totalMoves : 0;
-            let entropy = 0;
-            if (p1 > 0) entropy -= p1 * Math.log2(p1);
-            if (p2 > 0) entropy -= p2 * Math.log2(p2);
-            if (p3 > 0) entropy -= p3 * Math.log2(p3);
-            const randomnessPercent = totalMoves ? ((entropy / Math.log2(3)) * 100).toFixed(1) : '0.0';
-            document.getElementById('randomness-level').textContent = randomnessPercent + '%';
-
-            let randomnessStatus = 'Low Randomness';
-            if (randomnessPercent > 60) randomnessStatus = 'Medium Randomness';
-            if (randomnessPercent > 80) randomnessStatus = 'High Randomness';
-            document.getElementById('randomness-status').textContent = randomnessStatus;
-
-            const swingCount = insights.winners.reduce((count, winner, idx, arr) => {
-                if (idx === 0) return count;
-                const prev = arr[idx - 1];
-                if (winner === 'tie' || winner === 'unknown' || prev === 'tie' || prev === 'unknown') return count;
-                return winner !== prev ? count + 1 : count;
-            }, 0);
-            document.getElementById('strategy-changes-count').textContent = swingCount;
-            document.getElementById('changes-status').textContent = swingCount > 0 ? 'Momentum swings' : 'Stable';
+            // Note: Pattern View specific updates have been removed
+            // All pattern analysis elements were removed with the Pattern View cleanup
         }
         
         function refreshAnalytics() {
@@ -2009,7 +1756,6 @@
                     <h3>🎯 Strategy Highlights</h3>
                     <div class="summary-text">
                         <p><strong>Predictability:</strong> ${(insights?.moveVariance ?? 50).toFixed(1)}% — ${(insights?.moveVariance ?? 50) > 60 ? 'High (easy to read)' : (insights?.moveVariance ?? 50) > 40 ? 'Moderate balance' : 'Low (unpredictable)'}</p>
-                        <p><strong>Adaptation Rate:</strong> ${(insights?.patternChanges ?? 33).toFixed(1)}% — ${(insights?.patternChanges ?? 33) > 60 ? 'Highly adaptive' : (insights?.patternChanges ?? 33) > 40 ? 'Moderately adaptive' : 'Stable patterns'}</p>
                         <p><strong>AI Difficulty:</strong> ${(gameData?.difficulty || currentDifficulty || 'unknown').toUpperCase()} (${(insights?.aiAccuracy ?? 50).toFixed(1)}% prediction accuracy)</p>
                     </div>
                 </div>
@@ -2132,18 +1878,14 @@
             })
             .catch(err => {
                 console.log('Export failed, creating manual export:', err);
-                // Fallback: create manual JSON export
+                // Fallback: create manual JSON export with available data only
                 const analyticsData = {
                     timestamp: new Date().toISOString(),
                     total_games: parseInt(document.getElementById('rounds').textContent) || 0,
-                    predictability_score: document.getElementById('predictability-score').textContent,
-                    win_rate: document.getElementById('win-rate-trend').textContent,
-                    randomness_level: document.getElementById('randomness-level').textContent,
-                    move_distribution: {
-                        paper: document.getElementById('paper-percent').textContent,
-                        rock: document.getElementById('rock-percent').textContent,
-                        scissors: document.getElementById('scissors-percent').textContent
-                    }
+                    wins: parseInt(document.getElementById('wins').textContent) || 0,
+                    losses: parseInt(document.getElementById('losses').textContent) || 0,
+                    ties: parseInt(document.getElementById('ties').textContent) || 0,
+                    note: 'Pattern view analytics have been removed'
                 };
                 const dataStr = JSON.stringify(analyticsData, null, 2);
                 const dataBlob = new Blob([dataStr], {type: 'application/json'});
@@ -2207,6 +1949,7 @@
                     });
 
                     initializePredictionToggle();
+                    initializeConfidenceToggle();
                 }
                 
                 // Win Rate Trend Line Chart
@@ -2314,17 +2057,6 @@
                                     data: [],
                                     borderColor: '#9966FF',
                                     backgroundColor: 'rgba(153, 102, 255, 0.1)',
-                                    fill: false,
-                                    tension: 0.1,
-                                    borderDash: [5, 5],
-                                    pointRadius: 2,
-                                    hidden: true
-                                },
-                                {
-                                    label: 'Enhanced Prediction',
-                                    data: [],
-                                    borderColor: '#FF9F40',
-                                    backgroundColor: 'rgba(255, 159, 64, 0.1)',
                                     fill: false,
                                     tension: 0.1,
                                     borderDash: [5, 5],
@@ -2488,7 +2220,8 @@
                                     borderColor: 'rgba(255, 206, 86, 1)',
                                     backgroundColor: 'rgba(255, 206, 86, 0.1)',
                                     fill: false,
-                                    tension: 0.4
+                                    tension: 0, // Straight lines
+                                    hidden: true // Default hidden
                                 },
                                 {
                                     label: 'Frequency',
@@ -2496,7 +2229,8 @@
                                     borderColor: 'rgba(75, 192, 192, 1)',
                                     backgroundColor: 'rgba(75, 192, 192, 0.1)',
                                     fill: false,
-                                    tension: 0.4
+                                    tension: 0, // Straight lines
+                                    hidden: true // Default hidden
                                 },
                                 {
                                     label: 'Markov',
@@ -2504,15 +2238,8 @@
                                     borderColor: 'rgba(153, 102, 255, 1)',
                                     backgroundColor: 'rgba(153, 102, 255, 0.1)',
                                     fill: false,
-                                    tension: 0.4
-                                },
-                                {
-                                    label: 'Enhanced',
-                                    data: [],
-                                    borderColor: 'rgba(255, 159, 64, 1)',
-                                    backgroundColor: 'rgba(255, 159, 64, 0.1)',
-                                    fill: false,
-                                    tension: 0.4
+                                    tension: 0, // Straight lines
+                                    hidden: true // Default hidden
                                 },
                                 {
                                     label: 'LSTM',
@@ -2520,7 +2247,8 @@
                                     borderColor: 'rgba(54, 162, 235, 1)',
                                     backgroundColor: 'rgba(54, 162, 235, 0.1)',
                                     fill: false,
-                                    tension: 0.4
+                                    tension: 0, // Straight lines
+                                    hidden: true // Default hidden
                                 }
                             ]
                         },
@@ -2558,12 +2286,15 @@
                                     max: 1,
                                     title: {
                                         display: true,
-                                        text: 'Confidence',
+                                        text: 'Confidence (%)',
                                         color: '#f8fafc',
                                         font: { weight: 'bold' }
                                     },
                                     ticks: {
-                                        color: '#f8fafc'
+                                        color: '#f8fafc',
+                                        callback: function(value) {
+                                            return (value * 100).toFixed(0) + '%';
+                                        }
                                     },
                                     grid: {
                                         color: 'rgba(248,250,252,0.12)'
@@ -2673,7 +2404,6 @@
                     const randomPreds = pad((modelPreds.random || []).map(moveToNumber));
                     const frequencyPreds = pad((modelPreds.frequency || []).map(moveToNumber));
                     const markovPreds = pad((modelPreds.markov || []).map(moveToNumber));
-                    const enhancedPreds = pad((modelPreds.enhanced || []).map(moveToNumber));
 
                     const labels = Array.from({length: humanData.length}, (_, i) => i + 1);
                     let displayStart = 0;
@@ -2686,7 +2416,7 @@
                     
                     modelPredictionChart.data.labels = displayLabels;
                     const lstmPreds = pad((modelPreds.lstm || []).map(moveToNumber));
-                    const datasets = [humanData, robotData, randomPreds, frequencyPreds, markovPreds, enhancedPreds, lstmPreds];
+                    const datasets = [humanData, robotData, randomPreds, frequencyPreds, markovPreds, lstmPreds];
                     datasets.forEach((dataset, idx) => {
                         modelPredictionChart.data.datasets[idx].data = sliceData(dataset);
                     });
@@ -2704,16 +2434,15 @@
                 }
                 
                 // Update Confidence Trend Chart
-                if (confidenceTrendChart && data.confidence !== undefined) {
+                if (confidenceTrendChart && data.model_confidence_history) {
                     const moveNum = data.round;
                     
-                    // Simulate confidence values for different models (in real implementation, track actual confidence)
+                    // Use actual confidence values from backend
                     const confidenceValues = {
-                        random: 0.33,
-                        frequency: Math.min(0.8, 0.3 + (data.round * 0.02)),
-                        markov: Math.min(0.85, 0.4 + (data.round * 0.015)),
-                        enhanced: data.confidence || 0.5,
-                        lstm: Math.min(0.9, 0.5 + (data.round * 0.01))
+                        random: data.model_confidence_history.random ? data.model_confidence_history.random[data.model_confidence_history.random.length - 1] || 0 : 0,
+                        frequency: data.model_confidence_history.frequency ? data.model_confidence_history.frequency[data.model_confidence_history.frequency.length - 1] || 0 : 0,
+                        markov: data.model_confidence_history.markov ? data.model_confidence_history.markov[data.model_confidence_history.markov.length - 1] || 0 : 0,
+                        lstm: data.model_confidence_history.lstm ? data.model_confidence_history.lstm[data.model_confidence_history.lstm.length - 1] || 0 : 0
                     };
                     
                     if (confidenceTrendChart.data.labels.length > 20) {
@@ -2726,8 +2455,7 @@
                     confidenceTrendChart.data.datasets[0].data.push(confidenceValues.random);
                     confidenceTrendChart.data.datasets[1].data.push(confidenceValues.frequency);
                     confidenceTrendChart.data.datasets[2].data.push(confidenceValues.markov);
-                    confidenceTrendChart.data.datasets[3].data.push(confidenceValues.enhanced);
-                    confidenceTrendChart.data.datasets[4].data.push(confidenceValues.lstm);
+                    confidenceTrendChart.data.datasets[3].data.push(confidenceValues.lstm);
                     confidenceTrendChart.update('none');
                 }
                 
@@ -2754,7 +2482,6 @@
                 { name: 'Random', key: 'random', color: '#FFCE56' },
                 { name: 'Frequency', key: 'frequency', color: '#4BC0C0' },
                 { name: 'Markov', key: 'markov', color: '#9966FF' },
-                { name: 'Enhanced', key: 'enhanced', color: '#FF9F40' },
                 { name: 'LSTM Neural', key: 'lstm', color: '#6A5ACD' }
             ];
             
@@ -2787,7 +2514,6 @@
                 'random': 'Random Strategy',
                 'frequency': 'Frequency Analysis',
                 'markov': 'Markov Chain',
-                'enhanced': 'Enhanced ML',
                 'lstm': 'LSTM Neural',
                 'to_win': 'To Win (Aggressive)',
                 'not_to_lose': 'Not to Lose (Defensive)'
@@ -2809,274 +2535,125 @@
         
         // Debug Data Display Function
         function updateDebugPanel(data) {
-            // Helper function to format arrays nicely
-            const formatArray = (arr, name = '') => {
-                if (!arr || arr.length === 0) return '[]';
-                return `[${arr.map((item, i) => `${i}: "${item}"`).join(', ')}]`;
-            };
+            if (!data.debug_accuracy) return;
             
-            const formatNumericArray = (arr, name = '') => {
-                if (!arr || arr.length === 0) return '[]';
-                return `[${arr.map((item, i) => `${i}: ${item}`).join(', ')}]`;
-            };
+            const debugData = data.debug_accuracy;
             
-        }
-        
-        // Tournament Management Functions
-        function showTournamentDashboard() {
-            fetch('/tournament')
-            .then(res => res.json())
-            .then(data => {
-                updateTournamentDashboard(data);
-                document.getElementById('tournamentModal').style.display = 'block';
-            })
-            .catch(err => console.error('Error fetching tournament data:', err));
-        }
-        
-        function updateTournamentDashboard(data) {
-            // Update leaderboard
-            const leaderboardHtml = data.leaderboard.map((player, index) => `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: ${index < 3 ? '#f0f8ff' : '#f9f9f9'}; margin: 5px 0; border-radius: 5px;">
-                    <div>
-                        <span style="font-weight: bold; color: ${index === 0 ? '#FFD700' : index === 1 ? '#C0C0C0' : index === 2 ? '#CD7F32' : '#666'};">
-                            #${index + 1}
-                        </span>
-                        ${player.name}
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="font-weight: bold;">${Math.round(player.elo_rating)}</div>
-                        <div style="font-size: 12px; color: #666;">${player.wins}W-${player.losses}L</div>
+            const displayHtml = `
+                <div style="font-family: monospace; color: #e2e8f0; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <h4 style="color: #fbbf24; margin: 0 0 15px 0;">🔍 Debug: Prediction vs Reality Analysis</h4>
+                    
+                    ${Object.keys(debugData).map(modelName => {
+                        const modelDebug = debugData[modelName];
+                        
+                        return `
+                            <div style="margin: 20px 0; border: 1px solid #4a5568; border-radius: 6px; padding: 15px;">
+                                <h5 style="color: #81c784; margin: 0 0 10px 0; text-transform: uppercase;">${modelName} Model</h5>
+                                
+                                <div style="margin: 10px 0; padding: 10px; background: rgba(59, 130, 246, 0.1); border-radius: 4px; border-left: 3px solid #3b82f6;">
+                                    <strong style="color: #3b82f6;">📊 Summary</strong><br>
+                                    <div style="margin: 5px 0; font-size: 13px;">
+                                        AI Strategy Accuracy: <strong>${modelDebug.ai_strategy_accuracy}%</strong><br>
+                                        Current Method (Wrong): <strong>${modelDebug.current_method?.accuracy_percentage || 0}%</strong><br>
+                                        Correct Method (Right): <strong>${modelDebug.correct_method?.accuracy_percentage || 0}%</strong><br>
+                                        Discrepancy: <strong style="color: ${Math.abs((modelDebug.ai_strategy_accuracy || 0) - (modelDebug.correct_method?.accuracy_percentage || 0)) > 5 ? '#ef4444' : '#22c55e'}">${Math.abs((modelDebug.ai_strategy_accuracy || 0) - (modelDebug.correct_method?.accuracy_percentage || 0)).toFixed(1)}%</strong>
+                                    </div>
+                                </div>
+                                
+                                <details style="margin: 10px 0;">
+                                    <summary style="cursor: pointer; color: #60a5fa; margin: 10px 0;">📊 View Raw Prediction Data</summary>
+                                    <div style="margin: 10px 0; font-size: 12px;">
+                                        <div style="margin: 10px 0; padding: 10px; background: rgba(239, 68, 68, 0.1); border-radius: 4px; border-left: 3px solid #ef4444;">
+                                            <strong style="color: #ef4444;">❌ Current Method (Wrong): predictions[i] vs human_history[i]</strong>
+                                            <div style="max-height: 200px; overflow-y: auto; border: 1px solid #4a5568; padding: 5px; margin: 5px 0; font-size: 11px;">
+                                                ${(modelDebug.current_method?.comparisons || []).map(comp => 
+                                                    `<div style="margin: 2px 0; padding: 3px; background: rgba(255,255,255,0.05); border-radius: 2px;">
+                                                        <strong>Round ${comp.round}:</strong> Predicted "${comp.predicted}" vs Actual "${comp.actual}" → ${comp.correct ? '✅ Match' : '❌ Miss'}
+                                                        <br><small style="color: #94a3b8;">${comp.note}</small>
+                                                    </div>`
+                                                ).join('')}
+                                            </div>
+                                            <div style="margin: 5px 0; font-weight: bold;">
+                                                Result: ${modelDebug.current_method?.correct_count || 0}/${modelDebug.current_method?.comparisons?.length || 0} = ${modelDebug.current_method?.accuracy_percentage || 0}%
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="margin: 10px 0; padding: 10px; background: rgba(34, 197, 94, 0.1); border-radius: 4px; border-left: 3px solid #22c55e;">
+                                            <strong style="color: #22c55e;">✅ Correct Method (Right): predictions[i] vs human_history[i+1]</strong>
+                                            <div style="max-height: 200px; overflow-y: auto; border: 1px solid #4a5568; padding: 5px; margin: 5px 0; font-size: 11px;">
+                                                ${(modelDebug.correct_method?.comparisons || []).map(comp => 
+                                                    `<div style="margin: 2px 0; padding: 3px; background: rgba(255,255,255,0.05); border-radius: 2px;">
+                                                        <strong>Round ${comp.round}:</strong> Predicted "${comp.predicted}" vs Actual "${comp.actual}" → ${comp.correct ? '✅ Match' : '❌ Miss'}
+                                                        <br><small style="color: #94a3b8;">${comp.note}</small>
+                                                    </div>`
+                                                ).join('')}
+                                            </div>
+                                            <div style="margin: 5px 0; font-weight: bold;">
+                                                Result: ${modelDebug.correct_method?.correct_count || 0}/${modelDebug.correct_method?.comparisons?.length || 0} = ${modelDebug.correct_method?.accuracy_percentage || 0}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+                        `;
+                    }).join('')}
+                    
+                    <div style="margin: 20px 0; padding: 15px; background: rgba(59, 130, 246, 0.1); border-radius: 6px; border-left: 3px solid #3b82f6;">
+                        <h5 style="color: #3b82f6; margin: 0 0 10px 0;">📋 Key Findings</h5>
+                        <p style="margin: 5px 0; font-size: 13px; line-height: 1.5;">
+                            <strong>Issue:</strong> The current backend compares predictions[i] with human_history[i], but predictions[i] was made to predict human_history[i+1].<br>
+                            <strong>Fix:</strong> Change the comparison to predictions[i] vs human_history[i+1] to get the correct accuracy calculation.<br>
+                            <strong>Impact:</strong> This explains the discrepancy between Model Prediction Tracking and AI Strategy Accuracy values.
+                        </p>
                     </div>
                 </div>
-            `).join('');
+            `;
             
-            document.getElementById('leaderboard').innerHTML = leaderboardHtml;
-            
-            // Update stats
-            document.getElementById('totalPlayers').textContent = data.total_players;
-            document.getElementById('totalMatches').textContent = data.total_matches;
+            document.getElementById('debugDataDisplay').innerHTML = displayHtml;
         }
         
-        function createTournamentPlayer() {
-            const name = document.getElementById('newPlayerName').value.trim();
-            if (!name) {
-                alert('Please enter a player name');
-                return;
-            }
-            
-            fetch('/tournament/player', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name: name})
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('newPlayerName').value = '';
-                    showTournamentDashboard(); // Refresh dashboard
-                    alert(`Player "${data.player.name}" created successfully!`);
-                } else {
-                    alert('Error: ' + data.error);
+        function toggleDebugData() {
+            const debugContent = document.getElementById('debugAccuracyData');
+            if (debugContent.style.display === 'none') {
+                debugContent.style.display = 'block';
+                // If debug data is empty, fetch fresh data
+                if (!document.getElementById('debugDataDisplay').innerHTML.trim()) {
+                    fetch('/history')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.debug_accuracy) {
+                            updateDebugPanel(data);
+                        }
+                    })
+                    .catch(err => console.log('Failed to fetch debug data:', err));
                 }
-            })
-            .catch(err => {
-                console.error('Error creating player:', err);
-                alert('Error creating player');
-            });
-        }
-        
-        function createQuickMatch() {
-            const player1 = document.getElementById('player1Name').value.trim();
-            const player2 = document.getElementById('player2Name').value.trim();
-            
-            if (!player1 || !player2) {
-                alert('Please enter both player names');
-                return;
+            } else {
+                debugContent.style.display = 'none';
             }
-            
-            fetch('/tournament/match', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    player1_name: player1,
-                    player2_name: player2
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    alert(`Match created between ${player1} and ${player2}!`);
-                    document.getElementById('player1Name').value = '';
-                    document.getElementById('player2Name').value = '';
-                    // You could redirect to a match interface here
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            })
-            .catch(err => {
-                console.error('Error creating match:', err);
-                alert('Error creating match');
-            });
         }
         
         // LLM Type Management
         function updateLLMType() {
-            const selector = document.getElementById('llm-type-selector');
-            const selectedLLM = selector.value;
-            console.log(`Switching to LLM type: ${selectedLLM}`);
-            
-            // Update global LLM type
-            window.currentLLMType = selectedLLM;
-            
-            // Show feedback
-            const tipsList = document.getElementById('coaching-tips-list');
-            tipsList.innerHTML = `<p style="color: #0066cc;">🔄 Switched to ${selectedLLM.toUpperCase()} - Click "Get New Tips" to see the difference!</p>`;
+            // LLM Type selector functionality has been removed with Coach View cleanup
+            console.log('LLM Type selector is no longer available - Coach View has been simplified');
         }
         
         // Coaching Functions
         function refreshCoachingTips() {
-            console.log('Refreshing coaching tips...');
-            const llmType = window.currentLLMType || document.getElementById('llm-type-selector').value || 'mock';
-            
-            // Show loading indicator based on LLM type
-            const tipsContainer = document.getElementById('coaching-tips-list');
-            let loadingMessage;
-            switch(llmType) {
-                case 'mock':
-                    loadingMessage = '🎯 Basic coaching generating tips...';
-                    break;
-                case 'trained':
-                    loadingMessage = '🤖 Light-weight LLM analyzing your gameplay...';
-                    break;
-                case 'real':
-                    loadingMessage = '🌐 Advanced LLM thinking deeply... (This may take 30+ seconds)';
-                    break;
-                default:
-                    loadingMessage = '🔄 Generating coaching tips...';
-            }
-            
-            tipsContainer.innerHTML = `
-                <div style="
-                    display: flex; 
-                    align-items: center; 
-                    gap: 10px; 
-                    padding: 15px; 
-                    background: linear-gradient(90deg, #f0f9ff, #e0f2fe); 
-                    border-left: 4px solid #0284c7;
-                    border-radius: 6px;
-                    color: #0369a1;
-                    font-weight: 500;
-                ">
-                    <div class="loading-spinner" style="
-                        width: 20px; 
-                        height: 20px; 
-                        border: 2px solid #0284c7; 
-                        border-top: 2px solid transparent; 
-                        border-radius: 50%; 
-                        animation: spin 1s linear infinite;
-                    "></div>
-                    ${loadingMessage}
-                </div>
-            `;
-            
-            const startTime = Date.now();
-            
-            fetch('/coaching', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    llm_type: llmType
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                const responseTime = Date.now() - startTime;
-                console.log(`Coaching data received in ${responseTime}ms:`, data);
-                updateCoachingTips(data);
-            })
-            .catch(err => {
-                console.log('Coaching tips unavailable:', err);
-                document.getElementById('coaching-tips-list').innerHTML = 
-                    '<p style="color: #666; font-style: italic;">Coaching tips will be available after more games.</p>';
-            });
+            // Coaching tips functionality has been removed with Coach View cleanup
+            console.log('Coaching tips are no longer available - Coach View has been simplified');
         }
         
         function updateCoachingTips(coachingData) {
-            const tipsContainer = document.getElementById('coaching-tips-list');
-            const insightsContainer = document.getElementById('insights-content');
-            const insightsSummary = document.getElementById('insights-summary');
-            
-            // Determine which model was used
-            const llmType = coachingData.llm_type || 'unknown';
-            let modelBadge;
-            switch(llmType) {
-                case 'mock':
-                    modelBadge = '🎯 <span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Basic</span>';
-                    break;
-                case 'trained':
-                    modelBadge = '🤖 <span style="background: #f3e5f5; color: #7b1fa2; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Light-weight LLM</span>';
-                    break;
-                case 'real':
-                    modelBadge = '🌐 <span style="background: #e8f5e8; color: #2e7d32; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Advanced LLM</span>';
-                    break;
-                default:
-                    modelBadge = '❓ <span style="background: #fafafa; color: #616161; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">Unknown</span>';
-            }
-            
-            // Update tips with model indicator
-            if (coachingData.coaching_tips && coachingData.coaching_tips.length > 0) {
-                const modelHeader = `<div style="margin-bottom: 15px; padding: 8px 12px; background: rgba(0,0,0,0.05); border-radius: 6px; display: flex; align-items: center; gap: 8px; font-size: 14px;">
-                    Generated by: ${modelBadge}
-                </div>`;
-                
-                const tipsHtml = coachingData.coaching_tips.map((tip, index) => 
-                    `<div style="margin-bottom: 12px; padding: 10px; background: rgba(255,152,0,0.1); border-radius: 6px;">
-                        <strong>${index + 1}.</strong> ${tip}
-                    </div>`
-                ).join('');
-                tipsContainer.innerHTML = modelHeader + tipsHtml;
-            } else {
-                tipsContainer.innerHTML = '<p style="color: #666; font-style: italic;">Keep playing to get personalized tips!</p>';
-            }
-            
-            // Update insights (optional)
-            if (coachingData.insights && Object.keys(coachingData.insights).length > 0) {
-                const insights = coachingData.insights;
-                let insightsHtml = '';
-                
-                if (insights.predictability !== undefined) {
-                    const predPercent = (insights.predictability * 100).toFixed(1);
-                    insightsHtml += `<p><strong>Predictability:</strong> ${predPercent}% - `;
-                    insightsHtml += insights.predictability > 0.6 ? 'Too predictable!' : 'Good unpredictability';
-                    insightsHtml += '</p>';
-                }
-                
-                if (insights.pattern_type) {
-                    insightsHtml += `<p><strong>Pattern Type:</strong> ${insights.pattern_type.replace('_', ' ')}</p>`;
-                }
-                
-                if (insights.recent_performance) {
-                    const winRate = (insights.recent_performance.win_rate * 100).toFixed(1);
-                    insightsHtml += `<p><strong>Recent Win Rate:</strong> ${winRate}%</p>`;
-                }
-                
-                if (insightsHtml) {
-                    insightsContainer.innerHTML = insightsHtml;
-                    insightsSummary.style.display = 'block';
-                } else {
-                    insightsSummary.style.display = 'none';
-                }
-            } else {
-                insightsSummary.style.display = 'none';
-            }
+            // Coaching tips functionality has been removed with Coach View cleanup
+            console.log('Coaching tips update skipped - Coach View has been simplified');
         }
         
         function setDifficulty() {
             currentDifficulty = document.getElementById('difficulty').value;
             console.log('Difficulty set to:', currentDifficulty);
             updateRobotCharacter(currentDifficulty, currentStrategy, currentPersonality);
+            updateSelectedModelVisibility(); // Update confidence chart visibility
         }
         
         function setStrategy() {
@@ -3118,25 +2695,6 @@
                     setTimeout(() => notification.remove(), 300);
                 }, 2000);
             }
-        }
-        
-        // DEBUG: Test function to manually trigger robot update
-        function testRobotUpdate() {
-            console.log('=== MANUAL TEST TRIGGERED ===');
-            const diff = document.getElementById('difficulty').value;
-            const strat = document.getElementById('strategy').value;
-            const pers = document.getElementById('personality').value;
-            
-            console.log('Current dropdown values:', { diff, strat, pers });
-            console.log('Current JS variables:', { currentDifficulty, currentStrategy, currentPersonality });
-            
-            // Update variables
-            currentDifficulty = diff;
-            currentStrategy = strat;
-            currentPersonality = pers;
-            
-            console.log('Calling updateRobotCharacter...');
-            updateRobotCharacter(currentDifficulty, currentStrategy, currentPersonality);
         }
         
         
