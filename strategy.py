@@ -1,4 +1,4 @@
-# Strategy interface and implementations for difficulty levels
+# Implementations for difficulty levels
 import random
 from collections import defaultdict, deque
 from ml_model_enhanced import EnhancedMLModel

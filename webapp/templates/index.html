@@ -308,10 +308,9 @@
                                     <div class="select-card">
                                         <label for="difficulty">🎯 AI Difficulty</label>
                                         <select id="difficulty" onchange="setDifficulty()">
-                                            <option value="random" selected>Random</option>
-                                            <option value="frequency">Frequency</option>
-                                            <option value="markov">Markov</option>
-                                            <option value="lstm">LSTM Neural</option>
+                                            <option value="rookie">🟢 Rookie (Beginner)</option>
+                                            <option value="challenger" selected>🟡 Challenger (Intermediate)</option>
+                                            <option value="master">🔴 Master (Advanced)</option>
                                         </select>
                                     </div>
                                     <div class="select-card">
@@ -324,13 +323,13 @@
                                     <div class="select-card">
                                         <label for="personality">🤖 AI Personality</label>
                                         <select id="personality" onchange="setPersonality()">
-                                            <option value="neutral" selected>😐 Neutral</option>
-                                            <option value="berserker">⚔️ The Berserker (Ultra Aggressive)</option>
-                                            <option value="guardian">🛡️ The Guardian (Defensive Expert)</option>
-                                            <option value="chameleon">🦎 The Chameleon (Adaptive)</option>
-                                            <option value="professor">🔬 The Professor (Analytical)</option>
-                                            <option value="wildcard">🃏 The Wildcard (Unpredictable)</option>
-                                            <option value="mirror">🪞 The Mirror (Mimicking)</option>
+                                            <option value="neutral" selected>😐 Neutral (Balanced)</option>
+                                            <option value="aggressive">⚔️ Aggressive (High-risk)</option>
+                                            <option value="defensive">🛡️ Defensive (Risk-averse)</option>
+                                            <option value="unpredictable">🎲 Unpredictable (Erratic)</option>
+                                            <option value="cautious">� Cautious (Methodical)</option>
+                                            <option value="confident">💪 Confident (Bold)</option>
+                                            <option value="chameleon">� Chameleon (Adaptive)</option>
                                         </select>
                                     </div>
                                     <div class="select-card">
@@ -361,7 +360,7 @@
                                     <div class="meta-title"><span id="robot-name">Standard Robot</span></div>
                                     <div class="meta-tags">
                                         <span class="tag">Difficulty: <span id="robot-difficulty">Easy</span></span>
-                                        <span class="tag">Strategy: <span id="robot-strategy">Random</span></span>
+                                        <span class="tag">Strategy: <span id="robot-strategy">Challenger</span></span>
                                         <span class="tag">Personality: <span id="robot-personality">Balanced</span></span>
                                     </div>
                                 </div>
@@ -534,7 +533,7 @@
         console.log('Main page script loading...');
         
         // Global variables (will be updated from dropdown values on page load)
-    let currentDifficulty = 'random';  // Default fallback (mildest)
+    let currentDifficulty = 'challenger';  // Default to challenger difficulty
     let currentStrategy = 'balanced';  // Default fallback (mildest)
     let currentPersonality = 'neutral';  // Default fallback (mildest)
         
@@ -643,10 +642,9 @@
             
             const currentDifficulty = document.getElementById('difficulty').value;
             const difficultyToIndex = {
-                'random': 0,
-                'frequency': 1,
-                'markov': 2,
-                'lstm': 3
+                'rookie': 0,
+                'challenger': 1,
+                'master': 2
             };
             
             const selectedIndex = difficultyToIndex[currentDifficulty];
@@ -1211,32 +1209,28 @@
             // Personality character mapping
             const personalityChars = {
                 'neutral': '🤖',
-                'berserker': '💀',
-                'guardian': '🛡️', 
-                'chameleon': '🦎',
-                'professor': '🎓',
-                'wildcard': '🃏',
-                'mirror': '🪞',
+                'aggressive': '⚔️',
+                'defensive': '🛡️', 
+                'unpredictable': '🎲',
+                'cautious': '🔍',
+                'confident': '💪',
+                'chameleon': '�',
                 'balanced': '🤖'
             };
             
             // Difficulty-based background shading
             const difficultyStyles = {
-                'random': {
+                'rookie': {
                     background: 'linear-gradient(135deg, #e8f5e8, #d4edda)',
                     border: '3px solid #28a745'
                 },
-                'frequency': {
+                'challenger': {
                     background: 'linear-gradient(135deg, #fff3cd, #ffeaa7)',
                     border: '3px solid #ffc107'
                 },
-                'markov': {
+                'master': {
                     background: 'linear-gradient(135deg, #f8d7da, #f5b7b1)',
                     border: '3px solid #dc3545'
-                },
-                'lstm': {
-                    background: 'linear-gradient(135deg, #2c2c2c, #1a1a1a)',
-                    border: '3px solid #6f42c1'
                 }
             };
             
@@ -1246,7 +1240,7 @@
             avatar.textContent = char;
             
             // Update styling
-            const style = difficultyStyles[difficulty] || difficultyStyles['random'];
+            const style = difficultyStyles[difficulty] || difficultyStyles['rookie'];
             console.log('Setting avatar style:', style);
             avatar.style.background = style.background;
             avatar.style.border = style.border;
@@ -1261,17 +1255,23 @@
                 return;
             }
             
-            // Strategy symbol mapping
+            // Strategy/Difficulty symbol mapping
             const strategySymbols = {
-                'random': '🎲',
-                'frequency': '📊',
+                // New difficulty levels
+                'rookie': '�',
+                'challenger': '�', 
+                'master': '🔴',
+                // Strategy types
                 'pattern': '🔄',
-                'markov': '🧠',
-                'minimax': '⚔️',
-                'lstm': '🤖',
                 'balanced': '⚖️',
                 'to_win': '⚔️',
-                'not_to_lose': '🛡️'
+                'not_to_lose': '🛡️',
+                // Legacy support
+                'random': '🎲',
+                'frequency': '📊',
+                'markov': '🧠',
+                'minimax': '⚔️',
+                'lstm': '🤖'
             };
             
             const symbol = strategySymbols[strategy] || '⚔️';
@@ -1285,9 +1285,15 @@
             // Generate robot name based on personality and difficulty
             const names = {
                 'neutral': ['Standard', 'Basic', 'Default', 'Unit'],
+                'aggressive': ['Destroyer', 'Annihilator', 'Crusher', 'Devastator'],
+                'defensive': ['Protector', 'Defender', 'Shield', 'Bulwark'],
+                'unpredictable': ['Chaos', 'Random', 'Surprise', 'Wildfire'],
+                'cautious': ['Analyst', 'Scholar', 'Calculator', 'Logic'],
+                'confident': ['Echo', 'Reflection', 'Shadow', 'Copy'],
+                'chameleon': ['Shifter', 'Adapter', 'Morph', 'Mimic'],
+                // Legacy support
                 'berserker': ['Destroyer', 'Annihilator', 'Crusher', 'Devastator'],
                 'guardian': ['Protector', 'Defender', 'Shield', 'Bulwark'],
-                'chameleon': ['Shifter', 'Adapter', 'Morph', 'Mimic'],
                 'professor': ['Analyst', 'Scholar', 'Calculator', 'Logic'],
                 'wildcard': ['Chaos', 'Random', 'Surprise', 'Wildfire'],
                 'mirror': ['Echo', 'Reflection', 'Shadow', 'Copy'],
@@ -1297,6 +1303,11 @@
             const nameList = names[personality] || names['neutral'];
             const baseName = nameList[Math.floor(Math.random() * nameList.length)];
             const difficultyPrefix = {
+                // New 42-opponent difficulties
+                'rookie': 'Basic',
+                'challenger': 'Advanced', 
+                'master': 'Legendary',
+                // Legacy support for charts/compatibility
                 'random': 'Basic',
                 'frequency': 'Junior', 
                 'markov': 'Advanced',
@@ -1304,6 +1315,11 @@
             };
             
             const difficultyNames = {
+                // New 42-opponent difficulties
+                'rookie': 'Rookie',
+                'challenger': 'Challenger',
+                'master': 'Master',
+                // Legacy support for charts/compatibility
                 'random': 'Random',
                 'frequency': 'Frequency Analysis',
                 'markov': 'Markov Chain',
@@ -1317,10 +1333,17 @@
             };
             
             const personalityNames = {
+                // New 42-opponent personalities
                 'neutral': 'Neutral',
+                'aggressive': 'The Destroyer',
+                'defensive': 'The Guardian',
+                'unpredictable': 'The Wildcard',
+                'cautious': 'The Scholar',
+                'confident': 'The Mirror',
+                'chameleon': 'The Chameleon',
+                // Legacy support
                 'berserker': 'The Berserker',
                 'guardian': 'The Guardian',
-                'chameleon': 'The Chameleon',
                 'professor': 'The Professor',
                 'wildcard': 'The Wildcard',
                 'mirror': 'The Mirror'

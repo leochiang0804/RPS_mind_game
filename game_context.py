@@ -7,6 +7,8 @@ used across all AI coach endpoints, analytics, and UI components.
 
 The goal is to eliminate scattered data construction and ensure consistency
 across the entire application.
+
+Now includes support for the 42-opponent RPS AI system with Markov + HLBM framework.
 """
 
 import time
@@ -22,6 +24,185 @@ class GameContextConfig:
     include_advanced_metrics: bool = True
     include_temporal_data: bool = True
     validate_schema: bool = True
+
+
+# 42-Opponent System Integration
+_current_opponent_params = None
+_ai_system_metadata = {}
+
+
+def set_opponent_parameters(difficulty: str, strategy: str, personality: str) -> bool:
+    """
+    Set current opponent parameters for the 42-opponent system.
+    
+    Args:
+        difficulty: 'rookie', 'challenger', or 'master'
+        strategy: 'to_win' or 'not_to_lose'
+        personality: 'neutral', 'aggressive', 'defensive', etc.
+        
+    Returns:
+        True if parameters were set successfully
+    """
+    global _current_opponent_params, _ai_system_metadata
+    
+    try:
+        # Import here to avoid circular imports
+        from rps_ai_system import get_ai_system
+        
+        # Initialize AI system with opponent
+        ai_system = get_ai_system()
+        success = ai_system.set_opponent(difficulty, strategy, personality)
+        
+        if success:
+            _current_opponent_params = {
+                'difficulty': difficulty,
+                'strategy': strategy,
+                'personality': personality,
+                'opponent_info': ai_system.get_opponent_info(),
+                'set_time': time.time()
+            }
+            
+            _ai_system_metadata = {
+                'system_type': '42_opponent_markov_hlbm',
+                'version': '1.0',
+                'last_reset': time.time()
+            }
+            
+        return success
+        
+    except Exception as e:
+        print(f"Error setting opponent parameters: {e}")
+        return False
+
+
+def get_current_opponent_info() -> Dict[str, Any]:
+    """Get current opponent information."""
+    global _current_opponent_params
+    
+    if _current_opponent_params is None:
+        return {
+            'status': 'not_set',
+            'difficulty': 'unknown',
+            'strategy': 'unknown',
+            'personality': 'unknown'
+        }
+        
+    return _current_opponent_params.copy()
+
+
+def get_ai_prediction(session_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Get AI prediction using the 42-opponent system.
+    
+    Args:
+        session_data: Current session data with move history
+        
+    Returns:
+        Dictionary with prediction data
+    """
+    global _current_opponent_params
+    
+    try:
+        # Import here to avoid circular imports
+        from rps_ai_system import get_ai_system
+        
+        ai_system = get_ai_system()
+        
+        # Get move history from session
+        human_moves = session_data.get('human_moves', [])
+        
+        # Convert outcome history from results
+        results = session_data.get('results', [])
+        outcome_history = []
+        for result in results:
+            if result == 'human':
+                outcome_history.append('win')
+            elif result == 'robot':
+                outcome_history.append('loss')
+            else:
+                outcome_history.append('tie')
+        
+        # Get prediction
+        if len(human_moves) > 0:
+            probabilities, ai_move, metadata = ai_system.predict_next_move(
+                human_moves, outcome_history
+            )
+        else:
+            probabilities, ai_move, metadata = ai_system.predict_next_move()
+            
+        return {
+            'ai_move': ai_move,
+            'human_probabilities': probabilities.tolist(),
+            'confidence': metadata.get('confidence', 0.33),
+            'metadata': metadata,
+            'system_type': '42_opponent_system'
+        }
+        
+    except Exception as e:
+        print(f"Error getting AI prediction: {e}")
+        # Fallback to random
+        import random
+        return {
+            'ai_move': random.choice(['rock', 'paper', 'scissors']),
+            'human_probabilities': [0.33, 0.33, 0.33],
+            'confidence': 0.33,
+            'metadata': {'error': str(e)},
+            'system_type': 'fallback_random'
+        }
+
+
+def update_ai_with_result(human_move: str, ai_move: str) -> Dict[str, Any]:
+    """
+    Update AI system with game result.
+    
+    Args:
+        human_move: Human's move
+        ai_move: AI's move
+        
+    Returns:
+        Update metadata
+    """
+    try:
+        # Import here to avoid circular imports
+        from rps_ai_system import get_ai_system
+        
+        ai_system = get_ai_system()
+        return ai_system.update_with_human_move(human_move, ai_move)
+        
+    except Exception as e:
+        print(f"Error updating AI system: {e}")
+        return {'error': str(e)}
+
+
+def get_ai_performance_summary() -> Dict[str, Any]:
+    """Get AI performance summary for current session."""
+    try:
+        # Import here to avoid circular imports
+        from rps_ai_system import get_ai_system
+        
+        ai_system = get_ai_system()
+        return ai_system.get_performance_summary()
+        
+    except Exception as e:
+        print(f"Error getting AI performance summary: {e}")
+        return {'error': str(e), 'status': 'unavailable'}
+
+
+def reset_ai_system() -> None:
+    """Reset AI system for new game."""
+    global _ai_system_metadata
+    
+    try:
+        # Import here to avoid circular imports
+        from rps_ai_system import get_ai_system
+        
+        ai_system = get_ai_system()
+        ai_system.reset_game_state()
+        
+        _ai_system_metadata['last_reset'] = time.time()
+        
+    except Exception as e:
+        print(f"Error resetting AI system: {e}")
 
 
 class GameContextBuilder:
@@ -210,6 +391,9 @@ class GameContextBuilder:
             if personality_info and 'traits' in personality_info:
                 personality_traits = personality_info['traits']
         
+        # Get current opponent information from 42-opponent system
+        opponent_info_42 = get_current_opponent_info()
+        
         opponent_info = {
             'ai_difficulty': session.get('ai_difficulty', 'unknown'),
             'ai_strategy': session.get('strategy_preference', 'unknown'),
@@ -224,6 +408,17 @@ class GameContextBuilder:
             'personality_risk_tolerance': personality_traits.get('risk_tolerance', 0.0),
             'personality_memory_span': personality_traits.get('memory_span', 0.0),
             'personality_confidence_sensitivity': personality_traits.get('confidence_sensitivity', 0.0),
+            # 42-opponent system information
+            'opponent_system': {
+                'type': '42_opponent_markov_hlbm',
+                'status': opponent_info_42.get('status', 'not_set'),
+                'opponent_id': opponent_info_42.get('opponent_info', {}).get('opponent_id', 'unknown'),
+                'expected_win_rate': opponent_info_42.get('opponent_info', {}).get('expected_win_rate', 0.5),
+                'description': opponent_info_42.get('opponent_info', {}).get('description', 'Unknown opponent'),
+                'markov_order': opponent_info_42.get('opponent_info', {}).get('markov_order', 2),
+                'lambda_influence': opponent_info_42.get('opponent_info', {}).get('lambda_influence', 0.25),
+                'alpha': opponent_info_42.get('opponent_info', {}).get('alpha', 0.5)
+            }
         }
 
         # Game Status

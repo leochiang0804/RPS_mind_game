@@ -11,7 +11,16 @@ from personality_engine import get_personality_engine
 from move_mapping import normalize_move, get_counter_move, MOVES
 
 # Centralized Data Management - All AI coach endpoints use this for consistent data building
-from game_context import build_game_context
+from game_context import build_game_context, set_opponent_parameters, get_ai_prediction, update_ai_with_result, reset_ai_system
+
+# Import the new 42-opponent RPS AI system
+try:
+    from rps_ai_system import get_ai_system, initialize_ai_system
+    RPS_AI_SYSTEM_AVAILABLE = True
+    print("✅ 42-Opponent RPS AI System available")
+except ImportError as e:
+    RPS_AI_SYSTEM_AVAILABLE = False
+    print(f"⚠️ 42-Opponent RPS AI System not available: {e}")
 
 # Import Developer Console
 try:
@@ -34,14 +43,9 @@ except ImportError as e:
     PERFORMANCE_OPTIMIZER_AVAILABLE = False
     print(f"⚠️ Performance Optimizer not available: {e}")
 
-# Try to import LSTM functionality
-try:
-    from lstm_web_integration import get_lstm_predictor, init_lstm_model
-    LSTM_AVAILABLE = True
-    print("✅ LSTM integration available")
-except ImportError as e:
-    LSTM_AVAILABLE = False
-    print(f"⚠️ LSTM not available: {e}")
+# LSTM functionality replaced by 42-opponent system
+LSTM_AVAILABLE = False
+print("ℹ️ LSTM replaced by 42-opponent system")
 
 # AI Coach functionality - Currently under development
 # Coach View frontend is available, but backend AI Coach features are being redesigned
@@ -57,19 +61,8 @@ markov_strategy = MarkovStrategy()
 to_win_strategy = ToWinStrategy()
 not_to_lose_strategy = NotToLoseStrategy()
 
-# Initialize LSTM if available
+# LSTM predictor is replaced by 42-opponent system
 lstm_predictor = None
-if LSTM_AVAILABLE:
-    try:
-        lstm_predictor = get_lstm_predictor()
-        if init_lstm_model():
-            print("✅ LSTM model initialized for webapp")
-        else:
-            print("⚠️ LSTM model failed to initialize")
-            LSTM_AVAILABLE = False
-    except Exception as e:
-        print(f"⚠️ LSTM initialization error: {e}")
-        LSTM_AVAILABLE = False
 
 # Initialize advanced personality engine
 personality_engine = get_personality_engine()
@@ -84,8 +77,8 @@ game_state = {
     'round_history': [],  # Each entry: {'round': n, 'human': move, 'robot': move}
     'round': 0,
     'stats': {'human_win': 0, 'robot_win': 0, 'tie': 0},
-    'difficulty': 'markov',  # Default to markov mode
-    'ai_difficulty': 'markov',  # Explicit AI difficulty label
+    'difficulty': 'challenger',  # Default to challenger difficulty
+    'ai_difficulty': 'challenger',  # Explicit AI difficulty label
     'strategy_preference': 'to_win',  # Default strategy preference
     'personality': 'neutral',  # Default personality
     'multiplayer': False,
@@ -405,187 +398,127 @@ def play():
         return jsonify({'error': 'Invalid move'}), 400
 
     import random
-    # Difficulty strategies
+    # New 42-Opponent AI System
     def robot_strategy(history, difficulty, strategy_preference='to_win', personality='neutral'):
-        # Performance tracking - start timing
+        """
+        Updated robot strategy using the new 42-opponent Markov+HLBM system.
+        """
         start_time = time.time()
         
-        # Set the personality in the engine
-        advanced_personalities = ['berserker', 'guardian', 'chameleon', 'professor', 'wildcard', 'mirror']
-        
-        if personality in advanced_personalities:
-            personality_engine.set_personality(personality)
-        
-        # Predict next human move, then counter it
-        predicted = None
-        confidence = 0.33
-        base_move = None  # Initialize base_move
-        personality_modified_confidence = confidence  # Initialize as same as original
-        
-        # For random and frequency models, personality doesn't affect confidence
-        use_personality_for_confidence = difficulty in ['markov', 'lstm']
-        
-        # Apply strategy preference to determine which approach to use
-        if strategy_preference == 'to_win' and difficulty in ['markov', 'lstm']:
-            # Force the AI to use the aggressive "to win" approach
-            if len(history) >= 3:
-                if difficulty == 'lstm' and LSTM_AVAILABLE and lstm_predictor:
-                    # LSTM with TO_WIN strategy: confidence = abs(2 * highest_prob - 1)
-                    try:
-                        lstm_probs = lstm_predictor.predict(history)
-                        highest_prob = max(lstm_probs.values())
-                        confidence = abs(2 * highest_prob - 1)
-                        base_move = lstm_predictor.get_counter_move(history)
-                    except Exception as e:
-                        print(f"LSTM prediction error in TO_WIN: {e}")
-                        base_move = random.choice(MOVES)
-                        confidence = 0.33
-                else:
-                    # Use ToWinStrategy for MARKOV or fallback
-                    human_pred = to_win_strategy.predict(history)
-                    confidence = to_win_strategy.get_confidence()
-                    # Convert human prediction to robot counter move
-                    counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
-                    base_move = counter.get(human_pred) if human_pred else random.choice(MOVES)
-            else:
-                base_move = random.choice(MOVES)
-                confidence = 0.33
-            
-        elif strategy_preference == 'not_to_lose' and difficulty in ['markov', 'lstm']:
-            # Force the AI to use the defensive "not to lose" approach
-            if len(history) >= 3:
-                if difficulty == 'lstm' and LSTM_AVAILABLE and lstm_predictor:
-                    # LSTM with NOT_TO_LOSE strategy: confidence = abs(2 * (sum of highest two probs) - 1)
-                    try:
-                        lstm_probs = lstm_predictor.predict(history)
-                        sorted_probs = sorted(lstm_probs.values(), reverse=True)
-                        highest_two_sum = sorted_probs[0] + sorted_probs[1]
-                        confidence = abs(2 * highest_two_sum - 1)
-                        base_move = lstm_predictor.get_counter_move(history)
-                    except Exception as e:
-                        print(f"LSTM prediction error in NOT_TO_LOSE: {e}")
-                        base_move = random.choice(MOVES)
-                        confidence = 0.33
-                else:
-                    # Use NotToLoseStrategy for MARKOV or fallback
-                    human_pred = not_to_lose_strategy.predict(history)
-                    confidence = not_to_lose_strategy.get_confidence()
-                    # Convert human prediction to robot counter move
-                    counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
-                    base_move = counter.get(human_pred) if human_pred else random.choice(MOVES)
-            else:
-                base_move = random.choice(MOVES)
-                confidence = 0.33
-            
-        else:
-            # Regular difficulty-based strategy
-            if difficulty == 'random':
-                predicted = random.choice(MOVES)
-                confidence = 0.0  # Random strategy has no confidence
-            elif difficulty == 'frequency':
-                predicted_counter = frequency_strategy.predict(history)
-                # Convert back to predicted human move
-                reverse_counter = {'scissors': 'paper', 'rock': 'scissors', 'paper': 'rock'}
-                predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
-                confidence = 0.0  # Frequency strategy has no confidence
-            elif difficulty == 'markov':
-                markov_strategy.train(history)
-                predicted_counter = markov_strategy.predict(history)
-                reverse_counter = {'scissors': 'paper', 'rock': 'scissors', 'paper': 'rock'}
-                predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
-                confidence = 0.6
-            elif difficulty == 'lstm' and LSTM_AVAILABLE and lstm_predictor:
-                # LSTM prediction with strategy-specific confidence calculation
-                try:
-                    # Get LSTM probabilities for human moves
-                    lstm_probs = lstm_predictor.predict(history)
+        # Check if new AI system is available
+        if RPS_AI_SYSTEM_AVAILABLE:
+            try:
+                # Set opponent parameters in the AI system
+                success = set_opponent_parameters(difficulty, strategy_preference, personality)
+                
+                if success:
+                    # Get prediction from the AI system
+                    session_data = {
+                        'human_moves': history,
+                        'results': game_state.get('result_history', []),
+                        'ai_difficulty': difficulty,
+                        'strategy_preference': strategy_preference,
+                        'personality': personality
+                    }
                     
-                    # Calculate strategy-specific confidence
-                    if strategy_preference == 'to_win':
-                        # ToWin strategy: confidence = abs(2 * highest_prob - 1)
-                        highest_prob = max(lstm_probs.values())
-                        confidence = abs(2 * highest_prob - 1)
-                    elif strategy_preference == 'not_to_lose':
-                        # NotToLose strategy: confidence = abs(2 * (sum of highest two probs) - 1)
-                        sorted_probs = sorted(lstm_probs.values(), reverse=True)
-                        highest_two_sum = sorted_probs[0] + sorted_probs[1]
-                        confidence = abs(2 * highest_two_sum - 1)
-                    else:
-                        # Default to original LSTM confidence
-                        confidence = max(lstm_probs.values())
+                    prediction_data = get_ai_prediction(session_data)
                     
-                    # Get the counter move
-                    base_move = lstm_predictor.get_counter_move(history)
+                    # Extract data
+                    ai_move = prediction_data.get('ai_move', random.choice(MOVES))
+                    confidence = prediction_data.get('confidence', 0.33)
                     
-                    # Track LSTM inference time
+                    # Track inference time
                     inference_duration = time.time() - start_time
                     if DEVELOPER_CONSOLE_AVAILABLE:
-                        track_inference('lstm', inference_duration)
+                        track_inference(f'{difficulty}_{strategy_preference}_{personality}', inference_duration)
                     
-                    # Don't return early - continue to personality application
-                    predicted = None  # Set to None since we have base_move
-                except Exception as e:
-                    print(f"LSTM prediction error: {e}")
-                    predicted = random.choice(MOVES)
-                    confidence = 0.33
-            else:
-                predicted = random.choice(MOVES)
-                confidence = 0.0  # Default to no confidence
-            
-            # Convert prediction to robot move (skip for LSTM as it already has base_move)
-            if difficulty != 'lstm' or not base_move:
-                counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
-                base_move = counter.get(predicted) if predicted else random.choice(MOVES)
+                    # Return: base_move, confidence, personality_modified_confidence
+                    # In the new system, confidence already includes personality modifications
+                    return ai_move, confidence, confidence
+                    
+            except Exception as e:
+                print(f"Error using 42-opponent system: {e}")
+                # Fall through to legacy system
         
-        # Track inference time for non-LSTM models
+        # Fallback to legacy system for backwards compatibility
+        print(f"Using legacy system for {difficulty}/{strategy_preference}/{personality}")
+        
+        # Legacy system logic (simplified version)
+        predicted = None
+        confidence = 0.33
+        base_move = None
+        
+        if difficulty == 'rookie':
+            # Simple random with slight bias
+            if len(history) >= 3:
+                # Slightly favor most recent pattern
+                last_move = history[-1]
+                if random.random() < 0.6:  # 60% chance to counter last move
+                    counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
+                    base_move = counter.get(last_move, random.choice(MOVES))
+                    confidence = 0.35
+                else:
+                    base_move = random.choice(MOVES)
+                    confidence = 0.15
+            else:
+                base_move = random.choice(MOVES)
+                confidence = 0.15
+                
+        elif difficulty == 'challenger':
+            # Use legacy markov strategy
+            if len(history) >= 3:
+                markov_strategy.train(history)
+                predicted_counter = markov_strategy.predict(history)
+                if isinstance(predicted_counter, tuple):
+                    predicted_counter = predicted_counter[0]  # Extract move from tuple
+                reverse_counter = {'scissors': 'paper', 'rock': 'scissors', 'paper': 'rock'}
+                predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
+                counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
+                base_move = counter.get(predicted, random.choice(MOVES))
+                confidence = 0.55
+            else:
+                base_move = random.choice(MOVES)
+                confidence = 0.33
+                
+        elif difficulty == 'master':
+            # Use advanced strategy with 42-opponent system (LSTM replaced)
+            if len(history) >= 3:
+                markov_strategy.train(history)
+                predicted_counter = markov_strategy.predict(history)
+                if isinstance(predicted_counter, tuple):
+                    predicted_counter = predicted_counter[0]
+                reverse_counter = {'scissors': 'paper', 'rock': 'scissors', 'paper': 'rock'}
+                predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
+                counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
+                base_move = counter.get(predicted, random.choice(MOVES))
+                confidence = 0.75  # Higher confidence for master level
+            else:
+                base_move = random.choice(MOVES)
+                confidence = 0.33
+        else:
+            # Unknown difficulty - default to random
+            base_move = random.choice(MOVES)
+            confidence = 0.33
+        
+        # Apply simple personality modifiers for legacy compatibility
+        if personality == 'aggressive':
+            confidence = min(0.95, confidence * 1.2)
+        elif personality == 'defensive':
+            confidence = max(0.15, confidence * 0.8)
+        elif personality == 'unpredictable':
+            if random.random() < 0.3:
+                base_move = random.choice(MOVES)
+                confidence = 0.15
+        
+        # Track inference time
         inference_duration = time.time() - start_time
         if DEVELOPER_CONSOLE_AVAILABLE:
-            track_inference(difficulty, inference_duration)
+            try:
+                track_inference(f'legacy_{difficulty}', inference_duration)
+            except:
+                pass  # Silently fail if track_inference is not available
         
-        # Apply personality modifications using the advanced engine
-        if personality in advanced_personalities and use_personality_for_confidence:
-            # Create game history in the format expected by personality engine
-            game_history = []
-            if len(game_state['human_history']) == len(game_state['robot_history']):
-                game_history = list(zip(game_state['human_history'], game_state['robot_history']))
-            
-            final_move, personality_modified_confidence = personality_engine.apply_personality_to_move(
-                base_move or random.choice(MOVES), confidence, history, game_history
-            )
-            return final_move, confidence, personality_modified_confidence
-        elif personality in advanced_personalities and not use_personality_for_confidence:
-            # For random/frequency models, apply personality to move but not confidence
-            game_history = []
-            if len(game_state['human_history']) == len(game_state['robot_history']):
-                game_history = list(zip(game_state['human_history'], game_state['robot_history']))
-            
-            final_move, _ = personality_engine.apply_personality_to_move(
-                base_move or random.choice(MOVES), confidence, history, game_history
-            )
-            # For random/frequency, personality-modified confidence equals original confidence
-            return final_move, confidence, confidence
-        
-        # Legacy personality modifiers for backwards compatibility
-        elif personality == 'aggressive':
-            confidence = min(1.0, confidence * 1.2)  # More confident
-            return base_move, confidence, confidence  # Legacy personalities don't modify confidence differently
-        elif personality == 'defensive':
-            confidence = max(0.1, confidence * 0.8)  # Less confident
-            return base_move, confidence, confidence
-        elif personality == 'chaotic':
-            if random.random() < 0.3:  # 30% chance to be completely random
-                return random.choice(MOVES), 0.33, 0.33
-            return base_move, confidence, confidence
-        elif personality == 'adaptive':
-            # Simple adaptive logic for legacy support
-            if len(game_state['result_history']) >= 5:
-                recent_results = game_state['result_history'][-5:]
-                robot_wins = recent_results.count('robot')
-                if robot_wins <= 1:  # Losing, be more aggressive
-                    return base_move, min(1.0, confidence * 1.3), min(1.0, confidence * 1.3)
-            return base_move, confidence, confidence
-        
-        return base_move, confidence, confidence  # No personality modification
+        return base_move, confidence, confidence
 
     results = []
     robot_move, confidence, personality_modified_confidence = robot_strategy(
@@ -622,16 +555,8 @@ def play():
         markov_pred = reverse_counter.get(markov_robot_move, random.choice(MOVES))
         game_state['model_predictions_history']['markov'].append(markov_pred)
         
-        # LSTM prediction (if available)
-        if LSTM_AVAILABLE and lstm_predictor:
-            try:
-                lstm_probs = lstm_predictor.predict(history)
-                lstm_pred = max(lstm_probs.items(), key=lambda x: x[1])[0]  # Most likely human move
-                game_state['model_predictions_history']['lstm'].append(lstm_pred)
-            except Exception as e:
-                game_state['model_predictions_history']['lstm'].append(random.choice(MOVES))
-        else:
-            game_state['model_predictions_history']['lstm'].append(random.choice(MOVES))
+        # LSTM prediction - replaced by 42-opponent system
+        game_state['model_predictions_history']['lstm'].append(random.choice(MOVES))
         
         # Track confidence values for each model - Fixed to use model-specific confidence
         # Random and Frequency should always be 0%
@@ -665,26 +590,8 @@ def play():
         
         game_state['model_confidence_history']['markov'].append(markov_confidence)
         
-        # LSTM confidence - use its own confidence calculation with strategy formulas
-        if LSTM_AVAILABLE and lstm_predictor:
-            try:
-                lstm_raw_confidence = lstm_predictor.get_confidence(history)
-                
-                # Apply strategy-specific confidence formula
-                if strategy_preference == 'to_win':
-                    lstm_confidence = abs(2 * lstm_raw_confidence - 1)
-                elif strategy_preference == 'not_to_lose':
-                    # Estimate second highest probability
-                    remaining_prob = 1 - lstm_raw_confidence
-                    second_highest = remaining_prob / 2
-                    lstm_confidence = abs(2 * (lstm_raw_confidence + second_highest) - 1)
-                else:
-                    lstm_confidence = lstm_raw_confidence
-                game_state['model_confidence_history']['lstm'].append(lstm_confidence)
-            except:
-                game_state['model_confidence_history']['lstm'].append(0.0)
-        else:
-            game_state['model_confidence_history']['lstm'].append(0.0)
+        # LSTM confidence - replaced by 42-opponent system
+        game_state['model_confidence_history']['lstm'].append(0.0)
         
         game_state['model_confidence_history']['to_win'].append(to_win_strategy.get_confidence())
         game_state['model_confidence_history']['not_to_lose'].append(not_to_lose_strategy.get_confidence())
@@ -731,6 +638,13 @@ def play():
         game_state['round_history'].append({'round': game_state['round']+1, 'human': move, 'robot': robot_move})
         game_state['round'] += 1
         
+        # Update the new 42-opponent AI system with the result
+        if RPS_AI_SYSTEM_AVAILABLE:
+            try:
+                update_ai_with_result(move, robot_move)
+            except Exception as e:
+                print(f"Error updating AI system: {e}")
+        
         # Update personality engine with game result
         personality_engine.update_game_state(move, robot_move or 'paper', result, confidence)
         
@@ -776,27 +690,30 @@ def play():
                 game_state['accuracy'][model_name] = round(accuracy, 1)
     
     # Track game move in developer console
-    if DEVELOPER_CONSOLE_AVAILABLE and len(game_state['human_history']) > 0:
-        # Get all model predictions for this move
-        model_predictions = {}
-        model_confidences = {}
-        
-        for model_name in game_state['model_predictions_history']:
-            if game_state['model_predictions_history'][model_name]:
-                model_predictions[model_name] = game_state['model_predictions_history'][model_name][-1]
-        
-        for model_name in game_state['model_confidence_history']:
-            if game_state['model_confidence_history'][model_name]:
-                model_confidences[model_name] = game_state['model_confidence_history'][model_name][-1]
-        
-        # Track the complete move
-        track_move(
-            human_move=game_state['human_history'][-1],
-            robot_move=game_state['robot_history'][-1] if game_state['robot_history'] else 'unknown',
-            result=game_state['result_history'][-1] if game_state['result_history'] else 'unknown',
-            model_predictions=model_predictions,
-            model_confidences=model_confidences
-        )
+    if DEVELOPER_CONSOLE_AVAILABLE:
+        try:
+            # Get all model predictions for this move
+            model_predictions = {}
+            model_confidences = {}
+            
+            for model_name in game_state['model_predictions_history']:
+                if game_state['model_predictions_history'][model_name]:
+                    model_predictions[model_name] = game_state['model_predictions_history'][model_name][-1]
+            
+            for model_name in game_state['model_confidence_history']:
+                if game_state['model_confidence_history'][model_name]:
+                    model_confidences[model_name] = game_state['model_confidence_history'][model_name][-1]
+            
+            # Track the complete move
+            track_move(
+                human_move=game_state['human_history'][-1],
+                robot_move=game_state['robot_history'][-1] if game_state['robot_history'] else 'unknown',
+                result=game_state['result_history'][-1] if game_state['result_history'] else 'unknown',
+                model_predictions=model_predictions,
+                model_confidences=model_confidences
+            )
+        except:
+            pass  # Silently fail if developer console functions are not available
     
     # Store game data in session for AI coach access
     session['human_moves'] = game_state['human_history']
@@ -933,8 +850,8 @@ def reset():
     game_state['result_history'].clear()
     game_state['round'] = 0
     game_state['stats'] = {'human_win': 0, 'robot_win': 0, 'tie': 0}
-    game_state['difficulty'] = 'markov'  # Default to markov
-    game_state['ai_difficulty'] = 'markov'
+    game_state['difficulty'] = 'challenger'  # Default to challenger difficulty
+    game_state['ai_difficulty'] = 'challenger'
     game_state['multiplayer'] = False
     game_state['change_points'] = []
     game_state['current_strategy'] = 'unknown'
@@ -942,6 +859,13 @@ def reset():
     
     # Reset change detector
     change_detector.reset()
+    
+    # Reset the 42-opponent AI system
+    if RPS_AI_SYSTEM_AVAILABLE:
+        try:
+            reset_ai_system()
+        except Exception as e:
+            print(f"Error resetting AI system: {e}")
     
     if request.method == 'POST':
         return jsonify({'success': True})
@@ -1031,13 +955,16 @@ def developer_console():
     if not DEVELOPER_CONSOLE_AVAILABLE:
         return jsonify({'error': 'Developer console not available'}), 503
     
-    report = get_developer_report()
-    chart = get_chart()
-    
-    return render_template('developer_console.html', 
-                         report=report, 
-                         chart=chart,
-                         session_active=True)
+    try:
+        report = get_developer_report()
+        chart = get_chart()
+        
+        return render_template('developer_console.html', 
+                             report=report, 
+                             chart=chart,
+                             session_active=True)
+    except:
+        return jsonify({'error': 'Developer console functions not available'}), 503
 
 @app.route('/developer/api/report', methods=['GET'])
 def developer_api_report():
@@ -1045,7 +972,10 @@ def developer_api_report():
     if not DEVELOPER_CONSOLE_AVAILABLE:
         return jsonify({'error': 'Developer console not available'}), 503
     
-    return jsonify(get_developer_report())
+    try:
+        return jsonify(get_developer_report())
+    except:
+        return jsonify({'error': 'Developer report functions not available'}), 503
 
 @app.route('/developer/api/chart', methods=['GET'])
 def developer_api_chart():
@@ -1053,8 +983,11 @@ def developer_api_chart():
     if not DEVELOPER_CONSOLE_AVAILABLE:
         return jsonify({'error': 'Developer console not available'}), 503
     
-    chart_data = get_chart()
-    return jsonify({'chart': chart_data})
+    try:
+        chart_data = get_chart()
+        return jsonify({'chart': chart_data})
+    except:
+        return jsonify({'error': 'Chart functions not available'}), 503
 
 @app.route('/developer/api/export', methods=['POST'])
 def developer_api_export():
@@ -1084,8 +1017,11 @@ def performance_dashboard():
     if not PERFORMANCE_OPTIMIZER_AVAILABLE:
         return jsonify({'error': 'Performance optimizer not available'}), 503
     
-    report = get_performance_report()
-    return render_template('performance_dashboard.html', report=report)
+    try:
+        report = get_performance_report()
+        return render_template('performance_dashboard.html', report=report)
+    except:
+        return jsonify({'error': 'Performance optimizer functions not available'}), 503
 
 @app.route('/performance/api/report', methods=['GET'])
 def performance_api_report():
@@ -1093,7 +1029,10 @@ def performance_api_report():
     if not PERFORMANCE_OPTIMIZER_AVAILABLE:
         return jsonify({'error': 'Performance optimizer not available'}), 503
     
-    return jsonify(get_performance_report())
+    try:
+        return jsonify(get_performance_report())
+    except:
+        return jsonify({'error': 'Performance report functions not available'}), 503
 
 @app.route('/performance/api/bundle-analysis', methods=['GET'])
 def performance_api_bundle():
@@ -1101,7 +1040,10 @@ def performance_api_bundle():
     if not PERFORMANCE_OPTIMIZER_AVAILABLE:
         return jsonify({'error': 'Performance optimizer not available'}), 503
     
-    return jsonify(optimizer.bundle_analyzer.analyze_file_sizes())
+    try:
+        return jsonify(optimizer.bundle_analyzer.analyze_file_sizes())
+    except:
+        return jsonify({'error': 'Bundle analysis functions not available'}), 503
 
 @app.route('/performance/api/timing/<model_name>', methods=['GET'])
 def performance_api_timing(model_name):
@@ -1109,7 +1051,10 @@ def performance_api_timing(model_name):
     if not PERFORMANCE_OPTIMIZER_AVAILABLE:
         return jsonify({'error': 'Performance optimizer not available'}), 503
     
-    return jsonify(optimizer.timing_validator.get_timing_analysis(model_name))
+    try:
+        return jsonify(optimizer.timing_validator.get_timing_analysis(model_name))
+    except:
+        return jsonify({'error': 'Timing analysis functions not available'}), 503
 
 
 # AI Coach API Endpoints - Simplified for Development

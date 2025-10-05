@@ -97,6 +97,13 @@ Paper_Scissor_Stone/
 │   │   ├── developer_console.html # Developer analytics interface
 │   │   └── performance_dashboard.html # Performance monitoring
 │   └── static/             # Game assets and styling
+├── opponent_tester/        # 42-Opponent Testing Framework
+│   ├── opponent_performance_tester.py # Comprehensive testing suite
+│   ├── verify_dynamic_params.py # Parameter validation utility
+│   ├── view_plot.py        # Visualization viewer
+│   ├── results/            # Test results and reports
+│   ├── visualizations/     # Generated plots and charts
+│   └── README.md           # Testing framework documentation
 ├── strategy.py             # Core ML strategies implementation
 ├── ml_model_enhanced.py    # Enhanced ML models and algorithms
 ├── game_context.py         # Unified game context and metrics builder

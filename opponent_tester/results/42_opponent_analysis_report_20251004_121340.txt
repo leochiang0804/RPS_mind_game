@@ -1,0 +1,139 @@
+🎯 ENHANCED 42-OPPONENT PERFORMANCE ANALYSIS
+============================================================
+
+📋 TEST CONFIGURATION:
+  • Human Pattern: None
+  • Moves per Game: 75
+  • Games per Opponent: 1000
+  • Total Opponents: 42
+  • Total Game Sessions: 42000
+  • Total Moves Played: 3150000
+  • Test Duration: 335.0 seconds
+
+🎲 OVERALL PERFORMANCE:
+  • Total Game Sessions: 42000
+  • Win Rate: 37.4% ± 0.075
+  • Win Rate Range: 13.3% - 73.3%
+  • Win Rate Median: 36.0%
+  • Confidence: 0.290 ± 0.073
+  • Confidence Range: 0.155 - 0.478
+  • System Consistency: 0.925
+
+📊 FACTOR IMPACT ANALYSIS:
+  • Strongest Factor: STRATEGY_EFFECT (σ=0.032)
+  • Effect Rankings:
+    1. STRATEGY_EFFECT: σ=0.032
+    2. PERSONALITY_EFFECT: σ=0.024
+    3. DIFFICULTY_EFFECT: σ=0.018
+
+🎯 DIFFICULTY LEVEL ANALYSIS:
+  ROOKIE:
+    • Sessions: 14000
+    • Win Rate: 35.5% ± 0.059
+    • Win Rate Range: 13.3% - 60.0%
+    • Confidence: 0.296 ± 0.071
+    • Adaptation: Early 33.7% → Mid 34.4% → Late 35.2%
+    • Adaptation Strength: 1.5%
+    • Consistency: 0.941
+  CHALLENGER:
+    • Sessions: 14000
+    • Win Rate: 37.6% ± 0.065
+    • Win Rate Range: 16.0% - 69.3%
+    • Confidence: 0.276 ± 0.076
+    • Adaptation: Early 33.5% → Mid 35.7% → Late 37.1%
+    • Adaptation Strength: 3.6%
+    • Consistency: 0.935
+  MASTER:
+    • Sessions: 14000
+    • Win Rate: 39.1% ± 0.093
+    • Win Rate Range: 18.7% - 73.3%
+    • Confidence: 0.298 ± 0.071
+    • Adaptation: Early 33.4% → Mid 36.0% → Late 38.7%
+    • Adaptation Strength: 5.3%
+    • Consistency: 0.907
+
+⚔️ STRATEGY ANALYSIS:
+  TO WIN:
+    • Sessions: 21000
+    • Win Rate: 39.6% ± 0.084
+    • Win Rate Range: 13.3% - 73.3%
+    • Confidence: 0.293 ± 0.076
+    • Consistency: 0.916
+  NOT TO LOSE:
+    • Sessions: 21000
+    • Win Rate: 35.1% ± 0.057
+    • Win Rate Range: 13.3% - 61.3%
+    • Confidence: 0.287 ± 0.071
+    • Consistency: 0.943
+
+🎭 PERSONALITY ANALYSIS:
+  NEUTRAL:
+    • Sessions: 6000
+    • Win Rate: 37.0% ± 0.062
+    • Win Rate Range: 14.7% - 60.0%
+    • Confidence: 0.296 ± 0.073
+    • Consistency: 0.938
+  AGGRESSIVE:
+    • Sessions: 6000
+    • Win Rate: 35.1% ± 0.056
+    • Win Rate Range: 18.7% - 56.0%
+    • Confidence: 0.240 ± 0.038
+    • Consistency: 0.944
+  DEFENSIVE:
+    • Sessions: 6000
+    • Win Rate: 42.0% ± 0.099
+    • Win Rate Range: 18.7% - 72.0%
+    • Confidence: 0.387 ± 0.079
+    • Consistency: 0.901
+  UNPREDICTABLE:
+    • Sessions: 6000
+    • Win Rate: 36.0% ± 0.057
+    • Win Rate Range: 16.0% - 57.3%
+    • Confidence: 0.255 ± 0.045
+    • Consistency: 0.943
+  CAUTIOUS:
+    • Sessions: 6000
+    • Win Rate: 36.0% ± 0.057
+    • Win Rate Range: 13.3% - 60.0%
+    • Confidence: 0.281 ± 0.034
+    • Consistency: 0.943
+  CONFIDENT:
+    • Sessions: 6000
+    • Win Rate: 36.3% ± 0.059
+    • Win Rate Range: 13.3% - 61.3%
+    • Confidence: 0.272 ± 0.036
+    • Consistency: 0.941
+  CHAMELEON:
+    • Sessions: 6000
+    • Win Rate: 39.3% ± 0.096
+    • Win Rate Range: 16.0% - 73.3%
+    • Confidence: 0.299 ± 0.083
+    • Consistency: 0.904
+
+🏆 TOP PERFORMING CONFIGURATIONS:
+  🥇 HIGHEST WIN RATES:
+    1. master_to_win_defensive: 57.4% ± 0.052 (1000 games)
+    2. master_to_win_chameleon: 56.5% ± 0.053 (1000 games)
+    3. challenger_to_win_defensive: 48.4% ± 0.054 (1000 games)
+    4. rookie_to_win_neutral: 42.4% ± 0.054 (1000 games)
+    5. challenger_not_to_lose_chameleon: 39.9% ± 0.057 (1000 games)
+  🥉 LOWEST WIN RATES:
+    1. rookie_not_to_lose_neutral: 34.1% ± 0.056 (1000 games)
+    2. master_not_to_lose_aggressive: 33.5% ± 0.054 (1000 games)
+    3. master_not_to_lose_chameleon: 33.4% ± 0.054 (1000 games)
+    4. rookie_not_to_lose_unpredictable: 33.4% ± 0.055 (1000 games)
+    5. challenger_not_to_lose_aggressive: 33.3% ± 0.053 (1000 games)
+
+💡 STATISTICAL INSIGHTS:
+  • Difficulty creates 1.8% variance in performance
+  • Strategy creates 3.2% variance in performance
+  • Personality creates 2.4% variance in performance
+  • Difficulty levels show WEAK practical impact
+  • Strategy choice shows MODERATE practical impact
+  • Personality choice shows MODERATE practical impact
+
+📈 ACTIONABLE RECOMMENDATIONS:
+  • FOCUS: Strategy differences need enhancement
+  • IMPROVE: Enhance difficulty level differences
+  • IMPROVE: Amplify personality characteristics
+  • HEALTH: System shows good consistency across tests
