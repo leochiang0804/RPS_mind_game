@@ -89,6 +89,16 @@ temp/
 *.log
 logs/
 
+# Development files (tests, analysis, results)
+development/
+# Keep development structure but exclude contents from git
+!development/
+development/*
+
+# Game context files (can be large and frequently generated)
+game_context-*.json
+cookies.txt
+
 # Environment variables
 .env.local
 .env.development

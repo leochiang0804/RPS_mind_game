@@ -322,6 +322,11 @@ class GameContextBuilder:
                 recent_bias_type = bias_type
                 recent_bias_percent = percent
 
+        # SBC-specific emotional and strategic indicators
+        sbc_metrics = GameContextBuilder._calculate_sbc_metrics(
+            human_moves, robot_moves, results, confidence_score_history
+        )
+
         return {
             'full_game_snapshot': {
                 'human_moves': human_moves,
@@ -356,7 +361,245 @@ class GameContextBuilder:
             'min_confidence_score_modified_by_personality': min_confidence_score_modified_by_personality,
             'avg_confidence_score_modified_by_personality': avg_confidence_score_modified_by_personality,
             'confidence_score_modified_by_personality_history': personality_modified_confidence_score_history,
+            # SBC-specific metrics for banter and coaching
+            'sbc_metrics': sbc_metrics,
         }
+    
+    @staticmethod
+    def _calculate_sbc_metrics(human_moves, robot_moves, results, confidence_history):
+        """
+        Calculate SBC-specific metrics for enhanced banter and coaching.
+        
+        Args:
+            human_moves: List of human moves
+            robot_moves: List of robot moves
+            results: List of game results  
+            confidence_history: List of AI confidence scores
+            
+        Returns:
+            Dictionary with SBC-specific emotional and strategic indicators
+        """
+        total_rounds = len(results) if results else 0
+        
+        # Emotional Context Indicators
+        frustration_level = GameContextBuilder._calculate_frustration_level(results)
+        momentum_state = GameContextBuilder._calculate_momentum_state(results)
+        learning_trend = GameContextBuilder._calculate_learning_trend(results, confidence_history)
+        
+        # Strategic Analysis
+        pattern_exploitation_success = GameContextBuilder._calculate_pattern_exploitation(
+            human_moves, robot_moves, results
+        )
+        adaptation_speed = GameContextBuilder._calculate_adaptation_speed(results)
+        consistency_score = GameContextBuilder._calculate_consistency_score(human_moves)
+        
+        # Performance Context
+        performance_tier = GameContextBuilder._calculate_performance_tier(results)
+        challenge_readiness = GameContextBuilder._calculate_challenge_readiness(
+            results, confidence_history
+        )
+        
+        return {
+            'emotional_context': {
+                'frustration_level': frustration_level,  # 0-1 scale
+                'momentum_state': momentum_state,  # 'hot', 'cold', 'neutral'
+                'learning_trend': learning_trend,  # 'improving', 'declining', 'stable'
+            },
+            'strategic_analysis': {
+                'pattern_exploitation_success': pattern_exploitation_success,  # 0-1 scale
+                'adaptation_speed': adaptation_speed,  # 'fast', 'medium', 'slow'
+                'consistency_score': consistency_score,  # 0-1 scale
+            },
+            'performance_context': {
+                'performance_tier': performance_tier,  # 'beginner', 'intermediate', 'advanced'
+                'challenge_readiness': challenge_readiness,  # 0-1 scale
+                'total_rounds': total_rounds,
+            }
+        }
+    
+    @staticmethod
+    def _calculate_frustration_level(results):
+        """Calculate player frustration based on recent losses and streaks"""
+        if not results or len(results) < 3:
+            return 0.0
+            
+        recent_results = results[-10:]  # Last 10 rounds
+        recent_losses = recent_results.count('robot')
+        loss_rate = recent_losses / len(recent_results)
+        
+        # Check for consecutive losses (increases frustration)
+        consecutive_losses = 0
+        for result in reversed(recent_results):
+            if result == 'robot':
+                consecutive_losses += 1
+            else:
+                break
+                
+        # Frustration increases with loss rate and consecutive losses
+        base_frustration = min(1.0, loss_rate * 1.2)
+        streak_frustration = min(0.5, consecutive_losses * 0.1)
+        
+        return min(1.0, base_frustration + streak_frustration)
+    
+    @staticmethod
+    def _calculate_momentum_state(results):
+        """Determine current momentum state"""
+        if not results or len(results) < 5:
+            return 'neutral'
+            
+        recent_results = results[-5:]  # Last 5 rounds
+        human_wins = recent_results.count('human')
+        robot_wins = recent_results.count('robot')
+        
+        if human_wins >= 4:
+            return 'hot'
+        elif robot_wins >= 4:
+            return 'cold'
+        elif human_wins >= 3:
+            return 'warming'
+        elif robot_wins >= 3:
+            return 'cooling'
+        else:
+            return 'neutral'
+    
+    @staticmethod
+    def _calculate_learning_trend(results, confidence_history):
+        """Analyze if player is improving, declining, or stable"""
+        if not results or len(results) < 10:
+            return 'stable'
+            
+        # Split results into first half and second half
+        mid_point = len(results) // 2
+        first_half = results[:mid_point]
+        second_half = results[mid_point:]
+        
+        if len(first_half) < 3 or len(second_half) < 3:
+            return 'stable'
+            
+        first_half_win_rate = first_half.count('human') / len(first_half)
+        second_half_win_rate = second_half.count('human') / len(second_half)
+        
+        improvement = second_half_win_rate - first_half_win_rate
+        
+        if improvement > 0.15:  # 15% improvement
+            return 'improving'
+        elif improvement < -0.15:  # 15% decline
+            return 'declining'
+        else:
+            return 'stable'
+    
+    @staticmethod
+    def _calculate_pattern_exploitation(human_moves, robot_moves, results):
+        """Calculate how well AI is exploiting human patterns"""
+        if not results or len(results) < 5:
+            return 0.5
+            
+        # Look at recent performance (last 10 rounds)
+        recent_results = results[-10:]
+        robot_wins = recent_results.count('robot')
+        
+        # Success rate indicates pattern exploitation effectiveness
+        return robot_wins / len(recent_results)
+    
+    @staticmethod
+    def _calculate_adaptation_speed(results):
+        """Determine how quickly player adapts to AI strategies"""
+        if not results or len(results) < 10:
+            return 'medium'
+            
+        # Check win rate progression in chunks of 5
+        chunks = []
+        for i in range(0, len(results), 5):
+            chunk = results[i:i+5]
+            if len(chunk) >= 3:  # Minimum chunk size
+                win_rate = chunk.count('human') / len(chunk)
+                chunks.append(win_rate)
+                
+        if len(chunks) < 2:
+            return 'medium'
+            
+        # Calculate variance in win rates (high variance = fast adaptation)
+        variance = sum((rate - sum(chunks)/len(chunks))**2 for rate in chunks) / len(chunks)
+        
+        if variance > 0.15:
+            return 'fast'
+        elif variance < 0.05:
+            return 'slow'
+        else:
+            return 'medium'
+    
+    @staticmethod
+    def _calculate_consistency_score(human_moves):
+        """Calculate how consistent the player's move patterns are"""
+        if not human_moves or len(human_moves) < 5:
+            return 0.5
+            
+        from collections import Counter
+        
+        # Calculate move distribution
+        move_counts = Counter(human_moves)
+        total_moves = len(human_moves)
+        
+        # Perfect randomness would be 1/3 for each move
+        expected_freq = total_moves / 3
+        
+        # Calculate deviation from perfect randomness
+        deviations = []
+        for move in ['rock', 'paper', 'scissors']:
+            actual_freq = move_counts.get(move, 0)
+            deviation = abs(actual_freq - expected_freq) / expected_freq
+            deviations.append(deviation)
+            
+        # Average deviation (lower = more consistent/random)
+        avg_deviation = sum(deviations) / len(deviations)
+        
+        # Convert to consistency score (0 = random, 1 = very predictable)
+        return min(1.0, avg_deviation)
+    
+    @staticmethod
+    def _calculate_performance_tier(results):
+        """Categorize player skill level"""
+        if not results or len(results) < 10:
+            return 'beginner'
+            
+        human_win_rate = results.count('human') / len(results)
+        
+        if human_win_rate >= 0.55:
+            return 'advanced'
+        elif human_win_rate >= 0.45:
+            return 'intermediate'
+        else:
+            return 'beginner'
+    
+    @staticmethod
+    def _calculate_challenge_readiness(results, confidence_history):
+        """Determine if player is ready for increased difficulty"""
+        if not results or len(results) < 15:
+            return 0.3  # Low readiness for new players
+            
+        # Recent performance
+        recent_results = results[-10:]
+        recent_win_rate = recent_results.count('human') / len(recent_results)
+        
+        # Consistency (stable performance indicates readiness)
+        if len(results) >= 20:
+            mid_results = results[-20:-10]
+            mid_win_rate = mid_results.count('human') / len(mid_results)
+            stability = 1.0 - abs(recent_win_rate - mid_win_rate)
+        else:
+            stability = 0.5
+            
+        # AI confidence trend (if AI is less confident, player might be ready)
+        confidence_trend = 0.5
+        if confidence_history and len(confidence_history) >= 10:
+            recent_confidence = sum(confidence_history[-5:]) / 5
+            earlier_confidence = sum(confidence_history[-10:-5]) / 5
+            if recent_confidence < earlier_confidence:
+                confidence_trend = 0.7  # AI is less confident = player improving
+            
+        # Combine factors
+        readiness = (recent_win_rate * 0.4 + stability * 0.3 + confidence_trend * 0.3)
+        return min(1.0, readiness)
         
     def build_game_context(
         self,
@@ -451,12 +694,6 @@ class GameContextBuilder:
             'end_game': end_game,
             'round_number': round_num,
             'metrics': metrics,
-            'human_move_history': session.get('human_moves', []),
-            'robot_move_history': session.get('robot_moves', []),
-            'random_ai_predictions': session.get('model_predictions_history', {}).get('random', []),
-            'frequency_ai_predictions': session.get('model_predictions_history', {}).get('frequency', []),
-            'markov_ai_predictions': session.get('model_predictions_history', {}).get('markov', []),
-            'lstm_ai_predictions': session.get('model_predictions_history', {}).get('lstm', []),
         }
 
         # Analytics Metrics (placeholder)

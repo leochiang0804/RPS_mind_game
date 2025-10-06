@@ -152,6 +152,123 @@
             display: block;
             animation: fadeIn 0.25s ease;
         }
+        
+        /* Coaching Interface Styles */
+        .coach-content {
+            padding: 20px;
+        }
+        
+        .coach-tips-section, .coach-stats-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+        
+        .coach-tips-section h3, .coach-stats-section h3 {
+            color: #22c55e;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        #coaching-tips-container {
+            min-height: 120px;
+            margin-bottom: 15px;
+        }
+        
+        .coaching-tip {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            color: #e2e8f0;
+        }
+        
+        .coaching-tip.priority-high {
+            border-color: rgba(239, 68, 68, 0.5);
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .coaching-tip.priority-medium {
+            border-color: rgba(251, 191, 36, 0.5);
+            background: rgba(251, 191, 36, 0.1);
+        }
+        
+        .coaching-tip.priority-low {
+            border-color: rgba(34, 197, 94, 0.3);
+            background: rgba(34, 197, 94, 0.1);
+        }
+        
+        .coaching-tip-priority {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+        
+        .coaching-tip-placeholder {
+            text-align: center;
+            color: #94a3b8;
+            padding: 30px;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(34, 197, 94, 0.1);
+        }
+        
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-label {
+            color: #cbd5e1;
+        }
+        
+        .stat-value {
+            color: #22c55e;
+            font-weight: 600;
+        }
+        
+        #refresh-coaching-tips {
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        /* Performance Charts Styling */
+        .performance-chart-wrapper {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .performance-chart-wrapper h4 {
+            color: #22c55e;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+        
+        .current-stats {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        
+        /* LLM Banter Toggle Styling */
+        .select-card label[for="llm-banter-toggle"] {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body class="experimental-ui">
@@ -293,7 +410,7 @@
                                     <h3 class="overview-title">Strategic Intelligence</h3>
                                     <div class="overview-grid">
                                         <div class="overview-card wide">
-                                            <span class="label">Predictability Score</span>
+                                            <span class="label" title="Measures how predictable your moves are based on patterns. Lower values (0-40%) mean you're harder to predict, higher values (60%+) mean the AI can read your patterns easily.">Predictability Score ⓘ</span>
                                             <span class="value" id="overview-predictability">--</span>
                                             <span class="hint">Lower is better for humans</span>
                                         </div>
@@ -342,6 +459,13 @@
                                             <option value="500">500 Moves</option>
                                             <option value="1000">1000 Moves</option>
                                             <option value="infinite">Infinite</option>
+                                        </select>
+                                    </div>
+                                    <div class="select-card">
+                                        <label for="llm-banter-toggle">🧠 Banter Mode</label>
+                                        <select id="llm-banter-toggle" onchange="setLLMBanterMode()">
+                                            <option value="false" selected>🔧 Rule-based (Default)</option>
+                                            <option value="true">🤖 AI-Generated (LLM)</option>
                                         </select>
                                     </div>
                                     <!-- This is for Debug only -->
@@ -448,12 +572,51 @@
                                 <section class="panel coach-panel">
                                     <div class="panel-heading">
                                         <h2 class="panel-title">🎓 Coach View</h2>
-                                        <span class="panel-subtitle">Coaching functionality has been simplified.</span>
+                                        <span class="panel-subtitle">AI-powered strategic coaching with professor personality.</span>
                                     </div>
-                                    <div style="text-align: center; padding: 40px; color: #94a3b8;">
-                                        <h3>🚧 Coaching Under Maintenance</h3>
-                                        <p>Coach objects and AI strategy tips have been temporarily removed for system optimization.</p>
-                                        <p>Basic game functionality remains fully operational.</p>
+                                    <div class="coach-content">
+                                        <div class="coach-tips-section">
+                                            <h3>🧠 Strategic Coaching Tips</h3>
+                                            <div id="coaching-tips-container">
+                                                <div class="coaching-tip-placeholder">
+                                                    <p>🎮 Start playing to receive personalized coaching tips!</p>
+                                                    <p>Tips will analyze your recent moves and provide strategic guidance.</p>
+                                                </div>
+                                            </div>
+                                            <button id="refresh-coaching-tips" class="btn primary">🔄 Get New Tips</button>
+                                        </div>
+                                        
+                                        <div class="coach-stats-section">
+                                            <h3>📊 Performance Analysis</h3>
+                                            <div id="performance-charts-container">
+                                                <div class="performance-chart-wrapper">
+                                                    <h4>Predictability Over Time</h4>
+                                                    <canvas id="predictability-chart" width="400" height="200"></canvas>
+                                                </div>
+                                                <div class="performance-chart-wrapper">
+                                                    <h4 title="Shows how strongly the AI detects repeating patterns in your play. Higher values mean clearer patterns that the AI can exploit.">Pattern Strength Timeline ⓘ</h4>
+                                                    <canvas id="pattern-chart" width="400" height="200"></canvas>
+                                                </div>
+                                                <div class="performance-chart-wrapper">
+                                                    <h4 title="Measures how quickly the AI adapts its strategy to counter your moves. Higher rates mean the AI is learning and adjusting faster.">Adaptation Rate Progress ⓘ</h4>
+                                                    <canvas id="adaptation-chart" width="400" height="200"></canvas>
+                                                </div>
+                                            </div>
+                                            <div class="current-stats">
+                                                <div class="stat-item">
+                                                    <span class="stat-label" title="Real-time measure of how predictable your current move pattern is. Lower = harder to predict.">Current Predictability ⓘ:</span>
+                                                    <span id="current-predictability" class="stat-value">-</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-label" title="Strength of detectable patterns in your recent moves. Scale 0-1, where 1 means very strong patterns.">Current Pattern Strength ⓘ:</span>
+                                                    <span id="current-pattern" class="stat-value">-</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-label" title="How rapidly the AI is currently adjusting its prediction strategy based on your moves.">Current Adaptation Rate ⓘ:</span>
+                                                    <span id="current-adaptation" class="stat-value">-</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </section>
                             </div>
@@ -499,6 +662,9 @@
         gameStarted = false;
         document.getElementById('start-lock-controls').classList.remove('gradient-success');
         document.getElementById('start-lock-controls').classList.add('gradient-danger');
+        
+        // Initialize performance charts
+        initializePerformanceCharts();
     });
     // Only allow keyboard move input after Start is clicked
     document.addEventListener('keydown', function(e) {
@@ -536,6 +702,7 @@
     let currentDifficulty = 'challenger';  // Default to challenger difficulty
     let currentStrategy = 'balanced';  // Default fallback (mildest)
     let currentPersonality = 'neutral';  // Default fallback (mildest)
+    let useLLMBanter = false;  // Default to rule-based banter (not LLM)
         
         // Chart variables
         let moveDistributionChart = null;
@@ -559,10 +726,15 @@
             currentStrategy = document.getElementById('strategy').value;
             currentPersonality = document.getElementById('personality').value;
             
+            // Initialize LLM banter toggle (default to rule-based)
+            const llmToggle = document.getElementById('llm-banter-toggle');
+            useLLMBanter = llmToggle.value === 'true';
+            
             console.log('Initial dropdown values:', {
                 difficulty: currentDifficulty,
                 strategy: currentStrategy,
-                personality: currentPersonality
+                personality: currentPersonality,
+                useLLMBanter: useLLMBanter
             });
             
             setTimeout(initializeCharts, 100); // Small delay to ensure DOM is ready
@@ -580,6 +752,12 @@
                 defaultResultMessage = resultElement.textContent;
             }
             setGameLength();
+            
+            // Setup coaching interface
+            const refreshCoachingBtn = document.getElementById('refresh-coaching-tips');
+            if (refreshCoachingBtn) {
+                refreshCoachingBtn.addEventListener('click', refreshCoachingTips);
+            }
         });
         
         // Keyboard controls (removed duplicate listener)
@@ -1098,6 +1276,16 @@
                     robotWinRate: insights?.robotWinRate,
                     totalRounds: insights?.totalRounds
                 });
+                
+                // Update coaching stats if in coach view
+                if (insights?.totalRounds >= 5) {
+                    updateCoachingStats({
+                        human_moves: data.human_history || [],
+                        robot_moves: data.robot_history || [],
+                        results: data.result_history || [],
+                        round: insights.totalRounds
+                    });
+                }
             }, 800); // Delay to let move display finish
         }
         
@@ -1379,14 +1567,31 @@
             const avatarElement = document.getElementById('conversation-avatar');
             const calloutElement = document.getElementById('player-performance-callout');
 
-            const dialogue = generatePersonalityDialogue(personality, eventType, data);
+            // Check if user wants LLM-generated banter or rule-based
+            if (useLLMBanter) {
+                // Use SBC Backend for dynamic LLM-generated banter
+                generateSBCBanter(personality, eventType, data).then(dialogue => {
+                    // Update speech by printing text directly
+                    speechElement.textContent = dialogue.message;
 
-            // Update speech by printing text directly
-            speechElement.textContent = dialogue.message;
-
-            // Update mood and avatar
-            moodElement.textContent = dialogue.mood;
-            avatarElement.textContent = dialogue.avatar;
+                    // Update mood and avatar
+                    moodElement.textContent = dialogue.mood;
+                    avatarElement.textContent = dialogue.avatar;
+                }).catch(error => {
+                    console.warn('SBC Backend unavailable, using fallback dialogue:', error);
+                    // Fallback to rule-based dialogue when LLM fails
+                    const dialogue = generatePersonalityDialogue(personality, eventType, data);
+                    speechElement.textContent = dialogue.message;
+                    moodElement.textContent = dialogue.mood;
+                    avatarElement.textContent = dialogue.avatar;
+                });
+            } else {
+                // Use rule-based personality dialogue (default)
+                const dialogue = generatePersonalityDialogue(personality, eventType, data);
+                speechElement.textContent = dialogue.message;
+                moodElement.textContent = dialogue.mood;
+                avatarElement.textContent = dialogue.avatar;
+            }
 
             if (calloutElement) {
                 const humanWinRate = typeof data.humanWinRate === 'number' ? data.humanWinRate : null;
@@ -1409,6 +1614,129 @@
                     calloutElement.textContent = '';
                 }
             }
+        }
+        
+        async function generateSBCBanter(personality, eventType, data) {
+            try {
+                const response = await fetch('/sbc/banter', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        personality: personality,
+                        eventType: eventType,
+                        data: data
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                // Map to expected format
+                return {
+                    message: result.banter,
+                    mood: getPersonalityMood(personality, eventType),
+                    avatar: getPersonalityAvatar(personality)
+                };
+            } catch (error) {
+                console.error('SBC Backend error:', error);
+                throw error;
+            }
+        }
+        
+        function getPersonalityMood(personality, eventType) {
+            const moodMap = {
+                'berserker': {
+                    'start': '💀 Bloodthirsty',
+                    'win': '👹 Triumphant', 
+                    'lose': '😡 Furious',
+                    'tie': '😤 Frustrated',
+                    'default': '💀 Aggressive'
+                },
+                'guardian': {
+                    'start': '🛡️ Watchful',
+                    'win': '😌 Satisfied',
+                    'lose': '🤔 Analyzing',
+                    'tie': '⚖️ Balanced',
+                    'default': '🛡️ Defensive'
+                },
+                'chameleon': {
+                    'start': '🦎 Adaptive',
+                    'win': '😊 Pleased',
+                    'lose': '🤔 Learning',
+                    'tie': '🔄 Adjusting',
+                    'default': '🦎 Flexible'
+                },
+                'professor': {
+                    'start': '🧠 Analytical',
+                    'win': '😊 Satisfied',
+                    'lose': '🤔 Analyzing',
+                    'tie': '⚖️ Balanced',
+                    'default': '🧠 Thoughtful'
+                },
+                'wildcard': {
+                    'start': '🎲 Chaotic',
+                    'win': '🤪 Ecstatic',
+                    'lose': '😜 Amused',
+                    'tie': '🎭 Unpredictable',
+                    'default': '🎲 Random'
+                },
+                'mirror': {
+                    'start': '🪞 Observing',
+                    'win': '😊 Mirroring',
+                    'lose': '🤔 Adapting',
+                    'tie': '🔄 Reflecting',
+                    'default': '🪞 Reflective'
+                },
+                'neutral': {
+                    'start': '😐 Neutral',
+                    'win': '😊 Happy',
+                    'lose': '😕 Disappointed',
+                    'tie': '😐 Neutral',
+                    'default': '😐 Calm'
+                }
+            };
+            
+            const personalityMoods = moodMap[personality] || moodMap['neutral'];
+            return personalityMoods[eventType] || personalityMoods['default'];
+        }
+        
+        function getPersonalityAvatar(personality) {
+            const avatarMap = {
+                'berserker': '💀',
+                'guardian': '🛡️',
+                'chameleon': '🦎',
+                'professor': '🧠',
+                'wildcard': '🎲',
+                'mirror': '🪞',
+                'neutral': '😐'
+            };
+            
+            return avatarMap[personality] || '😐';
+        }
+        
+        function generateFallbackDialogue(personality, eventType, data) {
+            // Simple fallback dialogue for when SBC Backend is unavailable
+            const fallbackMessages = {
+                'berserker': { start: "Let's battle!", win: "Victory!", lose: "Defeat...", tie: "Draw!" },
+                'guardian': { start: "Defense ready!", win: "Success!", lose: "Good game!", tie: "Even!" },
+                'chameleon': { start: "Adapting...", win: "Evolved!", lose: "Learning!", tie: "Balanced!" },
+                'professor': { start: "Analyzing...", win: "Calculated!", lose: "Interesting!", tie: "Logical!" },
+                'wildcard': { start: "Random mode!", win: "Chaos wins!", lose: "Randomness!", tie: "Chaotic!" },
+                'mirror': { start: "Observing...", win: "Reflected!", lose: "Mirrored!", tie: "Symmetric!" },
+                'neutral': { start: "Starting...", win: "Won!", lose: "Lost!", tie: "Tied!" }
+            };
+            
+            const messages = fallbackMessages[personality] || fallbackMessages['neutral'];
+            return {
+                message: messages[eventType] || messages['start'],
+                mood: getPersonalityMood(personality, eventType),
+                avatar: getPersonalityAvatar(personality)
+            };
         }
         
         function generatePersonalityDialogue(personality, eventType, data) {
@@ -2629,14 +2957,344 @@
         }
         
         // Coaching Functions
-        function refreshCoachingTips() {
-            // Coaching tips functionality has been removed with Coach View cleanup
-            console.log('Coaching tips are no longer available - Coach View has been simplified');
+        async function refreshCoachingTips() {
+            try {
+                const response = await fetch('/coaching');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                // Use enhanced_tips if available, fallback to coaching_tips
+                const tips = result.enhanced_tips || result.coaching_tips || [];
+                updateCoachingDisplay(tips);
+                
+                // Also update performance stats when refreshing coaching
+                const gameResponse = await fetch('/game_data');
+                if (gameResponse.ok) {
+                    const gameData = await gameResponse.json();
+                    updateCoachingStats(gameData);
+                }
+            } catch (error) {
+                console.error('Failed to fetch coaching tips:', error);
+                showCoachingError('Unable to fetch coaching tips. Please try again.');
+            }
         }
         
-        function updateCoachingTips(coachingData) {
-            // Coaching tips functionality has been removed with Coach View cleanup
-            console.log('Coaching tips update skipped - Coach View has been simplified');
+        function updateCoachingDisplay(tips) {
+            const container = document.getElementById('coaching-tips-container');
+            
+            if (!tips || tips.length === 0) {
+                container.innerHTML = `
+                    <div class="coaching-tip-placeholder">
+                        <p>🎮 Play at least 5 rounds to receive personalized coaching tips!</p>
+                        <p>Tips will analyze your patterns and provide strategic guidance.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Handle both enhanced tip objects and simple string arrays
+            let processedTips = tips;
+            if (tips.length > 0 && typeof tips[0] === 'object' && tips[0].tip) {
+                // Enhanced tips format - already sorted by priority in backend
+                processedTips = tips.slice(0, 3);
+            } else {
+                // Simple string format - convert to objects
+                processedTips = tips.slice(0, 3).map((tip, index) => ({
+                    tip: tip,
+                    priority: 5.0,  // Default priority
+                    category: 'general'
+                }));
+            }
+            
+            container.innerHTML = processedTips.map((tipObj, index) => {
+                const priority = tipObj.priority || 5.0;
+                const priorityClass = priority >= 8 ? 'priority-high' : 
+                                   priority >= 5 ? 'priority-medium' : 'priority-low';
+                const priorityLabel = priority >= 8 ? '🔥 High Priority' : 
+                                     priority >= 5 ? '⚡ Medium Priority' : '💡 Low Priority';
+                
+                return `
+                    <div class="coaching-tip ${priorityClass}">
+                        <div class="coaching-tip-priority">${priorityLabel}</div>
+                        <div class="coaching-tip-content">${tipObj.tip}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function showCoachingError(message) {
+            const container = document.getElementById('coaching-tips-container');
+            container.innerHTML = `
+                <div class="coaching-tip-placeholder">
+                    <p>⚠️ ${message}</p>
+                </div>
+            `;
+        }
+        
+        // Performance Charts - Global variables
+        let predictabilityChart = null;
+        let patternChart = null;
+        let adaptationChart = null;
+        let performanceData = {
+            rounds: [],
+            predictability: [],
+            patternStrength: [],
+            adaptationRate: []
+        };
+        
+        function initializePerformanceCharts() {
+            // Initialize Predictability Chart
+            const predictabilityCtx = document.getElementById('predictability-chart');
+            if (predictabilityCtx) {
+                predictabilityChart = new Chart(predictabilityCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Predictability %',
+                            data: [],
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: 'rgba(34, 197, 94, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: 'rgba(34, 197, 94, 0.1)' }
+                            }
+                        },
+                        plugins: {
+                            legend: { labels: { color: '#22c55e' } }
+                        }
+                    }
+                });
+            }
+            
+            // Initialize Pattern Strength Chart
+            const patternCtx = document.getElementById('pattern-chart');
+            if (patternCtx) {
+                patternChart = new Chart(patternCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Pattern Strength',
+                            data: [],
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: 'rgba(34, 197, 94, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: 'rgba(34, 197, 94, 0.1)' }
+                            }
+                        },
+                        plugins: {
+                            legend: { labels: { color: '#22c55e' } }
+                        }
+                    }
+                });
+            }
+            
+            // Initialize Adaptation Rate Chart
+            const adaptationCtx = document.getElementById('adaptation-chart');
+            if (adaptationCtx) {
+                adaptationChart = new Chart(adaptationCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Adaptation Rate %',
+                            data: [],
+                            borderColor: '#22c55e',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: 'rgba(34, 197, 94, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#94a3b8' },
+                                grid: { color: 'rgba(34, 197, 94, 0.1)' }
+                            }
+                        },
+                        plugins: {
+                            legend: { labels: { color: '#22c55e' } }
+                        }
+                    }
+                });
+            }
+        }
+        
+        function updateCoachingStats(gameData) {
+            const humanMoves = gameData.human_moves || [];
+            const robotMoves = gameData.robot_moves || [];
+            const results = gameData.results || [];
+            const round = gameData.round || 0;
+            
+            if (!gameData || round < 5) {
+                // Not enough data for meaningful stats
+                document.getElementById('current-predictability').textContent = 'Insufficient Data';
+                document.getElementById('current-pattern').textContent = 'Insufficient Data';
+                document.getElementById('current-adaptation').textContent = 'Insufficient Data';
+                return;
+            }
+            
+            // Calculate metrics for the latest data point
+            const windowSize = Math.min(10, humanMoves.length);
+            const recentMoves = humanMoves.slice(-windowSize);
+            const recentResults = results.slice(-windowSize);
+            
+            const predictability = calculatePredictability(recentMoves);
+            const patternStrength = calculatePatternStrengthScore(recentMoves);
+            const adaptationRate = calculateAdaptationRate(humanMoves, results);
+            
+            // Update current stats display
+            document.getElementById('current-predictability').textContent = `${(predictability * 100).toFixed(1)}%`;
+            document.getElementById('current-pattern').textContent = `${patternStrength.toFixed(1)}%`;
+            document.getElementById('current-adaptation').textContent = `${(adaptationRate * 100).toFixed(1)}%`;
+            
+            // Update charts if we have enough data and the round is divisible by 2 (to avoid too many updates)
+            if (round >= 5 && round % 2 === 0) {
+                updatePerformanceCharts(round, predictability * 100, patternStrength, adaptationRate * 100);
+            }
+        }
+        
+        function updatePerformanceCharts(round, predictability, patternStrength, adaptationRate) {
+            const maxDataPoints = 20; // Keep only last 20 data points for readability
+            
+            // Add new data point
+            performanceData.rounds.push(round);
+            performanceData.predictability.push(predictability);
+            performanceData.patternStrength.push(patternStrength);
+            performanceData.adaptationRate.push(adaptationRate);
+            
+            // Trim data if too many points
+            if (performanceData.rounds.length > maxDataPoints) {
+                performanceData.rounds = performanceData.rounds.slice(-maxDataPoints);
+                performanceData.predictability = performanceData.predictability.slice(-maxDataPoints);
+                performanceData.patternStrength = performanceData.patternStrength.slice(-maxDataPoints);
+                performanceData.adaptationRate = performanceData.adaptationRate.slice(-maxDataPoints);
+            }
+            
+            // Update charts
+            if (predictabilityChart) {
+                predictabilityChart.data.labels = performanceData.rounds;
+                predictabilityChart.data.datasets[0].data = performanceData.predictability;
+                predictabilityChart.update('none'); // No animation for smoother updates
+            }
+            
+            if (patternChart) {
+                patternChart.data.labels = performanceData.rounds;
+                patternChart.data.datasets[0].data = performanceData.patternStrength;
+                patternChart.update('none');
+            }
+            
+            if (adaptationChart) {
+                adaptationChart.data.labels = performanceData.rounds;
+                adaptationChart.data.datasets[0].data = performanceData.adaptationRate;
+                adaptationChart.update('none');
+            }
+        }
+        
+        function calculatePredictability(moves) {
+            if (moves.length < 3) return 0;
+            
+            // Calculate entropy-based predictability
+            const counts = { 'rock': 0, 'paper': 0, 'scissors': 0 };
+            moves.forEach(move => counts[move]++);
+            
+            const total = moves.length;
+            let entropy = 0;
+            Object.values(counts).forEach(count => {
+                if (count > 0) {
+                    const p = count / total;
+                    entropy -= p * Math.log2(p);
+                }
+            });
+            
+            // Convert entropy to predictability (lower entropy = higher predictability)
+            const maxEntropy = Math.log2(3); // Maximum entropy for 3 choices
+            return 1 - (entropy / maxEntropy);
+        }
+        
+        function calculatePatternStrengthScore(moves) {
+            if (moves.length < 4) return 0;
+            
+            let patternScore = 0;
+            const patterns = [
+                // Repeating patterns
+                (m) => m[0] === m[1] && m[1] === m[2], // AAA
+                (m) => m[0] === m[2] && m[1] !== m[0], // ABA
+                // Cycling patterns
+                (m) => isRockPaperScissorsSequence(m.slice(0, 3)),
+                (m) => isScissorsPaperRockSequence(m.slice(0, 3))
+            ];
+            
+            for (let i = 0; i <= moves.length - 3; i++) {
+                const window = moves.slice(i, i + 3);
+                patterns.forEach(pattern => {
+                    if (pattern(window)) patternScore++;
+                });
+            }
+            
+            return Math.min(100, (patternScore / (moves.length - 2)) * 100);
+        }
+        
+        function isRockPaperScissorsSequence(moves) {
+            const sequence = ['rock', 'paper', 'scissors'];
+            return moves.every((move, i) => move === sequence[i]);
+        }
+        
+        function isScissorsPaperRockSequence(moves) {
+            const sequence = ['scissors', 'paper', 'rock'];
+            return moves.every((move, i) => move === sequence[i]);
+        }
+        
+        function calculateAdaptationRate(humanMoves, results) {
+            if (humanMoves.length < 10) return 0;
+            
+            // Compare recent performance vs earlier performance
+            const windowSize = Math.min(5, Math.floor(humanMoves.length / 2));
+            const recentResults = results.slice(-windowSize);
+            const earlierResults = results.slice(-windowSize * 2, -windowSize);
+            
+            const recentWinRate = recentResults.filter(r => r === 'human').length / recentResults.length;
+            const earlierWinRate = earlierResults.filter(r => r === 'human').length / earlierResults.length;
+            
+            // Adaptation rate is the improvement (or decline) in performance
+            return Math.max(0, recentWinRate - earlierWinRate + 0.5); // Add 0.5 to normalize around 50%
         }
         
         function setDifficulty() {
@@ -2659,6 +3317,23 @@
             updateStatusDisplay();
             applyPersonalityTheme(currentPersonality);
             updateRobotCharacter(currentDifficulty, currentStrategy, currentPersonality);
+            updateRobotConversation(currentPersonality, 'start');
+        }
+        
+        function setLLMBanterMode() {
+            const toggle = document.getElementById('llm-banter-toggle');
+            useLLMBanter = toggle.value === 'true';
+            console.log('LLM Banter mode set to:', useLLMBanter);
+            
+            // Update the conversation heading to reflect current mode
+            const conversationHeading = document.querySelector('.conversation-heading span');
+            if (conversationHeading) {
+                conversationHeading.textContent = useLLMBanter ? 
+                    'AI-generated personality banter.' : 
+                    'Rule-based personality responses.';
+            }
+            
+            // Regenerate current conversation with new mode
             updateRobotConversation(currentPersonality, 'start');
         }
         

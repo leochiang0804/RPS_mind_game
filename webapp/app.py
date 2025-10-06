@@ -13,6 +13,15 @@ from move_mapping import normalize_move, get_counter_move, MOVES
 # Centralized Data Management - All AI coach endpoints use this for consistent data building
 from game_context import build_game_context, set_opponent_parameters, get_ai_prediction, update_ai_with_result, reset_ai_system
 
+# Import SBC Backend for enhanced banter and coaching
+try:
+    from sbc_backend import get_sbc_backend
+    SBC_BACKEND_AVAILABLE = True
+    print("✅ SBC Backend available")
+except ImportError as e:
+    SBC_BACKEND_AVAILABLE = False
+    print(f"⚠️ SBC Backend not available: {e}")
+
 # Import the new 42-opponent RPS AI system
 try:
     from rps_ai_system import get_ai_system, initialize_ai_system
@@ -774,19 +783,194 @@ def play():
 
 @app.route('/coaching', methods=['GET', 'POST'])
 def get_coaching_tips():
-    """Get intelligent coaching tips - Under Development"""
-    return jsonify({
-        'status': 'under_development',
-        'coaching_tips': ['AI Coach is being redesigned with better specifications.'],
-        'experiments': [],
-        'insights': {'message': 'Enhanced coaching features coming soon.'},
-        'round': session.get('round', 0),
-        'current_strategy': 'under_development',
-        'llm_type': 'placeholder',
-        'enhanced_analysis': {},
-        'behavioral_insights': {},
-        'confidence': 0.0
-    })
+    """Get intelligent coaching tips powered by SBC Backend"""
+    if not SBC_BACKEND_AVAILABLE:
+        return jsonify({
+            'status': 'unavailable',
+            'coaching_tips': ['SBC Backend not available. Coach is under development.'],
+            'experiments': [],
+            'insights': {'message': 'Enhanced coaching features require SBC Backend.'},
+            'round': session.get('round', 0),
+            'current_strategy': 'under_development',
+            'llm_type': 'placeholder',
+            'enhanced_analysis': {},
+            'behavioral_insights': {},
+            'confidence': 0.0
+        })
+    
+    try:
+        # Build current game context
+        game_context = build_game_context(session)
+        
+        # Get SBC backend instance
+        sbc = get_sbc_backend()
+        
+        # Generate 3 coaching tips using SBC backend
+        coaching_seeds = sbc.rule_selector.select_coaching_seeds(game_context, 3)
+        
+        coaching_tips = []
+        for seed_data in coaching_seeds:
+            prompt = sbc._create_coaching_prompt(seed_data, game_context)
+            tip_text = sbc.model_adapter.generate_response(prompt, 'professor')
+            
+            coaching_tips.append({
+                'tip': tip_text,
+                'reason': seed_data['reason_key'],
+                'priority': seed_data['priority'],
+                'specific_advice': seed_data.get('specific_advice', ''),
+                'category': seed_data['tip_key']
+            })
+        
+        # Sort by priority (highest first)
+        coaching_tips.sort(key=lambda x: x['priority'], reverse=True)
+        
+        return jsonify({
+            'status': 'active',
+            'coaching_tips': [tip['tip'] for tip in coaching_tips],  # For backward compatibility
+            'enhanced_tips': coaching_tips,  # New detailed format
+            'total_tips': len(coaching_tips),
+            'experiments': [],
+            'insights': {
+                'message': f'Generated {len(coaching_tips)} coaching tips using SBC Backend',
+                'engine': sbc.model_adapter.engine.value,
+                'personality': 'professor'
+            },
+            'round': session.get('round', 0),
+            'current_strategy': 'sbc_powered',
+            'llm_type': sbc.model_adapter.engine.value,
+            'enhanced_analysis': game_context.get('game_status', {}).get('metrics', {}).get('sbc_metrics', {}),
+            'behavioral_insights': {
+                'frustration_level': game_context.get('game_status', {}).get('metrics', {}).get('sbc_metrics', {}).get('emotional_context', {}).get('frustration_level', 0),
+                'momentum_state': game_context.get('game_status', {}).get('metrics', {}).get('sbc_metrics', {}).get('emotional_context', {}).get('momentum_state', 'neutral'),
+                'learning_trend': game_context.get('game_status', {}).get('metrics', {}).get('sbc_metrics', {}).get('emotional_context', {}).get('learning_trend', 'stable')
+            },
+            'confidence': max([tip['priority'] for tip in coaching_tips]) if coaching_tips else 0.0
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'coaching_tips': [f'Error generating tips: {str(e)}'],
+            'experiments': [],
+            'insights': {'message': 'Error in SBC Backend'},
+            'round': session.get('round', 0),
+            'current_strategy': 'error',
+            'llm_type': 'error',
+            'enhanced_analysis': {},
+            'behavioral_insights': {},
+            'confidence': 0.0
+        })
+
+
+@app.route('/game_data', methods=['GET'])
+def get_game_data():
+    """Get current game session data for frontend analysis"""
+    try:
+        return jsonify({
+            'human_moves': session.get('human_moves', []),
+            'robot_moves': session.get('robot_moves', []),
+            'results': session.get('results', []),
+            'round': session.get('round', 0),
+            'human_wins': session.get('human_wins', 0),
+            'robot_wins': session.get('robot_wins', 0),
+            'ties': session.get('ties', 0)
+        })
+    except Exception as e:
+        return jsonify({
+            'error': f'Failed to get game data: {str(e)}',
+            'human_moves': [],
+            'robot_moves': [],
+            'results': [],
+            'round': 0,
+            'human_wins': 0,
+            'robot_wins': 0,
+            'ties': 0
+        })
+
+
+@app.route('/sbc/banter', methods=['POST'])
+def sbc_banter():
+    """Generate personality-aware banter using SBC Backend"""
+    if not SBC_BACKEND_AVAILABLE:
+        return jsonify({'error': 'SBC Backend not available'}), 503
+    
+    try:
+        # Build current game context
+        game_context = build_game_context(session)
+        
+        # Get SBC backend instance
+        sbc = get_sbc_backend()
+        
+        # Generate banter
+        seed_data = sbc.rule_selector.select_banter_seed(game_context)
+        prompt = sbc._create_banter_prompt(seed_data, game_context)
+        personality = seed_data['styling_hints'].get('personality', 'neutral')
+        
+        banter_text = sbc.model_adapter.generate_response(prompt, personality)
+        
+        return jsonify({
+            'banter': banter_text,
+            'personality': personality,
+            'context': seed_data['context_reason'],
+            'banter_key': seed_data['banter_key'],
+            'source': {
+                'engine': sbc.model_adapter.engine.value,
+                'personality': personality,
+                'analysis': 'comprehensive'
+            },
+            'timestamp': time.time()
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Error generating banter: {str(e)}'}), 500
+
+
+@app.route('/sbc/coach', methods=['POST'])
+def sbc_coach():
+    """Generate coaching tips using SBC Backend (API endpoint)"""
+    if not SBC_BACKEND_AVAILABLE:
+        return jsonify({'error': 'SBC Backend not available'}), 503
+    
+    try:
+        # Build current game context
+        game_context = build_game_context(session)
+        
+        # Get tip count from request
+        data = request.get_json() or {}
+        tip_count = data.get('tip_count', 3)
+        
+        # Get SBC backend instance
+        sbc = get_sbc_backend()
+        
+        # Generate coaching tips
+        seed_data_list = sbc.rule_selector.select_coaching_seeds(game_context, tip_count)
+        
+        tips = []
+        for seed_data in seed_data_list:
+            prompt = sbc._create_coaching_prompt(seed_data, game_context)
+            tip_text = sbc.model_adapter.generate_response(prompt, 'professor')
+            
+            tips.append({
+                'tip': tip_text,
+                'reason': seed_data['reason_key'],
+                'priority': seed_data['priority'],
+                'specific_advice': seed_data.get('specific_advice', ''),
+                'tip_key': seed_data['tip_key']
+            })
+        
+        return jsonify({
+            'tips': tips,
+            'total_tips': len(tips),
+            'source': {
+                'engine': sbc.model_adapter.engine.value,
+                'personality': 'professor',
+                'analysis_depth': 'comprehensive'
+            },
+            'timestamp': time.time()
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Error generating coaching: {str(e)}'}), 500
 
 
 @app.route('/stats', methods=['GET'])

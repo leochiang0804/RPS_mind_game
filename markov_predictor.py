@@ -87,9 +87,9 @@ class MarkovPredictor:
             self.transition_counts[state][next_move] += 1
             self.state_counts[state] += 1
     
-    def predict(self, move_history: Optional[List[Union[str, int]]] = None) -> Tuple[np.ndarray, Dict]:
+    def predict(self, move_history: Optional[List[Union[str, int]]] = None, difficulty_level: str = 'challenger') -> Tuple[np.ndarray, Dict]:
         """
-        Predict next move probabilities.
+        Predict next move probabilities with enhanced pattern detection.
         
         Args:
             move_history: Optional move history to use instead of internal history
@@ -124,6 +124,11 @@ class MarkovPredictor:
                 'confidence': 0.33
             }
             return probs, metadata
+        
+        # Enhanced pattern detection: Check for repetitive patterns with difficulty scaling
+        pattern_prediction = self._detect_and_counter_patterns(history, 'challenger')  # Default to challenger
+        if pattern_prediction is not None:
+            return pattern_prediction
             
         # Get current state (last 'order' moves)
         state = tuple(history[-self.order:])
@@ -153,6 +158,223 @@ class MarkovPredictor:
         }
         
         return probs, metadata
+    
+    def _detect_and_counter_patterns(self, history: List[str], difficulty_level: str = 'medium') -> Optional[Tuple[np.ndarray, Dict]]:
+        """
+        Detect and counter repetitive patterns in move history with difficulty-scaled thresholds.
+        
+        Args:
+            history: List of normalized move strings
+            difficulty_level: 'rookie', 'challenger', or 'master' for scaled detection
+            
+        Returns:
+            Tuple of (probabilities, metadata) if pattern detected, None otherwise
+        """
+        if len(history) < 4:
+            return None
+        
+        # Difficulty-scaled detection thresholds
+        thresholds = {
+            'rookie': {
+                'alternating': 0.9,   # Very hard to detect = very exploitable
+                'single_move': 0.95,  # Very hard to detect
+                'cycle': 0.9,         # Very hard to detect  
+                'min_history': 8      # Need much more history
+            },
+            'challenger': {
+                'alternating': 0.75,  # Medium-high threshold 
+                'single_move': 0.85,  # Medium-high threshold
+                'cycle': 0.75,        # Medium-high threshold
+                'min_history': 5      # Moderate history needed
+            },
+            'master': {
+                'alternating': 0.55,  # Very easy to detect = very hard to exploit
+                'single_move': 0.6,   # Very sensitive detection
+                'cycle': 0.55,        # Very sensitive detection
+                'min_history': 3      # Very quick detection
+            }
+        }
+        
+        # Get thresholds for this difficulty
+        config = thresholds.get(difficulty_level, thresholds['challenger'])
+        
+        # Check minimum history requirement
+        if len(history) < config['min_history']:
+            return None
+        
+        # Check for alternating patterns (length 2)
+        pattern_strength = self._detect_alternating_pattern(history)
+        if pattern_strength > config['alternating']:
+            return self._counter_alternating_pattern(history)
+        
+        # Check for repeating single move
+        single_move_strength = self._detect_single_move_pattern(history)
+        if single_move_strength > config['single_move']:
+            return self._counter_single_move_pattern(history)
+        
+        # Check for cycle patterns (length 3)
+        cycle_strength = self._detect_cycle_pattern(history)
+        if cycle_strength > config['cycle']:
+            return self._counter_cycle_pattern(history)
+        
+        return None
+    
+    def _detect_alternating_pattern(self, history: List[str]) -> float:
+        """Detect alternating patterns like rock-paper-rock-paper."""
+        if len(history) < 4:
+            return 0.0
+        
+        # Check last 8 moves for alternating pattern
+        recent = history[-8:] if len(history) >= 8 else history
+        
+        if len(recent) < 4:
+            return 0.0
+        
+        # Check if moves alternate between two values
+        alternations = 0
+        total_checks = len(recent) - 2
+        
+        for i in range(len(recent) - 2):
+            if recent[i] == recent[i + 2]:  # Same move 2 positions apart
+                alternations += 1
+        
+        return alternations / total_checks if total_checks > 0 else 0.0
+    
+    def _counter_alternating_pattern(self, history: List[str]) -> Tuple[np.ndarray, Dict]:
+        """Counter detected alternating pattern."""
+        # Predict what the next move will be based on alternating pattern
+        if len(history) >= 4:
+            # For true alternating pattern like A-B-A-B, look at the cycle
+            last_move = history[-1]
+            second_last = history[-2] 
+            
+            # If it's truly alternating between two moves
+            if last_move != second_last:
+                # The next move should be the same as second_last (continuing the alternation)
+                predicted_move = second_last
+            else:
+                # Fallback: assume next is different from last
+                # Find the other move in the alternating pattern
+                recent_moves = history[-6:] if len(history) >= 6 else history
+                unique_moves = list(set(recent_moves))
+                if len(unique_moves) >= 2:
+                    # Find the move that's not the last move
+                    predicted_move = next((m for m in unique_moves if m != last_move), last_move)
+                else:
+                    predicted_move = last_move
+        else:
+            # Not enough history, just predict different from last
+            predicted_move = history[-1] if history else 'rock'
+        
+        # Counter the predicted move strongly
+        counter_move = self._get_counter_move(predicted_move)
+        
+        probs = np.array([0.1, 0.1, 0.1])  # Low base probability
+        counter_idx = MOVES.index(counter_move)
+        probs[counter_idx] = 0.8  # High probability for counter move
+        
+        # Normalize
+        probs = probs / np.sum(probs)
+        
+        metadata = {
+            'method': 'pattern_counter_alternating',
+            'pattern_detected': 'alternating',
+            'predicted_human_move': predicted_move,
+            'counter_move': counter_move,
+            'confidence': 0.85
+        }
+        
+        return probs, metadata
+    
+    def _detect_single_move_pattern(self, history: List[str]) -> float:
+        """Detect single move repetition patterns."""
+        if len(history) < 3:
+            return 0.0
+        
+        # Check last 6 moves for single move dominance
+        recent = history[-6:] if len(history) >= 6 else history
+        
+        from collections import Counter
+        move_counts = Counter(recent)
+        most_common_count = move_counts.most_common(1)[0][1]
+        
+        return most_common_count / len(recent)
+    
+    def _counter_single_move_pattern(self, history: List[str]) -> Tuple[np.ndarray, Dict]:
+        """Counter detected single move pattern."""
+        from collections import Counter
+        recent = history[-6:] if len(history) >= 6 else history
+        most_common_move = Counter(recent).most_common(1)[0][0]
+        
+        counter_move = self._get_counter_move(most_common_move)
+        
+        probs = np.array([0.05, 0.05, 0.05])
+        counter_idx = MOVES.index(counter_move)
+        probs[counter_idx] = 0.9
+        
+        probs = probs / np.sum(probs)
+        
+        metadata = {
+            'method': 'pattern_counter_single',
+            'pattern_detected': 'single_move_repetition',
+            'predicted_human_move': most_common_move,
+            'counter_move': counter_move,
+            'confidence': 0.9
+        }
+        
+        return probs, metadata
+    
+    def _detect_cycle_pattern(self, history: List[str]) -> float:
+        """Detect cycle patterns like rock-paper-scissors-rock-paper-scissors."""
+        if len(history) < 6:
+            return 0.0
+        
+        # Check for rock-paper-scissors cycle
+        rps_cycle = ['rock', 'paper', 'scissors']
+        recent = history[-9:] if len(history) >= 9 else history
+        
+        # Count matches with RPS cycle pattern
+        matches = 0
+        checks = 0
+        
+        for i in range(len(recent)):
+            expected = rps_cycle[i % 3]
+            if recent[i] == expected:
+                matches += 1
+            checks += 1
+        
+        return matches / checks if checks > 0 else 0.0
+    
+    def _counter_cycle_pattern(self, history: List[str]) -> Tuple[np.ndarray, Dict]:
+        """Counter detected cycle pattern."""
+        rps_cycle = ['rock', 'paper', 'scissors']
+        
+        # Predict next move in cycle
+        cycle_position = len(history) % 3
+        predicted_move = rps_cycle[cycle_position]
+        
+        counter_move = self._get_counter_move(predicted_move)
+        
+        probs = np.array([0.1, 0.1, 0.1])
+        counter_idx = MOVES.index(counter_move)
+        probs[counter_idx] = 0.8
+        
+        probs = probs / np.sum(probs)
+        
+        metadata = {
+            'method': 'pattern_counter_cycle',
+            'pattern_detected': 'rps_cycle',
+            'predicted_human_move': predicted_move,
+            'counter_move': counter_move,
+            'confidence': 0.8
+        }
+        
+        return probs, metadata
+    
+    def _get_counter_move(self, move: str) -> str:
+        """Get the move that beats the given move."""
+        counters = {'rock': 'paper', 'paper': 'scissors', 'scissors': 'rock'}
+        return counters.get(move, 'rock')
         
     def evaluate_prediction(self, predicted_probs: np.ndarray, actual_move: Union[str, int]) -> float:
         """
@@ -285,16 +507,44 @@ class EnsembleMarkovPredictor:
         for predictor in self.predictors.values():
             predictor.update(move)
             
-    def predict(self, move_history: Optional[List[Union[str, int]]] = None) -> Tuple[np.ndarray, Dict]:
+    def predict(self, move_history: Optional[List[Union[str, int]]] = None, difficulty_level: str = 'challenger') -> Tuple[np.ndarray, Dict]:
         """
-        Predict using ensemble of predictors.
+        Predict using ensemble of predictors with pattern detection.
         
         Args:
             move_history: Optional move history to use
+            difficulty_level: 'rookie', 'challenger', or 'master' for pattern detection scaling
             
         Returns:
             Tuple of (probabilities, metadata)
         """
+        # Normalize move history like individual predictors do
+        if move_history is not None:
+            history = []
+            for move in move_history:
+                if isinstance(move, int):
+                    move = number_to_move(move)
+                history.append(normalize_move(move))
+        else:
+            # Use history from first predictor (they should all be the same)
+            history = list(self.predictors[self.orders[0]].move_history)
+        
+        # PRIORITY 1: Check for patterns first (like individual predictors) with difficulty scaling
+        if len(history) >= 4:
+            # Use the pattern detection from the first predictor with difficulty scaling
+            base_predictor = self.predictors[self.orders[0]]
+            pattern_result = base_predictor._detect_and_counter_patterns(history, difficulty_level)
+            if pattern_result is not None:
+                # Pattern detected! Use it with high priority
+                pattern_probs, pattern_metadata = pattern_result
+                pattern_metadata['method'] += '_ensemble'  # Mark as ensemble pattern detection
+                
+                # Apply adaptive epsilon reduction for patterns (like in RPS AI system)
+                pattern_metadata['epsilon_reduced'] = True
+                
+                return pattern_probs, pattern_metadata
+        
+        # PRIORITY 2: No pattern detected, use normal ensemble logic
         # Get predictions from all predictors
         predictions = {}
         confidences = {}

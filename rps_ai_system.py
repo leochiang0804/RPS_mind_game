@@ -162,16 +162,27 @@ class RPSAISystem:
             p_base = np.array([1/3, 1/3, 1/3])
             markov_metadata = {'method': 'uniform', 'reason': 'no_predictor'}
         else:
-            p_base, markov_metadata = self.markov_predictor.predict(moves_to_use)
+            # Get difficulty level for pattern detection scaling
+            difficulty_level = self.current_opponent.difficulty.value if self.current_opponent else 'challenger'
+            p_base, markov_metadata = self.markov_predictor.predict(moves_to_use, difficulty_level)
+            
+            # Adaptive epsilon based on pattern detection
+            effective_epsilon = self.current_opponent.epsilon if self.current_opponent else 0.15
+            
+            # Reduce epsilon significantly when patterns are detected
+            if markov_metadata.get('method', '').startswith('pattern_counter'):
+                # Strong pattern detected - minimize randomness
+                effective_epsilon = effective_epsilon * 0.1  # Reduce epsilon by 90%
+                markov_metadata['epsilon_reduced'] = True
+                markov_metadata['original_epsilon'] = self.current_opponent.epsilon
             
             # Apply epsilon noise to p_base for exploration at prediction level
-            if self.current_opponent and self.current_opponent.epsilon > 0:
-                epsilon = self.current_opponent.epsilon
+            if effective_epsilon > 0:
                 uniform_noise = np.array([1/3, 1/3, 1/3])
                 # Mix base prediction with uniform distribution based on epsilon
-                p_base = (1 - epsilon) * p_base + epsilon * uniform_noise
-                markov_metadata['epsilon_applied'] = epsilon
-                markov_metadata['method'] += '_with_epsilon_noise'
+                p_base = (1 - effective_epsilon) * p_base + effective_epsilon * uniform_noise
+                markov_metadata['epsilon_applied'] = effective_epsilon
+                markov_metadata['method'] += '_with_adaptive_epsilon'
             
         # Apply HLBM biases
         if len(moves_to_use) >= 2 and self.hlbm is not None:  # Need some history for biases
@@ -182,8 +193,8 @@ class RPSAISystem:
             p_adjusted = p_base
             hlbm_metadata = {'method': 'none', 'reason': 'insufficient_history'}
             
-        # Apply strategy layer
-        ai_move, strategy_metadata = self._apply_strategy_layer(p_adjusted)
+        # Apply strategy layer (pass metadata for pattern detection awareness)
+        ai_move, strategy_metadata = self._apply_strategy_layer(p_adjusted, markov_metadata)
         
         # Calculate confidence
         confidence = self._calculate_confidence(p_adjusted, markov_metadata)
@@ -302,7 +313,7 @@ class RPSAISystem:
             move_idx = np.random.choice(3, p=weighted_probs)
             return MOVES[move_idx]
 
-    def _apply_strategy_layer(self, probabilities: np.ndarray) -> Tuple[str, Dict]:
+    def _apply_strategy_layer(self, probabilities: np.ndarray, markov_metadata: Optional[Dict] = None) -> Tuple[str, Dict]:
         """Apply strategy layer to convert probabilities to move."""
         
         if not self.current_opponent:
@@ -311,6 +322,33 @@ class RPSAISystem:
         alpha = self.current_opponent.alpha
         epsilon = self.current_opponent.epsilon
         gamma = self.current_opponent.gamma
+        
+        # Check if we detected a pattern and should be more aggressive
+        pattern_detected = markov_metadata and markov_metadata.get('method', '').startswith('pattern_counter')
+        
+        if pattern_detected:
+            # Pattern detected - use the explicit prediction from Markov layer
+            predicted_human_move = markov_metadata.get('predicted_human_move') if markov_metadata else None
+            if predicted_human_move:
+                ai_move = get_counter_move(predicted_human_move)
+                return ai_move, {
+                    'method': 'pattern_counter_aggressive',
+                    'pattern_type': markov_metadata.get('pattern_detected', 'unknown') if markov_metadata else 'unknown',
+                    'predicted_human_move': predicted_human_move,
+                    'counter_move': ai_move,
+                    'confidence': markov_metadata.get('confidence', 0.8) if markov_metadata else 0.8
+                }
+            else:
+                # Fallback to gamma-weighted prediction if no explicit prediction
+                predicted_human_move = self._get_gamma_weighted_prediction(probabilities, 0.95)
+                ai_move = get_counter_move(predicted_human_move)
+                return ai_move, {
+                    'method': 'pattern_counter_aggressive',
+                    'pattern_type': markov_metadata.get('pattern_detected', 'unknown') if markov_metadata else 'unknown',
+                    'predicted_human_move': predicted_human_move,
+                    'counter_move': ai_move,
+                    'confidence': markov_metadata.get('confidence', 0.8) if markov_metadata else 0.8
+                }
         
         # Strategy logic with alpha blending
         # Alpha determines how much to blend To-Win vs Not-to-Lose behaviors
