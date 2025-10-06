@@ -88,7 +88,8 @@ class TestConfig:
                  max_moves: int = 50,
                  games_per_opponent: int = 100,
                  pattern_weights: Optional[Dict[str, float]] = None,
-                 human_pattern_selection: str = "weighted_random"):
+                 human_pattern_selection: str = "weighted_random",
+                 human_strategy_mode: str = "strategic"):
         """
         Initialize test configuration
         
@@ -97,10 +98,12 @@ class TestConfig:
             games_per_opponent: Number of game sessions per opponent configuration
             pattern_weights: Weights for human pattern selection (if None, uses equal weights)
             human_pattern_selection: How to select patterns - "weighted_random", "fixed", or "cycle"
+            human_strategy_mode: "strategic", "random", or "both"
         """
         self.max_moves = max_moves
         self.games_per_opponent = games_per_opponent
         self.human_pattern_selection = human_pattern_selection
+        self.human_strategy_mode = human_strategy_mode
         
         # Default pattern weights: equal probability for all patterns
         self.pattern_weights = pattern_weights or {
@@ -158,7 +161,8 @@ class TestConfig:
   • Games per opponent: {self.games_per_opponent}
   • Total game sessions: {self.get_total_games()}
   • Pattern selection: {self.human_pattern_selection}
-  • Pattern weights: {self.pattern_weights}"""
+  • Pattern weights: {self.pattern_weights}
+  • Human strategy mode: {self.human_strategy_mode}"""
 
 @dataclass
 class GameResult:
@@ -184,6 +188,8 @@ class SessionStats:
     human_wins: int
     ties: int
     robot_win_rate: float
+    human_win_rate: float
+    tie_rate: float
     
     # Confidence metrics
     avg_confidence: float
@@ -200,6 +206,9 @@ class SessionStats:
     avg_game_duration: float
     total_test_time: float
     moves_distribution: Dict[str, int]
+    
+    # Human strategy level (field with default value comes last)
+    human_strategy_level: str = "strategic"  # "strategic" or "random"
 
 class HumanPlayer:
     """Simulates realistic human playing patterns"""
@@ -302,8 +311,14 @@ class PerformanceTester:
             print("❌ Data missing required columns for statistical analysis.")
             return None
 
-        # Convert win rate to percentage for easier interpretation
-        df['win_rate_pct'] = df['robot_win_rate'] * 100
+        # Ensure human_win_rate and tie_rate columns exist, or calculate if missing
+        if 'human_win_rate' not in df.columns:
+            df['human_win_rate'] = df['human_wins'] / df['total_games']
+        if 'tie_rate' not in df.columns:
+            df['tie_rate'] = df['ties'] / df['total_games']
+        df['robot_win_rate_pct'] = df['robot_win_rate'] * 100
+        df['human_win_rate_pct'] = df['human_win_rate'] * 100
+        df['tie_rate_pct'] = df['tie_rate'] * 100
 
         # Statistical Analysis Setup
         from scipy import stats
@@ -322,8 +337,12 @@ class PerformanceTester:
         report_lines.append(f"  • Difficulty levels: {df['difficulty'].unique().tolist()}")
         report_lines.append(f"  • Strategy types: {df['strategy'].unique().tolist()}")
         report_lines.append(f"  • Personality types: {df['personality'].unique().tolist()}")
-        report_lines.append(f"  • Win rate range: {df['win_rate_pct'].min():.1f}% - {df['win_rate_pct'].max():.1f}%")
-        report_lines.append(f"  • Overall mean win rate: {df['win_rate_pct'].mean():.1f}% ± {df['win_rate_pct'].std():.2f}%")
+        report_lines.append(f"  • Robot win rate range: {df['robot_win_rate_pct'].min():.1f}% - {df['robot_win_rate_pct'].max():.1f}%")
+        report_lines.append(f"  • Overall mean robot win rate: {df['robot_win_rate_pct'].mean():.1f}% ± {df['robot_win_rate_pct'].std():.2f}%")
+        report_lines.append(f"  • Human win rate range: {df['human_win_rate_pct'].min():.1f}% - {df['human_win_rate_pct'].max():.1f}%")
+        report_lines.append(f"  • Overall mean human win rate: {df['human_win_rate_pct'].mean():.1f}% ± {df['human_win_rate_pct'].std():.2f}%")
+        report_lines.append(f"  • Tie rate range: {df['tie_rate_pct'].min():.1f}% - {df['tie_rate_pct'].max():.1f}%")
+        report_lines.append(f"  • Overall mean tie rate: {df['tie_rate_pct'].mean():.1f}% ± {df['tie_rate_pct'].std():.2f}%")
         report_lines.append("")
 
         # One-way ANOVA for each factor with detailed interpretation
@@ -331,11 +350,11 @@ class PerformanceTester:
         effect_sizes = {}
         
         for factor in ['difficulty', 'strategy', 'personality']:
-            report_lines.append(f"🔬 ANALYSIS: {factor.upper()} FACTOR")
+            report_lines.append(f"🔬 ANALYSIS: {factor.upper()} FACTOR (Robot Win Rate)")
             report_lines.append("-" * 50)
             
-            # Perform ANOVA
-            model = ols(f'win_rate_pct ~ C({factor})', data=df).fit()
+            # Perform ANOVA for robot win rate
+            model = ols(f'robot_win_rate_pct ~ C({factor})', data=df).fit()
             anova_table = sm.stats.anova_lm(model, typ=2)
             anova_results[factor] = anova_table
             
@@ -349,8 +368,8 @@ class PerformanceTester:
             eta_squared = ss_factor / ss_total
             effect_sizes[factor] = eta_squared
             
-            # Group statistics
-            group_stats = df.groupby(factor)['win_rate_pct'].agg(['count', 'mean', 'std'])
+            # Group statistics for robot win rate
+            group_stats = df.groupby(factor)['robot_win_rate_pct'].agg(['count', 'mean', 'std'])
             
             report_lines.append("Group Statistics:")
             for group in group_stats.index:
@@ -412,7 +431,7 @@ class PerformanceTester:
             if p_value < 0.05 and factor in ['difficulty', 'personality']:  # More than 2 groups
                 report_lines.append("Post-hoc Pairwise Comparisons (Tukey HSD):")
                 try:
-                    groups = [df[df[factor] == level]['win_rate_pct'].values for level in df[factor].unique()]
+                    groups = [df[df[factor] == level]['robot_win_rate_pct'].values for level in df[factor].unique()]
                     tukey_result = tukey_hsd(*groups)
                     
                     # Create pairwise comparison table
@@ -443,7 +462,7 @@ class PerformanceTester:
         report_lines.append("-" * 50)
         
         try:
-            model_full = ols('win_rate_pct ~ C(difficulty) + C(strategy) + C(personality) + C(difficulty):C(strategy)', data=df).fit()
+            model_full = ols('robot_win_rate_pct ~ C(difficulty) + C(strategy) + C(personality) + C(difficulty):C(strategy)', data=df).fit()
             anova_full = sm.stats.anova_lm(model_full, typ=2)
             
             report_lines.append("Multi-factor ANOVA with Interactions:")
@@ -525,7 +544,7 @@ class PerformanceTester:
         
         # 1. Difficulty analysis with significance annotation
         ax = axes[0, 0]
-        box_plot = df.boxplot(column='win_rate_pct', by='difficulty', ax=ax, patch_artist=True)
+        box_plot = df.boxplot(column='robot_win_rate_pct', by='difficulty', ax=ax, patch_artist=True)
         
         # Color the boxes
         difficulty_levels = sorted(df['difficulty'].unique())
@@ -543,7 +562,7 @@ class PerformanceTester:
         
         # 2. Strategy analysis
         ax = axes[0, 1]
-        strategy_data = [df[df['strategy'] == strategy]['win_rate_pct'].values 
+        strategy_data = [df[df['strategy'] == strategy]['robot_win_rate_pct'].values 
                         for strategy in sorted(df['strategy'].unique())]
         bp = ax.boxplot(strategy_data, patch_artist=True, labels=sorted(df['strategy'].unique()))
         
@@ -561,7 +580,7 @@ class PerformanceTester:
         
         # 3. Personality analysis
         ax = axes[0, 2]
-        personality_data = [df[df['personality'] == personality]['win_rate_pct'].values 
+        personality_data = [df[df['personality'] == personality]['robot_win_rate_pct'].values 
                            for personality in sorted(df['personality'].unique())]
         bp = ax.boxplot(personality_data, patch_artist=True, 
                        labels=[p.title() for p in sorted(df['personality'].unique())])
@@ -601,15 +620,15 @@ class PerformanceTester:
         
         # 5. Confidence analysis by difficulty
         ax = axes[1, 1]
-        sns.boxplot(data=df, x='difficulty', y='avg_confidence', ax=ax, palette='viridis')
+        sns.boxplot(data=df, x='difficulty', y='avg_confidence', ax=ax, hue='difficulty', palette='viridis', legend=False)
         ax.set_title('Confidence by Difficulty', fontweight='bold')
         ax.set_xlabel('Difficulty Level')
         ax.set_ylabel('Average Confidence')
         
         # 6. Win rate distribution
         ax = axes[1, 2]
-        ax.hist(df['win_rate_pct'], bins=20, alpha=0.7, color='skyblue', edgecolor='black')
-        ax.axvline(df['win_rate_pct'].mean(), color='red', linestyle='--', linewidth=2, label=f'Mean: {df["win_rate_pct"].mean():.1f}%')
+        ax.hist(df['robot_win_rate_pct'], bins=20, alpha=0.7, color='skyblue', edgecolor='black')
+        ax.axvline(df['robot_win_rate_pct'].mean(), color='red', linestyle='--', linewidth=2, label=f'Mean: {df["robot_win_rate_pct"].mean():.1f}%')
         ax.set_title('Win Rate Distribution', fontweight='bold')
         ax.set_xlabel('Win Rate (%)')
         ax.set_ylabel('Frequency')
@@ -661,17 +680,24 @@ class PerformanceTester:
             return 'robot'
     
     def test_opponent_configuration(self, difficulty: str, strategy: str, personality: str, 
-                                  human_pattern: Optional[str] = None, verbose: bool = False) -> List[SessionStats]:
+                                  human_pattern: Optional[str] = None, verbose: bool = False, 
+                                  human_strategy_level: str = "strategic") -> List[SessionStats]:
         """Test a single opponent configuration with multiple games"""
         
         opponent_config = f"{difficulty}_{strategy}_{personality}"
         
-        # Use config to choose pattern if not specified
-        if human_pattern is None:
-            human_pattern = self.config.choose_pattern()
+        # Determine the actual pattern to use based on strategy level
+        if human_strategy_level == "random":
+            actual_pattern = "random"
+        else:
+            # Use config to choose pattern if not specified for strategic mode
+            if human_pattern is None:
+                actual_pattern = self.config.choose_pattern()
+            else:
+                actual_pattern = human_pattern
             
         if verbose:
-            print(f"\n🎯 Testing: {opponent_config} vs {human_pattern} human ({self.config.games_per_opponent} games)")
+            print(f"\n🎯 Testing: {opponent_config} vs {actual_pattern} human ({self.config.games_per_opponent} games)")
         
         all_sessions = []
         
@@ -680,7 +706,7 @@ class PerformanceTester:
                 print(f"  Game Session {game_session + 1}/{self.config.games_per_opponent}")
             
             session_stats = self.test_single_session(
-                difficulty, strategy, personality, human_pattern, verbose=False
+                difficulty, strategy, personality, actual_pattern, verbose=False, human_strategy_level=human_strategy_level
             )
             all_sessions.append(session_stats)
         
@@ -692,7 +718,8 @@ class PerformanceTester:
         return all_sessions
     
     def test_single_session(self, difficulty: str, strategy: str, personality: str, 
-                           human_pattern: str = "adaptive", verbose: bool = False) -> SessionStats:
+                           human_pattern: str = "adaptive", verbose: bool = False,
+                           human_strategy_level: str = "strategic") -> SessionStats:
         
         opponent_config = f"{difficulty}_{strategy}_{personality}"
         if verbose:
@@ -792,6 +819,8 @@ class PerformanceTester:
             human_wins=human_wins,
             ties=ties,
             robot_win_rate=robot_wins / self.config.max_moves,
+            human_win_rate=human_wins / self.config.max_moves,
+            tie_rate=ties / self.config.max_moves,
             avg_confidence=statistics.mean(confidences),
             min_confidence=min(confidences),
             max_confidence=max(confidences),
@@ -801,7 +830,8 @@ class PerformanceTester:
             late_game_win_rate=late_robot_wins / len(late_results),
             avg_game_duration=total_time / self.config.max_moves,
             total_test_time=total_time,
-            moves_distribution=dict(Counter(robot_moves))
+            moves_distribution=dict(Counter(robot_moves)),
+            human_strategy_level=human_strategy_level
         )
         
         if verbose:
@@ -811,6 +841,13 @@ class PerformanceTester:
     
     def run_comprehensive_test(self, human_pattern: Optional[str] = "adaptive", verbose: bool = True) -> Dict:
         """Run complete test of all 42 opponent combinations with multiple games each"""
+        
+        # Determine which human strategy modes to test
+        strategy_modes = []
+        if self.config.human_strategy_mode == "both":
+            strategy_modes = ["strategic", "random"]
+        else:
+            strategy_modes = [self.config.human_strategy_mode]
         
         # Use config to choose pattern if None provided
         if human_pattern is None:
@@ -822,34 +859,43 @@ class PerformanceTester:
             print(f"\n🚀 Starting comprehensive 42-opponent test")
             print(f"📊 Configuration: {self.config.games_per_opponent} games × {self.config.max_moves} moves per opponent, {pattern_display}")
             print(f"🎯 Total tests: {len(self.difficulties)} × {len(self.strategies)} × {len(self.personalities)} = 42 opponents")
-            print(f"🎮 Total games: 42 × {self.config.games_per_opponent} = {42 * self.config.games_per_opponent} game sessions")
+            print(f"🎮 Human strategy modes: {strategy_modes}")
+            print(f"🎮 Total games: 42 × {self.config.games_per_opponent} × {len(strategy_modes)} = {42 * self.config.games_per_opponent * len(strategy_modes)} game sessions")
             print(f"🔧 Config summary:\n{self.config.summary()}")
             print("=" * 60)
         
         start_time = time.time()
         all_sessions = []
         
-        test_count = 0
-        total_tests = len(self.difficulties) * len(self.strategies) * len(self.personalities)
+        total_tests_per_mode = len(self.difficulties) * len(self.strategies) * len(self.personalities)
+        total_tests = total_tests_per_mode * len(strategy_modes)
         
-        # Test each combination
-        for difficulty in self.difficulties:
-            for strategy in self.strategies:
-                for personality in self.personalities:
-                    test_count += 1
-                    
-                    if verbose:
-                        print(f"\n[{test_count}/{total_tests}] Testing: {difficulty}-{strategy}-{personality}")
-                    
-                    try:
-                        opponent_sessions = self.test_opponent_configuration(
-                            difficulty, strategy, personality, human_pattern, verbose=verbose
-                        )
-                        all_sessions.extend(opponent_sessions)
+        # Test each human strategy mode
+        for human_strategy_level in strategy_modes:
+            if verbose and len(strategy_modes) > 1:
+                print(f"\n🎯 Testing with human strategy level: {human_strategy_level}")
+            
+            test_count = 0
+            
+            # Test each opponent combination
+            for difficulty in self.difficulties:
+                for strategy in self.strategies:
+                    for personality in self.personalities:
+                        test_count += 1
                         
-                    except Exception as e:
-                        print(f"❌ Error testing {difficulty}-{strategy}-{personality}: {e}")
-                        continue
+                        if verbose:
+                            strategy_indicator = f" (Human: {human_strategy_level})" if len(strategy_modes) > 1 else ""
+                            print(f"\n[{test_count}/{total_tests_per_mode}] Testing: {difficulty}-{strategy}-{personality}{strategy_indicator}")
+                        
+                        try:
+                            opponent_sessions = self.test_opponent_configuration(
+                                difficulty, strategy, personality, human_pattern, verbose=verbose, human_strategy_level=human_strategy_level
+                            )
+                            all_sessions.extend(opponent_sessions)
+                            
+                        except Exception as e:
+                            print(f"❌ Error testing {difficulty}-{strategy}-{personality}: {e}")
+                            continue
         
         total_time = time.time() - start_time
         
@@ -871,7 +917,8 @@ class PerformanceTester:
                 'total_moves_played': len(all_sessions) * self.config.max_moves,
                 'total_test_time': total_time,
                 'pattern_weights': self.config.pattern_weights,
-                'pattern_selection': self.config.human_pattern_selection
+                'pattern_selection': self.config.human_pattern_selection,
+                'human_strategy_mode': self.config.human_strategy_mode
             },
             'sessions': [asdict(session) for session in all_sessions],
             'analysis': analysis
@@ -1269,23 +1316,307 @@ class PerformanceTester:
 
         return report_text
         
-    def create_scatter_plot_analysis(self, results: Dict, output_dir: str = "visualizations") -> List[str]:
+    def create_comprehensive_win_rate_analysis(self, results: Dict, output_dir: str = "visualizations") -> List[str]:
         """
-        Create comprehensive scatter plot analysis with color coding for all 42 data points
+        Create comprehensive win rate analysis showing robot, human, and tie rates
         Returns list of generated plot filenames
         """
-        print("📊 Generating enhanced scatter plot visualizations...")
+        print("📊 Generating comprehensive win rate analysis...")
         
         # Ensure output directory exists
         os.makedirs(output_dir, exist_ok=True)
         
-        # Set style for better looking plots
-        plt.style.use('default')
-        sns.set_palette("husl")
-        
         sessions = results['sessions']
         timestamp = time.strftime("%Y%m%d_%H%M%S")
+        
+        # Prepare data for plotting
+        plot_data = []
+        for session in sessions:
+            # Calculate rates if not present
+            robot_win_rate = session.get('robot_win_rate', session.get('robot_wins', 0) / session.get('total_games', 1)) * 100
+            human_win_rate = session.get('human_win_rate', session.get('human_wins', 0) / session.get('total_games', 1)) * 100
+            tie_rate = session.get('tie_rate', session.get('ties', 0) / session.get('total_games', 1)) * 100
+            
+            plot_data.append({
+                'difficulty': session['difficulty'],
+                'strategy': session['strategy'], 
+                'personality': session['personality'],
+                'robot_win_rate': robot_win_rate,
+                'human_win_rate': human_win_rate,
+                'tie_rate': tie_rate,
+                'human_strategy_level': session.get('human_strategy_level', 'unknown')
+            })
+        
+        df = pd.DataFrame(plot_data)
+        
         plot_files = []
+        
+        # 1. Win Rates by Difficulty
+        plt.figure(figsize=(18, 6))
+        
+        # Get the categories in a consistent order
+        difficulty_categories = sorted(df['difficulty'].unique())
+        
+        # Robot win rate by difficulty
+        plt.subplot(1, 3, 1)
+        sns.boxplot(x='difficulty', y='robot_win_rate', data=df, hue='difficulty', palette='Set2', legend=False, order=difficulty_categories)
+        # Add mean and std annotations - ensure order matches boxplot
+        for i, difficulty in enumerate(difficulty_categories):
+            subset = df[df['difficulty'] == difficulty]['robot_win_rate']
+            mean_val = subset.mean()
+            std_val = subset.std()
+            plt.text(i, mean_val + std_val + 1, f'μ={mean_val:.1f}%\nσ={std_val:.1f}%', 
+                    ha='center', va='bottom', fontsize=9, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+        plt.title('Robot Win Rate by Difficulty')
+        plt.ylabel('Robot Win Rate (%)')
+        plt.xlabel('Difficulty')
+        
+        # Human win rate by difficulty  
+        plt.subplot(1, 3, 2)
+        sns.boxplot(x='difficulty', y='human_win_rate', data=df, hue='difficulty', palette='Set1', legend=False, order=difficulty_categories)
+        # Add mean and std annotations - ensure order matches boxplot
+        for i, difficulty in enumerate(difficulty_categories):
+            subset = df[df['difficulty'] == difficulty]['human_win_rate']
+            mean_val = subset.mean()
+            std_val = subset.std()
+            plt.text(i, mean_val + std_val + 1, f'μ={mean_val:.1f}%\nσ={std_val:.1f}%', 
+                    ha='center', va='bottom', fontsize=9, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+        plt.title('Human Win Rate by Difficulty')
+        plt.ylabel('Human Win Rate (%)')
+        plt.xlabel('Difficulty')
+        
+        # Tie rate by difficulty
+        plt.subplot(1, 3, 3)
+        sns.boxplot(x='difficulty', y='tie_rate', data=df, hue='difficulty', palette='Set3', legend=False, order=difficulty_categories)
+        # Add mean and std annotations - ensure order matches boxplot
+        for i, difficulty in enumerate(difficulty_categories):
+            subset = df[df['difficulty'] == difficulty]['tie_rate']
+            mean_val = subset.mean()
+            std_val = subset.std()
+            plt.text(i, mean_val + std_val + 1, f'μ={mean_val:.1f}%\nσ={std_val:.1f}%', 
+                    ha='center', va='bottom', fontsize=9, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+        plt.title('Tie Rate by Difficulty')
+        plt.ylabel('Tie Rate (%)')
+        plt.xlabel('Difficulty')
+        
+        plt.tight_layout()
+        plot_file = f"{output_dir}/win_rates_by_difficulty_{timestamp}.png"
+        plt.savefig(plot_file, dpi=300, bbox_inches='tight')
+        print(f"📈 Win rates by difficulty saved: {plot_file}")
+        plt.close()
+        plot_files.append(plot_file)
+        
+        # 2. Win Rates by Strategy
+        plt.figure(figsize=(18, 6))
+        
+        # Get the categories in a consistent order
+        strategy_categories = sorted(df['strategy'].unique())
+        
+        # Robot win rate by strategy
+        plt.subplot(1, 3, 1)
+        sns.boxplot(x='strategy', y='robot_win_rate', data=df, hue='strategy', palette='viridis', legend=False, order=strategy_categories)
+        plt.xticks(rotation=45)
+        # Add mean and std annotations - ensure order matches boxplot
+        for i, strategy in enumerate(strategy_categories):
+            subset = df[df['strategy'] == strategy]['robot_win_rate']
+            mean_val = subset.mean()
+            std_val = subset.std()
+            plt.text(i, mean_val + std_val + 1, f'μ={mean_val:.1f}%\nσ={std_val:.1f}%', 
+                    ha='center', va='bottom', fontsize=9, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+        plt.title('Robot Win Rate by Strategy')
+        plt.ylabel('Robot Win Rate (%)')
+        plt.xlabel('Strategy')
+        
+        # Human win rate by strategy
+        plt.subplot(1, 3, 2)
+        sns.boxplot(x='strategy', y='human_win_rate', data=df, hue='strategy', palette='plasma', legend=False, order=strategy_categories)
+        plt.xticks(rotation=45)
+        # Add mean and std annotations - ensure order matches boxplot
+        for i, strategy in enumerate(strategy_categories):
+            subset = df[df['strategy'] == strategy]['human_win_rate']
+            mean_val = subset.mean()
+            std_val = subset.std()
+            plt.text(i, mean_val + std_val + 1, f'μ={mean_val:.1f}%\nσ={std_val:.1f}%', 
+                    ha='center', va='bottom', fontsize=9, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+        plt.title('Human Win Rate by Strategy')
+        plt.ylabel('Human Win Rate (%)')
+        plt.xlabel('Strategy')
+        
+        # Tie rate by strategy
+        plt.subplot(1, 3, 3)
+        sns.boxplot(x='strategy', y='tie_rate', data=df, hue='strategy', palette='coolwarm', legend=False, order=strategy_categories)
+        plt.xticks(rotation=45)
+        # Add mean and std annotations - ensure order matches boxplot
+        for i, strategy in enumerate(strategy_categories):
+            subset = df[df['strategy'] == strategy]['tie_rate']
+            mean_val = subset.mean()
+            std_val = subset.std()
+            plt.text(i, mean_val + std_val + 1, f'μ={mean_val:.1f}%\nσ={std_val:.1f}%', 
+                    ha='center', va='bottom', fontsize=9, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+        plt.title('Tie Rate by Strategy')
+        plt.ylabel('Tie Rate (%)')
+        plt.xlabel('Strategy')
+        
+        plt.tight_layout()
+        plot_file = f"{output_dir}/win_rates_by_strategy_{timestamp}.png"
+        plt.savefig(plot_file, dpi=300, bbox_inches='tight')
+        print(f"📈 Win rates by strategy saved: {plot_file}")
+        plt.close()
+        plot_files.append(plot_file)
+        
+        # 3. Win Rates by Personality
+        plt.figure(figsize=(20, 6))
+        
+        # Get the categories in a consistent order
+        personality_categories = sorted(df['personality'].unique())
+        
+        # Robot win rate by personality
+        plt.subplot(1, 3, 1)
+        sns.boxplot(x='personality', y='robot_win_rate', data=df, hue='personality', palette='tab10', legend=False, order=personality_categories)
+        plt.xticks(rotation=45)
+        # Add mean and std annotations - ensure order matches boxplot
+        for i, personality in enumerate(personality_categories):
+            subset = df[df['personality'] == personality]['robot_win_rate']
+            mean_val = subset.mean()
+            std_val = subset.std()
+            plt.text(i, mean_val + std_val + 1, f'μ={mean_val:.1f}%\nσ={std_val:.1f}%', 
+                    ha='center', va='bottom', fontsize=8, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+        plt.title('Robot Win Rate by Personality')
+        plt.ylabel('Robot Win Rate (%)')
+        plt.xlabel('Personality')
+        
+        # Human win rate by personality
+        plt.subplot(1, 3, 2)
+        sns.boxplot(x='personality', y='human_win_rate', data=df, hue='personality', palette='tab20', legend=False, order=personality_categories)
+        plt.xticks(rotation=45)
+        # Add mean and std annotations - ensure order matches boxplot
+        for i, personality in enumerate(personality_categories):
+            subset = df[df['personality'] == personality]['human_win_rate']
+            mean_val = subset.mean()
+            std_val = subset.std()
+            plt.text(i, mean_val + std_val + 1, f'μ={mean_val:.1f}%\nσ={std_val:.1f}%', 
+                    ha='center', va='bottom', fontsize=8, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+        plt.title('Human Win Rate by Personality')
+        plt.ylabel('Human Win Rate (%)')
+        plt.xlabel('Personality')
+        
+        # Tie rate by personality
+        plt.subplot(1, 3, 3)
+        sns.boxplot(x='personality', y='tie_rate', data=df, hue='personality', palette='Spectral', legend=False, order=personality_categories)
+        plt.xticks(rotation=45)
+        # Add mean and std annotations - ensure order matches boxplot
+        for i, personality in enumerate(personality_categories):
+            subset = df[df['personality'] == personality]['tie_rate']
+            mean_val = subset.mean()
+            std_val = subset.std()
+            plt.text(i, mean_val + std_val + 1, f'μ={mean_val:.1f}%\nσ={std_val:.1f}%', 
+                    ha='center', va='bottom', fontsize=8, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+        plt.title('Tie Rate by Personality')
+        plt.ylabel('Tie Rate (%)')
+        plt.xlabel('Personality')
+        
+        plt.tight_layout()
+        plot_file = f"{output_dir}/win_rates_by_personality_{timestamp}.png"
+        plt.savefig(plot_file, dpi=300, bbox_inches='tight')
+        print(f"📈 Win rates by personality saved: {plot_file}")
+        plt.close()
+        plot_files.append(plot_file)
+        
+        # Print comprehensive summary
+        print("\n📊 COMPREHENSIVE WIN RATE ANALYSIS SUMMARY:")
+        print(f"  • Total configurations analyzed: {len(df)}")
+        print(f"  • Robot win rate range: {df['robot_win_rate'].min():.1f}% - {df['robot_win_rate'].max():.1f}%")
+        print(f"  • Human win rate range: {df['human_win_rate'].min():.1f}% - {df['human_win_rate'].max():.1f}%")
+        print(f"  • Tie rate range: {df['tie_rate'].min():.1f}% - {df['tie_rate'].max():.1f}%")
+        
+        print("\n📈 BY DIFFICULTY:")
+        for difficulty in difficulty_categories:
+            subset = df[df['difficulty'] == difficulty]
+            print(f"  {difficulty.upper()}:")
+            print(f"    Robot: {subset['robot_win_rate'].mean():.1f}% ± {subset['robot_win_rate'].std():.1f}%")
+            print(f"    Human: {subset['human_win_rate'].mean():.1f}% ± {subset['human_win_rate'].std():.1f}%")
+            print(f"    Tie:   {subset['tie_rate'].mean():.1f}% ± {subset['tie_rate'].std():.1f}%")
+        
+        print("\n📈 BY STRATEGY:")
+        for strategy in strategy_categories:
+            subset = df[df['strategy'] == strategy]
+            print(f"  {strategy.upper()}:")
+            print(f"    Robot: {subset['robot_win_rate'].mean():.1f}% ± {subset['robot_win_rate'].std():.1f}%")
+            print(f"    Human: {subset['human_win_rate'].mean():.1f}% ± {subset['human_win_rate'].std():.1f}%")
+            print(f"    Tie:   {subset['tie_rate'].mean():.1f}% ± {subset['tie_rate'].std():.1f}%")
+        
+        print("\n📈 BY PERSONALITY:")
+        for personality in personality_categories:
+            subset = df[df['personality'] == personality]
+            print(f"  {personality.upper()}:")
+            print(f"    Robot: {subset['robot_win_rate'].mean():.1f}% ± {subset['robot_win_rate'].std():.1f}%")
+            print(f"    Human: {subset['human_win_rate'].mean():.1f}% ± {subset['human_win_rate'].std():.1f}%")
+            print(f"    Tie:   {subset['tie_rate'].mean():.1f}% ± {subset['tie_rate'].std():.1f}%")
+        
+        # 4. Win Rates by Human Strategy
+        plt.figure(figsize=(18, 6))
+        
+        # Get the categories in a consistent order
+        strategy_categories = sorted(df['human_strategy_level'].unique())
+        
+        # Robot win rate by human strategy
+        plt.subplot(1, 3, 1)
+        box_plot = sns.boxplot(x='human_strategy_level', y='robot_win_rate', data=df, hue='human_strategy_level', palette='Set1', legend=False, order=strategy_categories)
+        # Add mean and std annotations - ensure order matches boxplot
+        for i, strategy in enumerate(strategy_categories):
+            subset = df[df['human_strategy_level'] == strategy]['robot_win_rate']
+            mean_val = subset.mean()
+            std_val = subset.std()
+            plt.text(i, mean_val + std_val + 1, f'μ={mean_val:.1f}%\nσ={std_val:.1f}%', 
+                    ha='center', va='bottom', fontsize=9, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+        plt.title('Robot Win Rate by Human Strategy')
+        plt.ylabel('Robot Win Rate (%)')
+        plt.xlabel('Human Strategy Level')
+        
+        # Human win rate by human strategy
+        plt.subplot(1, 3, 2)
+        sns.boxplot(x='human_strategy_level', y='human_win_rate', data=df, hue='human_strategy_level', palette='Set2', legend=False, order=strategy_categories)
+        # Add mean and std annotations - ensure order matches boxplot
+        for i, strategy in enumerate(strategy_categories):
+            subset = df[df['human_strategy_level'] == strategy]['human_win_rate']
+            mean_val = subset.mean()
+            std_val = subset.std()
+            plt.text(i, mean_val + std_val + 1, f'μ={mean_val:.1f}%\nσ={std_val:.1f}%', 
+                    ha='center', va='bottom', fontsize=9, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+        plt.title('Human Win Rate by Human Strategy')
+        plt.ylabel('Human Win Rate (%)')
+        plt.xlabel('Human Strategy Level')
+        
+        # Tie rate by human strategy
+        plt.subplot(1, 3, 3)
+        sns.boxplot(x='human_strategy_level', y='tie_rate', data=df, hue='human_strategy_level', palette='Set3', legend=False, order=strategy_categories)
+        # Add mean and std annotations - ensure order matches boxplot
+        for i, strategy in enumerate(strategy_categories):
+            subset = df[df['human_strategy_level'] == strategy]['tie_rate']
+            mean_val = subset.mean()
+            std_val = subset.std()
+            plt.text(i, mean_val + std_val + 1, f'μ={mean_val:.1f}%\nσ={std_val:.1f}%', 
+                    ha='center', va='bottom', fontsize=9, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+        plt.title('Tie Rate by Human Strategy')
+        plt.ylabel('Tie Rate (%)')
+        plt.xlabel('Human Strategy Level')
+        
+        plt.tight_layout()
+        plot_file = f"{output_dir}/win_rates_by_human_strategy_{timestamp}.png"
+        plt.savefig(plot_file, dpi=300, bbox_inches='tight')
+        print(f"📈 Win rates by human strategy saved: {plot_file}")
+        plt.close()
+        plot_files.append(plot_file)
+        
+        print("\n📈 BY HUMAN STRATEGY:")
+        for strategy in strategy_categories:
+            subset = df[df['human_strategy_level'] == strategy]
+            print(f"  {strategy.upper()}:")
+            print(f"    Robot: {subset['robot_win_rate'].mean():.1f}% ± {subset['robot_win_rate'].std():.1f}%")
+            print(f"    Human: {subset['human_win_rate'].mean():.1f}% ± {subset['human_win_rate'].std():.1f}%")
+            print(f"    Tie:   {subset['tie_rate'].mean():.1f}% ± {subset['tie_rate'].std():.1f}%")
+        
+        return plot_files
         
         # Prepare data for plotting - aggregate by opponent configuration
         opponent_data = defaultdict(list)
@@ -1575,6 +1906,7 @@ class PerformanceTester:
                 'difficulty': session['difficulty'].title(),
                 'strategy': session['strategy'].replace('_', ' ').title(),
                 'personality': session['personality'].title(),
+                'human_strategy_level': session.get('human_strategy_level', 'strategic').title(),
                 'win_rate': session['robot_win_rate'] * 100,  # Convert to percentage
                 'confidence': session['avg_confidence'],
                 'opponent_config': session['opponent_config']
@@ -1582,10 +1914,36 @@ class PerformanceTester:
         
         df = pd.DataFrame(data_for_plots)
         
+        # Check if we have human strategy level data to create its box plot
+        has_strategy_level_data = len(df['human_strategy_level'].unique()) > 1
+        
+        # 0. Box plot for Human Strategy Level Impact (if applicable)
+        if has_strategy_level_data:
+            plt.figure(figsize=(10, 6))
+            sns.boxplot(data=df, x='human_strategy_level', y='win_rate', hue='human_strategy_level', palette='Set2', legend=False)
+            plt.title('Win Rate Distribution by Human Strategy Level', fontsize=14, fontweight='bold')
+            plt.xlabel('Human Strategy Level', fontsize=12)
+            plt.ylabel('Win Rate (%)', fontsize=12)
+            plt.grid(True, alpha=0.3)
+            
+            # Add statistical annotations
+            for i, hsl in enumerate(df['human_strategy_level'].unique()):
+                subset = df[df['human_strategy_level'] == hsl]['win_rate']
+                mean_val = subset.mean()
+                plt.text(i, mean_val + 1, f'μ={mean_val:.1f}%', 
+                        ha='center', va='bottom', fontweight='bold', fontsize=10)
+            
+            plt.tight_layout()
+            plot0_file = f"{output_dir}/win_rate_by_human_strategy_{timestamp}.png"
+            plt.savefig(plot0_file, dpi=300, bbox_inches='tight')
+            plot_files.append(plot0_file)
+            print(f"📈 Human strategy level plot saved: {plot0_file}")
+            plt.close()
+        
         # 1. Box plot for Difficulty Impact
         plt.figure(figsize=(12, 8))
         plt.subplot(2, 2, 1)
-        box_plot = sns.boxplot(data=df, x='difficulty', y='win_rate', palette='viridis')
+        box_plot = sns.boxplot(data=df, x='difficulty', y='win_rate', hue='difficulty', palette='viridis', legend=False)
         plt.title('Win Rate Distribution by Difficulty Level', fontsize=14, fontweight='bold')
         plt.xlabel('Difficulty Level', fontsize=12)
         plt.ylabel('Win Rate (%)', fontsize=12)
@@ -1600,7 +1958,7 @@ class PerformanceTester:
         
         # 2. Box plot for Strategy Impact
         plt.subplot(2, 2, 2)
-        sns.boxplot(data=df, x='strategy', y='win_rate', palette='coolwarm')
+        sns.boxplot(data=df, x='strategy', y='win_rate', hue='strategy', palette='coolwarm', legend=False)
         plt.title('Win Rate Distribution by Strategy', fontsize=14, fontweight='bold')
         plt.xlabel('Strategy', fontsize=12)
         plt.ylabel('Win Rate (%)', fontsize=12)
@@ -1615,7 +1973,7 @@ class PerformanceTester:
         
         # 3. Box plot for Personality Impact
         plt.subplot(2, 1, 2)
-        sns.boxplot(data=df, x='personality', y='win_rate', palette='tab10')
+        sns.boxplot(data=df, x='personality', y='win_rate', hue='personality', palette='tab10', legend=False)
         plt.title('Win Rate Distribution by Personality Type', fontsize=14, fontweight='bold')
         plt.xlabel('Personality Type', fontsize=12)
         plt.ylabel('Win Rate (%)', fontsize=12)
@@ -1643,21 +2001,21 @@ class PerformanceTester:
         
         # Confidence by Difficulty
         plt.subplot(2, 3, 1)
-        sns.boxplot(data=df, x='difficulty', y='confidence', palette='viridis')
+        sns.boxplot(data=df, x='difficulty', y='confidence', hue='difficulty', palette='viridis', legend=False)
         plt.title('Confidence by Difficulty', fontweight='bold')
         plt.ylabel('Confidence Score')
         plt.grid(True, alpha=0.3)
         
         # Confidence by Strategy
         plt.subplot(2, 3, 2)
-        sns.boxplot(data=df, x='strategy', y='confidence', palette='coolwarm')
+        sns.boxplot(data=df, x='strategy', y='confidence', hue='strategy', palette='coolwarm', legend=False)
         plt.title('Confidence by Strategy', fontweight='bold')
         plt.ylabel('Confidence Score')
         plt.grid(True, alpha=0.3)
         
         # Confidence by Personality
         plt.subplot(2, 3, 3)
-        sns.boxplot(data=df, x='personality', y='confidence', palette='tab10')
+        sns.boxplot(data=df, x='personality', y='confidence', hue='personality', palette='tab10', legend=False)
         plt.title('Confidence by Personality', fontweight='bold')
         plt.ylabel('Confidence Score')
         plt.xticks(rotation=45)
@@ -1676,7 +2034,7 @@ class PerformanceTester:
         
         # Strategy comparison violin plot
         plt.subplot(2, 3, 5)
-        sns.violinplot(data=df, x='strategy', y='win_rate', palette='coolwarm')
+        sns.violinplot(data=df, x='strategy', y='win_rate', hue='strategy', palette='coolwarm', legend=False)
         plt.title('Strategy Impact Distribution', fontweight='bold')
         plt.ylabel('Win Rate (%)')
         plt.grid(True, alpha=0.3)
@@ -1783,8 +2141,15 @@ def main():
     
     # Example: Create custom test configuration
     # You can adjust these parameters for your thorough study
+    
+    # Choose human strategy mode: "strategic", "random", or "both"
+    # "strategic" - only weighted_random human patterns (current behavior)
+    # "random" - only pure random human moves (non-strategic)
+    # "both" - run tests for both strategic and random human players (introduces 4th variable)
+    human_strategy_mode = "both"  # Change to "strategic" or "random" as needed
+    
     custom_config = TestConfig(
-        max_moves=75,  # Increase from default 50 to 75 moves per game
+        max_moves=50,  # Increase from default 50 to 75 moves per game
         games_per_opponent=1000,  # Increase from default 10 to 15 games per opponent
         pattern_weights={
             'adaptive': 0.4,        # Focus more on adaptive patterns
@@ -1793,7 +2158,8 @@ def main():
             'frequency_based': 0.1,   # Less bias-based patterns
             'random': 0.0           # No purely random patterns
         },
-        human_pattern_selection="weighted_random"
+        human_pattern_selection="weighted_random",
+        human_strategy_mode=human_strategy_mode
     )
     
     print("\n🔧 Using Custom Configuration:")
@@ -1822,19 +2188,13 @@ def main():
     # Generate comprehensive visualizations
     print("\n🎨 Creating comprehensive visualization plots...")
     try:
-        # Create enhanced scatter plot analysis (new feature)
-        scatter_plot_files = tester.create_scatter_plot_analysis(results, visualizations_dir)
-        print(f"📊 Generated {len(scatter_plot_files)} scatter plot analysis files:")
-        for plot_file in scatter_plot_files:
+        # Create comprehensive win rate analysis
+        win_rate_files = tester.create_comprehensive_win_rate_analysis(results, visualizations_dir)
+        print(f"📊 Generated {len(win_rate_files)} win rate analysis files:")
+        for plot_file in win_rate_files:
             print(f"  📈 {plot_file}")
         
-        # Create traditional box plots for comparison
-        box_plot_files = tester.create_box_plots(results, visualizations_dir)
-        print(f"📊 Generated {len(box_plot_files)} additional box plot files:")
-        for plot_file in box_plot_files:
-            print(f"  📈 {plot_file}")
-        
-        total_plots = len(scatter_plot_files) + len(box_plot_files)
+        total_plots = len(win_rate_files)
         print(f"📊 Total visualization files generated: {total_plots}")
         
     except Exception as e:

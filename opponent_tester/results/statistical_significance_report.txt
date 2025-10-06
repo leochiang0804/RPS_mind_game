@@ -4,131 +4,135 @@ COMPREHENSIVE STATISTICAL SIGNIFICANCE ANALYSIS
 ================================================================================
 
 📊 SAMPLE DESCRIPTION:
-  • Total observations: 42000
+  • Total observations: 84000
   • Difficulty levels: ['rookie', 'challenger', 'master']
   • Strategy types: ['to_win', 'not_to_lose']
   • Personality types: ['neutral', 'aggressive', 'defensive', 'unpredictable', 'cautious', 'confident', 'chameleon']
-  • Win rate range: 13.3% - 73.3%
-  • Overall mean win rate: 37.4% ± 7.51%
+  • Robot win rate range: 10.0% - 70.0%
+  • Overall mean robot win rate: 34.5% ± 6.89%
+  • Human win rate range: 4.0% - 64.0%
+  • Overall mean human win rate: 32.6% ± 6.64%
+  • Tie rate range: 6.0% - 62.0%
+  • Overall mean tie rate: 32.8% ± 6.85%
 
-🔬 ANALYSIS: DIFFICULTY FACTOR
+🔬 ANALYSIS: DIFFICULTY FACTOR (Robot Win Rate)
 --------------------------------------------------
 Group Statistics:
-  Challenger: n=14000.0, mean=37.6%, sd=6.49%
-  Master: n=14000.0, mean=39.1%, sd=9.29%
-  Rookie: n=14000.0, mean=35.5%, sd=5.86%
+  Challenger: n=28000.0, mean=34.3%, sd=6.72%
+  Master: n=28000.0, mean=34.9%, sd=6.99%
+  Rookie: n=28000.0, mean=34.4%, sd=6.95%
 
 ANOVA Results:
-  F-statistic: 845.638
+  F-statistic: 46.873
   p-value: 0.000000
-  Effect size (η²): 0.039
+  Effect size (η²): 0.001
   Statistical Significance: HIGHLY SIGNIFICANT (p < 0.001)
-  Effect Magnitude: SMALL effect
+  Effect Magnitude: NEGLIGIBLE effect
 
 Practical Interpretation:
   ✅ Difficulty significantly affects AI performance
-  📈 Performance range: 3.6 percentage points
-  🏆 Best performing: Master (39.1%)
-  📉 Worst performing: Rookie (35.5%)
-  💪 Strength of effect: 3.9% of variance explained
+  📈 Performance range: 0.5 percentage points
+  🏆 Best performing: Master (34.9%)
+  📉 Worst performing: Challenger (34.3%)
+  💪 Strength of effect: 0.1% of variance explained
 
 Post-hoc Pairwise Comparisons (Tukey HSD):
-  Rookie vs Challenger: 2.1% difference - significant
-  Rookie vs Master: 3.6% difference - significant
-  Challenger vs Master: 1.5% difference - not significant
+  Rookie vs Challenger: 0.1% difference - not significant
+  Rookie vs Master: 0.4% difference - not significant
+  Challenger vs Master: 0.5% difference - not significant
 
-🔬 ANALYSIS: STRATEGY FACTOR
+🔬 ANALYSIS: STRATEGY FACTOR (Robot Win Rate)
 --------------------------------------------------
 Group Statistics:
-  Not_To_Lose: n=21000.0, mean=35.1%, sd=5.74%
-  To_Win: n=21000.0, mean=39.6%, sd=8.36%
+  Not_To_Lose: n=42000.0, mean=34.1%, sd=6.77%
+  To_Win: n=42000.0, mean=35.0%, sd=6.98%
 
 ANOVA Results:
-  F-statistic: 4116.123
+  F-statistic: 334.682
   p-value: 0.000000
-  Effect size (η²): 0.089
+  Effect size (η²): 0.004
   Statistical Significance: HIGHLY SIGNIFICANT (p < 0.001)
-  Effect Magnitude: MEDIUM effect
+  Effect Magnitude: NEGLIGIBLE effect
 
 Practical Interpretation:
   ✅ Strategy significantly affects AI performance
-  📈 Performance range: 4.5 percentage points
-  🏆 Best performing: To_Win (39.6%)
-  📉 Worst performing: Not_To_Lose (35.1%)
-  💪 Strength of effect: 8.9% of variance explained
+  📈 Performance range: 0.9 percentage points
+  🏆 Best performing: To_Win (35.0%)
+  📉 Worst performing: Not_To_Lose (34.1%)
+  💪 Strength of effect: 0.4% of variance explained
 
-🔬 ANALYSIS: PERSONALITY FACTOR
+🔬 ANALYSIS: PERSONALITY FACTOR (Robot Win Rate)
 --------------------------------------------------
 Group Statistics:
-  Aggressive: n=6000.0, mean=35.1%, sd=5.64%
-  Cautious: n=6000.0, mean=36.0%, sd=5.74%
-  Chameleon: n=6000.0, mean=39.3%, sd=9.64%
-  Confident: n=6000.0, mean=36.3%, sd=5.85%
-  Defensive: n=6000.0, mean=42.0%, sd=9.85%
-  Neutral: n=6000.0, mean=37.0%, sd=6.20%
-  Unpredictable: n=6000.0, mean=36.0%, sd=5.73%
+  Aggressive: n=12000.0, mean=35.1%, sd=7.13%
+  Cautious: n=12000.0, mean=34.6%, sd=7.04%
+  Chameleon: n=12000.0, mean=34.5%, sd=6.83%
+  Confident: n=12000.0, mean=35.1%, sd=7.02%
+  Defensive: n=12000.0, mean=34.2%, sd=6.68%
+  Neutral: n=12000.0, mean=34.4%, sd=6.81%
+  Unpredictable: n=12000.0, mean=34.0%, sd=6.63%
 
 ANOVA Results:
-  F-statistic: 674.401
+  F-statistic: 45.772
   p-value: 0.000000
-  Effect size (η²): 0.088
+  Effect size (η²): 0.003
   Statistical Significance: HIGHLY SIGNIFICANT (p < 0.001)
-  Effect Magnitude: MEDIUM effect
+  Effect Magnitude: NEGLIGIBLE effect
 
 Practical Interpretation:
   ✅ Personality significantly affects AI performance
-  📈 Performance range: 6.9 percentage points
-  🏆 Best performing: Defensive (42.0%)
-  📉 Worst performing: Aggressive (35.1%)
-  💪 Strength of effect: 8.8% of variance explained
+  📈 Performance range: 1.1 percentage points
+  🏆 Best performing: Aggressive (35.1%)
+  📉 Worst performing: Unpredictable (34.0%)
+  💪 Strength of effect: 0.3% of variance explained
 
 Post-hoc Pairwise Comparisons (Tukey HSD):
-  Neutral vs Aggressive: 1.9% difference - not significant
-  Neutral vs Defensive: 5.0% difference - significant
-  Neutral vs Unpredictable: 0.9% difference - not significant
-  Neutral vs Cautious: 1.0% difference - not significant
-  Neutral vs Confident: 0.7% difference - not significant
-  Neutral vs Chameleon: 2.3% difference - significant
-  Aggressive vs Defensive: 6.9% difference - significant
-  Aggressive vs Unpredictable: 0.9% difference - not significant
-  Aggressive vs Cautious: 0.9% difference - not significant
-  Aggressive vs Confident: 1.2% difference - not significant
-  Aggressive vs Chameleon: 4.2% difference - significant
-  Defensive vs Unpredictable: 5.9% difference - significant
-  Defensive vs Cautious: 5.9% difference - significant
-  Defensive vs Confident: 5.7% difference - significant
-  Defensive vs Chameleon: 2.7% difference - significant
-  Unpredictable vs Cautious: 0.0% difference - not significant
-  Unpredictable vs Confident: 0.3% difference - not significant
-  Unpredictable vs Chameleon: 3.2% difference - significant
-  Cautious vs Confident: 0.3% difference - not significant
-  Cautious vs Chameleon: 3.2% difference - significant
-  Confident vs Chameleon: 3.0% difference - significant
+  Neutral vs Aggressive: 0.7% difference - not significant
+  Neutral vs Defensive: 0.3% difference - not significant
+  Neutral vs Unpredictable: 0.4% difference - not significant
+  Neutral vs Cautious: 0.2% difference - not significant
+  Neutral vs Confident: 0.6% difference - not significant
+  Neutral vs Chameleon: 0.0% difference - not significant
+  Aggressive vs Defensive: 1.0% difference - not significant
+  Aggressive vs Unpredictable: 1.1% difference - not significant
+  Aggressive vs Cautious: 0.5% difference - not significant
+  Aggressive vs Confident: 0.1% difference - not significant
+  Aggressive vs Chameleon: 0.7% difference - not significant
+  Defensive vs Unpredictable: 0.2% difference - not significant
+  Defensive vs Cautious: 0.5% difference - not significant
+  Defensive vs Confident: 0.9% difference - not significant
+  Defensive vs Chameleon: 0.3% difference - not significant
+  Unpredictable vs Cautious: 0.6% difference - not significant
+  Unpredictable vs Confident: 1.1% difference - not significant
+  Unpredictable vs Chameleon: 0.4% difference - not significant
+  Cautious vs Confident: 0.4% difference - not significant
+  Cautious vs Chameleon: 0.2% difference - not significant
+  Confident vs Chameleon: 0.6% difference - not significant
 
 🔬 COMPREHENSIVE MODEL ANALYSIS
 --------------------------------------------------
 Multi-factor ANOVA with Interactions:
-                                 sum_sq       df            F  PR(>F)
-C(difficulty)              9.174889e+04      2.0  1100.036897     0.0
-C(strategy)                2.115464e+05      1.0  5072.732896     0.0
-C(personality)             2.083008e+05      6.0   832.484539     0.0
-C(difficulty):C(strategy)  1.074091e+05      2.0  1287.796681     0.0
-Residual                   1.751011e+06  41988.0          NaN     NaN
+                                 sum_sq       df           F        PR(>F)
+C(difficulty)              4.447443e+03      2.0   47.218007  3.198898e-21
+C(strategy)                1.583232e+04      1.0  336.179994  6.072831e-75
+C(personality)             1.300168e+04      6.0   46.012468  1.354773e-56
+C(difficulty):C(strategy)  7.260226e+02      2.0    7.708101  4.494916e-04
+Residual                   3.955396e+06  83988.0         NaN           NaN
 
 Model Performance:
-  R-squared: 0.261
-  Adjusted R-squared: 0.261
-  Model explains 26.1% of variance in win rates
+  R-squared: 0.009
+  Adjusted R-squared: 0.008
+  Model explains 0.9% of variance in win rates
 
 📋 OVERALL CONCLUSIONS
 --------------------------------------------------
 ✅ SIGNIFICANT FACTORS:
-  • DIFFICULTY: p=0.0000, η²=0.039
-  • STRATEGY: p=0.0000, η²=0.089
-  • PERSONALITY: p=0.0000, η²=0.088
+  • DIFFICULTY: p=0.0000, η²=0.001
+  • STRATEGY: p=0.0000, η²=0.004
+  • PERSONALITY: p=0.0000, η²=0.003
   • Primary factor: STRATEGY
 
 🎯 ACTIONABLE RECOMMENDATIONS:
-  ⚠️ Difficulty: Weak differentiator - consider enhancing variations
-  ✅ Strategy: Strong differentiator - maintain current implementation
-  ✅ Personality: Strong differentiator - maintain current implementation
+  🔧 Difficulty: No clear effect - review implementation or increase differences
+  🔧 Strategy: No clear effect - review implementation or increase differences
+  🔧 Personality: No clear effect - review implementation or increase differences
