@@ -8,7 +8,7 @@ used across all AI coach endpoints, analytics, and UI components.
 The goal is to eliminate scattered data construction and ensure consistency
 across the entire application.
 
-Now includes support for the 42-opponent RPS AI system with Markov + HLBM framework.
+Now routes all AI interactions through the adaptive opponent engine designed for richer difficulty, strategy, and personality behaviours.
 """
 
 import time
@@ -33,7 +33,7 @@ _ai_system_metadata = {}
 
 def set_opponent_parameters(difficulty: str, strategy: str, personality: str) -> bool:
     """
-    Set current opponent parameters for the 42-opponent system.
+    Set current opponent parameters for the adaptive opponent engine.
     
     Args:
         difficulty: 'rookie', 'challenger', or 'master'
@@ -63,8 +63,8 @@ def set_opponent_parameters(difficulty: str, strategy: str, personality: str) ->
             }
             
             _ai_system_metadata = {
-                'system_type': '42_opponent_markov_hlbm',
-                'version': '1.0',
+                'system_type': 'adaptive_opponent_engine',
+                'version': '2.0',
                 'last_reset': time.time()
             }
             
@@ -92,7 +92,7 @@ def get_current_opponent_info() -> Dict[str, Any]:
 
 def get_ai_prediction(session_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Get AI prediction using the 42-opponent system.
+    Get AI prediction using the adaptive opponent engine.
     
     Args:
         session_data: Current session data with move history
@@ -135,7 +135,7 @@ def get_ai_prediction(session_data: Dict[str, Any]) -> Dict[str, Any]:
             'human_probabilities': probabilities.tolist(),
             'confidence': metadata.get('confidence', 0.33),
             'metadata': metadata,
-            'system_type': '42_opponent_system'
+            'system_type': 'adaptive_opponent_engine'
         }
         
     except Exception as e:
@@ -634,8 +634,9 @@ class GameContextBuilder:
             if personality_info and 'traits' in personality_info:
                 personality_traits = personality_info['traits']
         
-        # Get current opponent information from 42-opponent system
+        # Get current opponent information from adaptive opponent engine
         opponent_info_42 = get_current_opponent_info()
+        opponent_details = opponent_info_42.get('opponent_info', {})
         
         opponent_info = {
             'ai_difficulty': session.get('ai_difficulty', 'unknown'),
@@ -651,16 +652,15 @@ class GameContextBuilder:
             'personality_risk_tolerance': personality_traits.get('risk_tolerance', 0.0),
             'personality_memory_span': personality_traits.get('memory_span', 0.0),
             'personality_confidence_sensitivity': personality_traits.get('confidence_sensitivity', 0.0),
-            # 42-opponent system information
+            # Adaptive opponent engine information
             'opponent_system': {
-                'type': '42_opponent_markov_hlbm',
+                'type': 'adaptive_opponent_engine',
                 'status': opponent_info_42.get('status', 'not_set'),
-                'opponent_id': opponent_info_42.get('opponent_info', {}).get('opponent_id', 'unknown'),
-                'expected_win_rate': opponent_info_42.get('opponent_info', {}).get('expected_win_rate', 0.5),
-                'description': opponent_info_42.get('opponent_info', {}).get('description', 'Unknown opponent'),
-                'markov_order': opponent_info_42.get('opponent_info', {}).get('markov_order', 2),
-                'lambda_influence': opponent_info_42.get('opponent_info', {}).get('lambda_influence', 0.25),
-                'alpha': opponent_info_42.get('opponent_info', {}).get('alpha', 0.5)
+                'opponent_id': opponent_details.get('opponent_id', 'unknown'),
+                'description': opponent_details.get('description', 'Unknown opponent'),
+                'difficulty_notes': opponent_details.get('difficulty_notes', ''),
+                'strategy_notes': opponent_details.get('strategy_notes', ''),
+                'personality_notes': opponent_details.get('personality_notes', '')
             }
         }
 

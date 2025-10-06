@@ -2,8 +2,24 @@
 Parameter-Synthesis Engine (PSE) for RPS AI
 ===========================================
 
-Generates 42 distinct AI opponents using systematic parameter combinations:
-- 3 Difficulties: Rookie, Challenger, Master
+Generates 42 distinct AI opponents using systematic parameter            Difficulty.CHALLENGER: {
+                'markov_order': 2,
+                'smoothing_factor': 0.6,
+                'ensemble_weights': {1: 0.3, 2: 0.7},
+                'lambda_influence': 0.25,   # Moderate reduction for balanced exploitation
+                'bias_weights': {'RA': 0.25, 'WSLS': 0.28, 'ALT': 0.17, 'CYC': 0.24, 'META': 0.06},
+                'bias_params': {
+                    'RA': {'rho': 0.03},
+                    'WSLS': {'delta_WS': 0.04, 'delta_LS': 0.03, 'delta_T': 0.02},
+                    'ALT': {'delta_ALT': 0.03},
+                    'CYC': {'delta_CYC': 0.03},
+                    'META': {'delta_META': 0.02}
+                },
+                'epsilon': 0.12,            # Balanced exploration-exploitation
+                'gamma': 0.80,              # Moderate exploitation focus
+                'expected_win_rate': 0.62,  # Increased for better challenge
+                'computational_complexity': 'medium'
+            } Difficulties: Rookie, Challenger, Master
 - 2 Strategies: To-Win (α≈0.85), Not-to-Lose (α≈0.15)  
 - 7 Personalities: Neutral, Aggressive, Defensive, Unpredictable, Cautious, Confident, Chameleon
 
@@ -43,28 +59,28 @@ class Personality(Enum):
 
 @dataclass
 class OpponentParameters:
-    """Complete parameter set for an AI opponent."""
+    """Complete parameter set for a single opponent configuration."""
     
-    # Identification
+    # Basic identification
+    opponent_id: str
     difficulty: Difficulty
     strategy: Strategy
     personality: Personality
-    opponent_id: str
     
     # Markov Predictor Parameters
     markov_order: int
     smoothing_factor: float
     ensemble_weights: Dict[int, float]  # {order: weight}
+    pattern_memory_limit: int  # Memory limit for pattern detection
+    pattern_detection_speed: float  # NEW: How fast patterns are detected (difficulty-based)
     
-    # HLBM Parameters
-    lambda_influence: float
-    bias_weights: Dict[str, float]  # {RA, WSLS, ALT, CYC, META}
-    bias_params: Dict[str, Dict[str, float]]
-    
-    # Strategy Parameters
+    # Strategy Parameters (decision-making logic only)
     alpha: float  # To-win vs not-to-lose balance
-    epsilon: float  # Exploration factor
+    epsilon: float  # Exploration factor  
     gamma: float  # Exploitation factor
+    
+    # Personality Parameters (marginal probability adjustments only)
+    personality_influence: float  # How much personality affects probabilities (very small)
     
     # Metadata
     description: str
@@ -81,12 +97,12 @@ class OpponentParameters:
             'markov_order': self.markov_order,
             'smoothing_factor': self.smoothing_factor,
             'ensemble_weights': self.ensemble_weights,
-            'lambda_influence': self.lambda_influence,
-            'bias_weights': self.bias_weights,
-            'bias_params': self.bias_params,
+            'pattern_memory_limit': self.pattern_memory_limit,
+            'pattern_detection_speed': self.pattern_detection_speed,
             'alpha': self.alpha,
             'epsilon': self.epsilon,
             'gamma': self.gamma,
+            'personality_influence': self.personality_influence,
             'description': self.description,
             'expected_win_rate': self.expected_win_rate,
             'computational_complexity': self.computational_complexity
@@ -103,12 +119,12 @@ class OpponentParameters:
             markov_order=data['markov_order'],
             smoothing_factor=data['smoothing_factor'],
             ensemble_weights=data['ensemble_weights'],
-            lambda_influence=data['lambda_influence'],
-            bias_weights=data['bias_weights'],
-            bias_params=data['bias_params'],
+            pattern_memory_limit=data.get('pattern_memory_limit', 25),  # Default for backward compatibility
+            pattern_detection_speed=data.get('pattern_detection_speed', 1.0),  # Default
             alpha=data['alpha'],
             epsilon=data['epsilon'],
             gamma=data['gamma'],
+            personality_influence=data.get('personality_influence', 0.05),  # Default
             description=data['description'],
             expected_win_rate=data['expected_win_rate'],
             computational_complexity=data['computational_complexity']
@@ -127,137 +143,102 @@ class ParameterSynthesisEngine:
         """Initialize PSE with base parameter templates."""
         self.opponents = {}  # {opponent_id: OpponentParameters}
         self._init_base_parameters()
+        self.generate_all_opponents()  # Generate all 42 opponents
         
     def _init_base_parameters(self) -> None:
         """Initialize base parameter templates for each difficulty."""
         
-        # Difficulty-based base parameters
+        # Difficulty-based base parameters - ENHANCED SYSTEM per AI_DIFFICULTY_ENHANCEMENT_PLAN
+        # Implementing multi-order Markov chains and improved exploitation parameters
         self.difficulty_presets = {
             Difficulty.ROOKIE: {
-                'markov_order': 1,
-                'smoothing_factor': 3,
-                'ensemble_weights': {1: 0.65, 2: 0.3, 3: 0.05},
-                'lambda_influence': 0.5,
-                'bias_weights': {'RA': 0.32, 'WSLS': 0.28, 'ALT': 0.18, 'CYC': 0.12, 'META': 0.10},
-                'bias_params': {
-                    'RA': {'rho': 0.08},
-                    'WSLS': {'delta_WS': 0.08, 'delta_LS': 0.06, 'delta_T': 0.03},
-                    'ALT': {'delta_ALT': 0.08},
-                    'CYC': {'delta_CYC': 0.08},
-                    'META': {'delta_META': 0.02}
-                },
-                'epsilon': 0.2,
-                'gamma': 0.4,
-                'expected_win_rate': 0.45,
+                # ROOKIE_PARAMS from enhancement plan: markov_orders [1,2], exploitation_strength 0.4, randomness_factor 0.3
+                'markov_order': 2,  # Highest order for ensemble
+                'smoothing_factor': 2.0,  # Higher smoothing = less aggressive pattern exploitation
+                'ensemble_weights': {1: 0.7, 2: 0.3},  # Simple patterns only [1,2]
+                'pattern_memory_limit': 15,  # Remember last 15 moves
+                'pattern_detection_speed': 0.3,  # Slow adaptation ('slow' adaptation_speed)
+                'epsilon': 0.30,  # 30% randomness (randomness_factor 0.3)
+                'gamma': 0.40,    # Moderate exploitation (exploitation_strength 0.4)
+                'personality_influence': 0.08,  # Higher personality influence for more variability
+                'expected_win_rate': 0.35,  # Target 30-40% AI win rate
                 'computational_complexity': 'low'
             },
             
             Difficulty.CHALLENGER: {
-                'markov_order': 2,
-                'smoothing_factor': 1.0,
-                'ensemble_weights': {1: 0.3, 2: 0.5, 3: 0.2},
-                'lambda_influence': 0.25,
-                'bias_weights': {'RA': 0.28, 'WSLS': 0.30, 'ALT': 0.18, 'CYC': 0.16, 'META': 0.08},
-                'bias_params': {
-                    'RA': {'rho': 0.06},
-                    'WSLS': {'delta_WS': 0.04, 'delta_LS': 0.05, 'delta_T': 0.02},
-                    'ALT': {'delta_ALT': 0.04},
-                    'CYC': {'delta_CYC': 0.04},
-                    'META': {'delta_META': 0.015}
-                },
-                'epsilon': 0.15,
-                'gamma': 0.75,
-                'expected_win_rate': 0.55,
+                # CHALLENGER_PARAMS from enhancement plan: markov_orders [1,2,3,5], exploitation_strength 0.7, randomness_factor 0.2
+                'markov_order': 5,  # Highest order for ensemble
+                'smoothing_factor': 0.8,  # Medium smoothing
+                'ensemble_weights': {1: 0.15, 2: 0.35, 3: 0.35, 5: 0.15},  # Multi-order [1,2,3,5]
+                'pattern_memory_limit': 25,  # Remember last 25 moves
+                'pattern_detection_speed': 0.7,  # Medium adaptation ('medium' adaptation_speed)
+                'epsilon': 0.20,  # 20% randomness (randomness_factor 0.2)
+                'gamma': 0.70,    # Higher exploitation (exploitation_strength 0.7)
+                'personality_influence': 0.05,  # Medium personality influence
+                'expected_win_rate': 0.55,  # Target 50-60% AI win rate
                 'computational_complexity': 'medium'
             },
             
             Difficulty.MASTER: {
-                'markov_order': 3,
-                'smoothing_factor': 0.5,
-                'ensemble_weights': {1: 0.1, 2: 0.3, 3: 0.6},
-                'lambda_influence': 0.15,
-                'bias_weights': {'RA': 0.24, 'WSLS': 0.30, 'ALT': 0.16, 'CYC': 0.24, 'META': 0.06},
-                'bias_params': {
-                    'RA': {'rho': 0.02},
-                    'WSLS': {'delta_WS': 0.03, 'delta_LS': 0.02, 'delta_T': 0.01},
-                    'ALT': {'delta_ALT': 0.02},
-                    'CYC': {'delta_CYC': 0.02},
-                    'META': {'delta_META': 0.01}
-                },
-                'epsilon': 0.08,
-                'gamma': 0.90,
-                'expected_win_rate': 0.65,
+                # MASTER_PARAMS from enhancement plan: markov_orders [1,2,3,5,7,10], exploitation_strength 0.9, randomness_factor 0.1
+                'markov_order': 10,  # Highest order for ensemble
+                'smoothing_factor': 0.3,  # Lower smoothing = aggressive exploitation
+                'ensemble_weights': {1: 0.05, 2: 0.15, 3: 0.25, 5: 0.25, 7: 0.15, 10: 0.15},  # Long-term patterns [1,2,3,5,7,10]
+                'pattern_memory_limit': 50,  # Remember last 50 moves
+                'pattern_detection_speed': 1.0,  # Fast adaptation ('fast' adaptation_speed)
+                'epsilon': 0.10,   # 10% randomness (randomness_factor 0.1)
+                'gamma': 0.90,     # High exploitation (exploitation_strength 0.9)
+                'personality_influence': 0.02,  # Minimal personality influence for consistency
+                'expected_win_rate': 0.75,  # Target 70-80% AI win rate
                 'computational_complexity': 'high'
             }
         }
         
-        # Strategy adjustments
+        # Strategy adjustments - ONLY affect decision-making logic, not probabilities
         self.strategy_adjustments = {
             Strategy.TO_WIN: {
-                'alpha': 0.95,
-                'epsilon_multiplier': 1.2,  # More exploration
-                'gamma_multiplier': 1.1,    # Slightly more exploitation
-                'lambda_multiplier': 0.9,   # Less psychological bias
+                'alpha': 0.95,  # Strongly favor aggressive win-seeking behavior
+                'epsilon_multiplier': 1.2,  # Slightly more exploration when seeking wins
+                'gamma_multiplier': 1.1,    # Slightly more exploitation when confident
                 'description_suffix': 'Aggressive play, seeks wins'
             },
             Strategy.NOT_TO_LOSE: {
-                'alpha': 0.05,
-                'epsilon_multiplier': 0.8,  # Less exploration
-                'gamma_multiplier': 0.9,    # Less exploitation
-                'lambda_multiplier': 1.1,   # More psychological bias
+                'alpha': 0.05,  # Strongly favor conservative behavior
+                'epsilon_multiplier': 0.8,  # Less exploration (more predictable)
+                'gamma_multiplier': 0.9,    # Less exploitation (more cautious)
                 'description_suffix': 'Conservative play, avoids losses'
             }
         }
         
-        # Personality adjustments
+        # Personality adjustments - ONLY marginal probability adjustments
+        # No longer affects strategy parameters (alpha, epsilon, gamma)
         self.personality_adjustments = {
             Personality.NEUTRAL: {
-                'delta_alpha': 0.0,
-                'delta_epsilon': 0.0,
-                'delta_gamma': 0.0,
-                'delta_lambda': 0.0,
+                'influence_multiplier': 1.0,
                 'description': 'Balanced, no specific bias'
             },
             Personality.AGGRESSIVE: {
-                'delta_alpha': 0.05,
-                'delta_epsilon': 0.05,
-                'delta_gamma': 0.1,
-                'delta_lambda': -0.05,
+                'influence_multiplier': 1.2,  # Slightly more personality influence
                 'description': 'High-risk, high-reward approach'
             },
             Personality.DEFENSIVE: {
-                'delta_alpha': -0.1,
-                'delta_epsilon': -0.05,
-                'delta_gamma': -0.05,
-                'delta_lambda': 0.05,
+                'influence_multiplier': 0.8,  # Less personality influence (more methodical)
                 'description': 'Risk-averse, conservative play'
             },
             Personality.UNPREDICTABLE: {
-                'delta_alpha': 0.0,
-                'delta_epsilon': 0.15,
-                'delta_gamma': -0.1,
-                'delta_lambda': 0.1,
+                'influence_multiplier': 1.5,  # More personality influence (more erratic)
                 'description': 'Erratic, hard to predict'
             },
             Personality.CAUTIOUS: {
-                'delta_alpha': -0.05,
-                'delta_epsilon': -0.1,
-                'delta_gamma': 0.05,
-                'delta_lambda': 0.03,
+                'influence_multiplier': 0.6,  # Minimal personality influence
                 'description': 'Careful, methodical approach'
             },
             Personality.CONFIDENT: {
-                'delta_alpha': 0.03,
-                'delta_epsilon': 0.02,
-                'delta_gamma': 0.08,
-                'delta_lambda': -0.03,
+                'influence_multiplier': 1.1,  # Slightly more influence
                 'description': 'Bold, assertive play style'
             },
             Personality.CHAMELEON: {
-                'delta_alpha': 0.0,
-                'delta_epsilon': 0.03,
-                'delta_gamma': 0.02,
-                'delta_lambda': 0.08,
+                'influence_multiplier': 0.5,  # Minimal influence (adaptive)
                 'description': 'Adaptive, mirrors human patterns'
             }
         }
@@ -282,60 +263,26 @@ class ParameterSynthesisEngine:
                         personality: Personality) -> OpponentParameters:
         """Create a single opponent with specified characteristics."""
         
-        # Start with difficulty preset
-        base_params = self.difficulty_presets[difficulty].copy()
+        # Get base difficulty parameters
+        base_params = self.difficulty_presets[difficulty]
+        
+        # Calculate pattern detection speed from difficulty
+        pattern_detection_speed = base_params['pattern_detection_speed']
         
         # Apply strategy adjustments
         strategy_adj = self.strategy_adjustments[strategy]
         alpha = strategy_adj['alpha']
         epsilon = base_params['epsilon'] * strategy_adj['epsilon_multiplier']
         gamma = base_params['gamma'] * strategy_adj['gamma_multiplier']
-        lambda_influence = base_params['lambda_influence'] * strategy_adj['lambda_multiplier']
         
-        # Apply personality adjustments
+        # Get personality influence
         personality_adj = self.personality_adjustments[personality]
-        alpha += personality_adj['delta_alpha']
-        epsilon += personality_adj['delta_epsilon']
-        gamma += personality_adj['delta_gamma']
-        lambda_influence += personality_adj['delta_lambda']
-        
-        # Apply personality adjustments to bias parameters
-        adjusted_bias_params = {}
-        for bias_type, params in base_params['bias_params'].items():
-            adjusted_bias_params[bias_type] = {}
-            for param_name, param_value in params.items():
-                # Apply personality scaling to bias parameters
-                scale_factor = 1.0
-                
-                if personality == Personality.AGGRESSIVE:
-                    # Aggressive personalities have stronger biases
-                    scale_factor = 1.2
-                elif personality == Personality.DEFENSIVE:
-                    # Defensive personalities have weaker biases
-                    scale_factor = 0.8
-                elif personality == Personality.UNPREDICTABLE:
-                    # Unpredictable personalities have random bias scaling
-                    scale_factor = np.random.uniform(0.7, 1.5)
-                elif personality == Personality.CAUTIOUS:
-                    # Cautious personalities have slightly weaker biases
-                    scale_factor = 0.9
-                elif personality == Personality.CONFIDENT:
-                    # Confident personalities have slightly stronger biases
-                    scale_factor = 1.1
-                elif personality == Personality.CHAMELEON:
-                    # Chameleon personalities adapt - stronger meta and wsls biases
-                    if bias_type in ['META', 'WSLS']:
-                        scale_factor = 1.3
-                    else:
-                        scale_factor = 0.9
-                        
-                adjusted_bias_params[bias_type][param_name] = param_value * scale_factor
+        personality_influence = personality_adj['influence_multiplier']
         
         # Clamp values to valid ranges
         alpha = np.clip(alpha, 0.1, 0.9)
         epsilon = np.clip(epsilon, 0.05, 0.4)
         gamma = np.clip(gamma, 0.5, 0.95)
-        lambda_influence = np.clip(lambda_influence, 0.10, 0.45)
         
         # Create opponent ID
         opponent_id = f"{difficulty.value}_{strategy.value}_{personality.value}"
@@ -365,9 +312,9 @@ class ParameterSynthesisEngine:
             markov_order=base_params['markov_order'],
             smoothing_factor=base_params['smoothing_factor'],
             ensemble_weights=base_params['ensemble_weights'].copy(),
-            lambda_influence=lambda_influence,
-            bias_weights=base_params['bias_weights'].copy(),
-            bias_params=adjusted_bias_params,  # Use personality-adjusted bias parameters
+            pattern_memory_limit=base_params['pattern_memory_limit'],
+            pattern_detection_speed=pattern_detection_speed,
+            personality_influence=personality_influence,
             alpha=alpha,
             epsilon=epsilon,
             gamma=gamma,
@@ -437,7 +384,8 @@ class ParameterSynthesisEngine:
             
         # Calculate statistics
         win_rates = [opp.expected_win_rate for opp in self.opponents.values()]
-        lambda_values = [opp.lambda_influence for opp in self.opponents.values()]
+        pattern_speeds = [opp.pattern_detection_speed for opp in self.opponents.values()]
+        personality_influences = [opp.personality_influence for opp in self.opponents.values()]
         
         return {
             'total_opponents': total_opponents,
@@ -446,9 +394,11 @@ class ParameterSynthesisEngine:
             'by_strategy': {strat: len(opps) for strat, opps in by_strategy.items()},
             'by_personality': {pers: len(opps) for pers, opps in by_personality.items()},
             'win_rate_range': (min(win_rates), max(win_rates)),
-            'lambda_range': (min(lambda_values), max(lambda_values)),
+            'pattern_speed_range': (min(pattern_speeds), max(pattern_speeds)),
+            'personality_influence_range': (min(personality_influences), max(personality_influences)),
             'avg_win_rate': np.mean(win_rates),
-            'avg_lambda': np.mean(lambda_values)
+            'avg_pattern_speed': np.mean(pattern_speeds),
+            'avg_personality_influence': np.mean(personality_influences)
         }
         
     def save_opponents(self, filepath: str) -> None:
@@ -500,7 +450,8 @@ def test_pse():
     print(f"By strategy: {stats['by_strategy']}")
     print(f"By personality: {stats['by_personality']}")
     print(f"Win rate range: {stats['win_rate_range']}")
-    print(f"Lambda range: {stats['lambda_range']}")
+    print(f"Pattern speed range: {stats['pattern_speed_range']}")
+    print(f"Personality influence range: {stats['personality_influence_range']}")
     
     # Test specific opponent
     opponent = pse.get_opponent('challenger', 'to_win', 'aggressive')
@@ -508,7 +459,8 @@ def test_pse():
         print(f"\nSample opponent: {opponent.opponent_id}")
         print(f"Description: {opponent.description}")
         print(f"Alpha: {opponent.alpha}")
-        print(f"Lambda: {opponent.lambda_influence}")
+        print(f"Pattern Detection Speed: {opponent.pattern_detection_speed}")
+        print(f"Personality Influence: {opponent.personality_influence}")
         print(f"Expected win rate: {opponent.expected_win_rate}")
     
     # Test filtering

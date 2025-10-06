@@ -22,14 +22,14 @@ except ImportError as e:
     SBC_BACKEND_AVAILABLE = False
     print(f"⚠️ SBC Backend not available: {e}")
 
-# Import the new 42-opponent RPS AI system
+# Import the adaptive RPS AI system
 try:
     from rps_ai_system import get_ai_system, initialize_ai_system
     RPS_AI_SYSTEM_AVAILABLE = True
-    print("✅ 42-Opponent RPS AI System available")
+    print("✅ Adaptive RPS AI system available")
 except ImportError as e:
     RPS_AI_SYSTEM_AVAILABLE = False
-    print(f"⚠️ 42-Opponent RPS AI System not available: {e}")
+    print(f"⚠️ Adaptive RPS AI system not available: {e}")
 
 # Import Developer Console
 try:
@@ -52,9 +52,9 @@ except ImportError as e:
     PERFORMANCE_OPTIMIZER_AVAILABLE = False
     print(f"⚠️ Performance Optimizer not available: {e}")
 
-# LSTM functionality replaced by 42-opponent system
+# LSTM functionality replaced by adaptive system
 LSTM_AVAILABLE = False
-print("ℹ️ LSTM replaced by 42-opponent system")
+print("ℹ️ LSTM replaced by adaptive system")
 
 # AI Coach functionality - Currently under development
 # Coach View frontend is available, but backend AI Coach features are being redesigned
@@ -70,7 +70,7 @@ markov_strategy = MarkovStrategy()
 to_win_strategy = ToWinStrategy()
 not_to_lose_strategy = NotToLoseStrategy()
 
-# LSTM predictor is replaced by 42-opponent system
+# LSTM predictor is replaced by adaptive system
 lstm_predictor = None
 
 # Initialize advanced personality engine
@@ -407,10 +407,10 @@ def play():
         return jsonify({'error': 'Invalid move'}), 400
 
     import random
-    # New 42-Opponent AI System
+    # Adaptive AI System
     def robot_strategy(history, difficulty, strategy_preference='to_win', personality='neutral'):
         """
-        Updated robot strategy using the new 42-opponent Markov+HLBM system.
+        Updated robot strategy using the adaptive opponent engine.
         """
         start_time = time.time()
         
@@ -446,88 +446,22 @@ def play():
                     return ai_move, confidence, confidence
                     
             except Exception as e:
-                print(f"Error using 42-opponent system: {e}")
+                print(f"Error using adaptive system: {e}")
                 # Fall through to legacy system
         
-        # Fallback to legacy system for backwards compatibility
-        print(f"Using legacy system for {difficulty}/{strategy_preference}/{personality}")
-        
-        # Legacy system logic (simplified version)
-        predicted = None
-        confidence = 0.33
-        base_move = None
-        
-        if difficulty == 'rookie':
-            # Simple random with slight bias
-            if len(history) >= 3:
-                # Slightly favor most recent pattern
-                last_move = history[-1]
-                if random.random() < 0.6:  # 60% chance to counter last move
-                    counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
-                    base_move = counter.get(last_move, random.choice(MOVES))
-                    confidence = 0.35
-                else:
-                    base_move = random.choice(MOVES)
-                    confidence = 0.15
-            else:
-                base_move = random.choice(MOVES)
-                confidence = 0.15
-                
-        elif difficulty == 'challenger':
-            # Use legacy markov strategy
-            if len(history) >= 3:
-                markov_strategy.train(history)
-                predicted_counter = markov_strategy.predict(history)
-                if isinstance(predicted_counter, tuple):
-                    predicted_counter = predicted_counter[0]  # Extract move from tuple
-                reverse_counter = {'scissors': 'paper', 'rock': 'scissors', 'paper': 'rock'}
-                predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
-                counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
-                base_move = counter.get(predicted, random.choice(MOVES))
-                confidence = 0.55
-            else:
-                base_move = random.choice(MOVES)
-                confidence = 0.33
-                
-        elif difficulty == 'master':
-            # Use advanced strategy with 42-opponent system (LSTM replaced)
-            if len(history) >= 3:
-                markov_strategy.train(history)
-                predicted_counter = markov_strategy.predict(history)
-                if isinstance(predicted_counter, tuple):
-                    predicted_counter = predicted_counter[0]
-                reverse_counter = {'scissors': 'paper', 'rock': 'scissors', 'paper': 'rock'}
-                predicted = reverse_counter.get(predicted_counter, random.choice(MOVES))
-                counter = {'paper': 'scissors', 'scissors': 'rock', 'rock': 'paper'}
-                base_move = counter.get(predicted, random.choice(MOVES))
-                confidence = 0.75  # Higher confidence for master level
-            else:
-                base_move = random.choice(MOVES)
-                confidence = 0.33
-        else:
-            # Unknown difficulty - default to random
-            base_move = random.choice(MOVES)
-            confidence = 0.33
-        
-        # Apply simple personality modifiers for legacy compatibility
-        if personality == 'aggressive':
-            confidence = min(0.95, confidence * 1.2)
-        elif personality == 'defensive':
-            confidence = max(0.15, confidence * 0.8)
-        elif personality == 'unpredictable':
-            if random.random() < 0.3:
-                base_move = random.choice(MOVES)
-                confidence = 0.15
-        
-        # Track inference time
+        # Fallback to a lightweight random policy if the adaptive engine is unavailable
+        fallback_move = random.choice(MOVES)
+        fallback_confidence = 0.2
+
         inference_duration = time.time() - start_time
         if DEVELOPER_CONSOLE_AVAILABLE:
             try:
                 track_inference(f'legacy_{difficulty}', inference_duration)
-            except:
-                pass  # Silently fail if track_inference is not available
-        
-        return base_move, confidence, confidence
+            except Exception:
+                pass
+
+        return fallback_move, fallback_confidence, fallback_confidence
+
 
     results = []
     robot_move, confidence, personality_modified_confidence = robot_strategy(
@@ -564,7 +498,7 @@ def play():
         markov_pred = reverse_counter.get(markov_robot_move, random.choice(MOVES))
         game_state['model_predictions_history']['markov'].append(markov_pred)
         
-        # LSTM prediction - replaced by 42-opponent system
+        # LSTM prediction - replaced by adaptive system
         game_state['model_predictions_history']['lstm'].append(random.choice(MOVES))
         
         # Track confidence values for each model - Fixed to use model-specific confidence
@@ -599,7 +533,7 @@ def play():
         
         game_state['model_confidence_history']['markov'].append(markov_confidence)
         
-        # LSTM confidence - replaced by 42-opponent system
+        # LSTM confidence - replaced by adaptive system
         game_state['model_confidence_history']['lstm'].append(0.0)
         
         game_state['model_confidence_history']['to_win'].append(to_win_strategy.get_confidence())
@@ -647,7 +581,7 @@ def play():
         game_state['round_history'].append({'round': game_state['round']+1, 'human': move, 'robot': robot_move})
         game_state['round'] += 1
         
-        # Update the new 42-opponent AI system with the result
+        # Update the adaptive AI system with the result
         if RPS_AI_SYSTEM_AVAILABLE:
             try:
                 update_ai_with_result(move, robot_move)
@@ -1044,7 +978,7 @@ def reset():
     # Reset change detector
     change_detector.reset()
     
-    # Reset the 42-opponent AI system
+    # Reset the adaptive AI system
     if RPS_AI_SYSTEM_AVAILABLE:
         try:
             reset_ai_system()

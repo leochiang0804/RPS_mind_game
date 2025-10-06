@@ -3,9 +3,25 @@ Markov Predictor System for RPS AI
 ==================================
 
 Implements Markov chain predictors of orders 1-3 with proper smoothing and count tracking.
-This replaces the LSTM-based prediction system with a systematic approach.
-
-Features:
+This replaces the LSTM-based prediction system with a syst        # NEW: Check for frequency bias first (most reliable pattern)
+        freq_strength = self._detect_frequency_bias(history)
+        if freq_strength > config['frequency_bias']:
+            return self._counter_frequency_bias(history, config['exploitation_strength'])
+        
+        # Check for alternating patterns (length 2)
+        pattern_strength = self._detect_alternating_pattern(history)
+        if pattern_strength > config['alternating']:
+            return self._counter_alternating_pattern(history, config['exploitation_strength'])
+        
+        # Check for single move repetition
+        single_strength = self._detect_single_move_pattern(history)
+        if single_strength > config['single_move']:
+            return self._counter_single_move_pattern(history, config['exploitation_strength'])
+        
+        # Check for cycle patterns (length 3+)
+        cycle_strength = self._detect_cycle_pattern(history)
+        if cycle_strength > config['cycle']:
+            return self._counter_cycle_pattern(history, config['exploitation_strength'])eatures:
 - Multi-order Markov chains (1st, 2nd, 3rd order)
 - Laplace smoothing for unseen sequences
 - Count tracking for statistical confidence
@@ -16,7 +32,7 @@ Created: 2025-10-03
 """
 
 import numpy as np
-from collections import defaultdict, Counter
+from collections import defaultdict, Counter, deque
 from typing import List, Dict, Tuple, Optional, Union
 import json
 from move_mapping import (
@@ -32,19 +48,25 @@ class MarkovPredictor:
     Supports orders 1-3 with Laplace smoothing and count tracking.
     """
     
-    def __init__(self, order: int = 2, smoothing_factor: float = 1.0):
+    def __init__(self, order: int = 2, smoothing_factor: float = 1.0, pattern_memory_limit: Optional[int] = None, pattern_detection_speed: float = 1.0):
         """
         Initialize Markov predictor.
         
         Args:
             order: Markov order (1, 2, or 3)
             smoothing_factor: Laplace smoothing parameter (default 1.0)
+            pattern_memory_limit: Maximum moves to remember (15/25/50 for rookie/challenger/master)
+            pattern_detection_speed: Speed of pattern detection (0.5=slow, 1.0=normal, 2.0=fast)
         """
-        if order not in [1, 2, 3]:
-            raise ValueError(f"Order must be 1, 2, or 3. Got {order}")
+        if order < 1:
+            raise ValueError(f"Order must be >= 1. Got {order}")
+        if order > 20:  # Reasonable upper limit to prevent memory issues
+            raise ValueError(f"Order must be <= 20. Got {order}")
             
         self.order = order
         self.smoothing_factor = smoothing_factor
+        self.pattern_memory_limit = pattern_memory_limit
+        self.pattern_detection_speed = pattern_detection_speed
         
         # Transition counts: state -> {next_move: count}
         self.transition_counts = defaultdict(lambda: defaultdict(int))
@@ -52,8 +74,11 @@ class MarkovPredictor:
         # Total observations for each state
         self.state_counts = defaultdict(int)
         
-        # Move history for building states
-        self.move_history = []
+        # Move history for building states - with memory limit based on difficulty
+        if pattern_memory_limit:
+            self.move_history = deque(maxlen=pattern_memory_limit)
+        else:
+            self.move_history = []
         
         # Statistics
         self.total_predictions = 0
@@ -79,13 +104,20 @@ class MarkovPredictor:
         
         # Update transition counts if we have enough history
         if len(self.move_history) > self.order:
-            # Get the state (previous 'order' moves)
-            state = tuple(self.move_history[-(self.order+1):-1])
-            next_move = self.move_history[-1]
+            # Get the state (previous 'order' moves) - handle both deque and list
+            if isinstance(self.move_history, deque):
+                history_list = list(self.move_history)
+                state = tuple(history_list[-(self.order+1):-1])
+                next_move = history_list[-1]
+            else:
+                state = tuple(self.move_history[-(self.order+1):-1])
+                next_move = self.move_history[-1]
             
-            # Update counts
-            self.transition_counts[state][next_move] += 1
-            self.state_counts[state] += 1
+            # Update counts with pattern detection speed multiplier
+            # Higher speed = faster learning, lower speed = slower learning
+            count_increment = max(1, int(self.pattern_detection_speed))
+            self.transition_counts[state][next_move] += count_increment
+            self.state_counts[state] += count_increment
     
     def predict(self, move_history: Optional[List[Union[str, int]]] = None, difficulty_level: str = 'challenger') -> Tuple[np.ndarray, Dict]:
         """
@@ -108,7 +140,11 @@ class MarkovPredictor:
                     move = number_to_move(move)
                 history.append(normalize_move(move))
         else:
-            history = self.move_history.copy()
+            # Convert internal history to list for consistent handling
+            if isinstance(self.move_history, deque):
+                history = list(self.move_history)
+            else:
+                history = self.move_history.copy()
             
         # Check if we have enough history
         if len(history) < self.order:
@@ -161,7 +197,7 @@ class MarkovPredictor:
     
     def _detect_and_counter_patterns(self, history: List[str], difficulty_level: str = 'medium') -> Optional[Tuple[np.ndarray, Dict]]:
         """
-        Detect and counter repetitive patterns in move history with difficulty-scaled thresholds.
+        Enhanced pattern detection and counter-exploitation with difficulty-scaled thresholds.
         
         Args:
             history: List of normalized move strings
@@ -173,25 +209,31 @@ class MarkovPredictor:
         if len(history) < 4:
             return None
         
-        # Difficulty-scaled detection thresholds
+        # REBALANCED difficulty-scaled detection thresholds
         thresholds = {
             'rookie': {
-                'alternating': 0.9,   # Very hard to detect = very exploitable
-                'single_move': 0.95,  # Very hard to detect
-                'cycle': 0.9,         # Very hard to detect  
-                'min_history': 8      # Need much more history
+                'alternating': 0.65,     # Moderate threshold = moderate detection
+                'single_move': 0.70,     # Moderate threshold = moderate detection  
+                'cycle': 0.65,           # Moderate threshold = moderate detection
+                'frequency_bias': 0.55,  # Moderate threshold = moderate detection
+                'min_history': 7,        # Moderate history needed
+                'exploitation_strength': 0.65  # Moderate exploitation
             },
             'challenger': {
-                'alternating': 0.75,  # Medium-high threshold 
-                'single_move': 0.85,  # Medium-high threshold
-                'cycle': 0.75,        # Medium-high threshold
-                'min_history': 5      # Moderate history needed
+                'alternating': 0.45,     # Good detection
+                'single_move': 0.55,     # Good detection
+                'cycle': 0.45,           # Good detection
+                'frequency_bias': 0.40,  # Good detection
+                'min_history': 5,        # Moderate history needed
+                'exploitation_strength': 0.80  # Strong exploitation
             },
             'master': {
-                'alternating': 0.55,  # Very easy to detect = very hard to exploit
-                'single_move': 0.6,   # Very sensitive detection
-                'cycle': 0.55,        # Very sensitive detection
-                'min_history': 3      # Very quick detection
+                'alternating': 0.35,     # Aggressive detection
+                'single_move': 0.45,     # Aggressive detection
+                'cycle': 0.35,           # Aggressive detection  
+                'frequency_bias': 0.30,  # Aggressive detection
+                'min_history': 4,        # Quick detection
+                'exploitation_strength': 0.95  # Very strong exploitation
             }
         }
         
@@ -201,6 +243,11 @@ class MarkovPredictor:
         # Check minimum history requirement
         if len(history) < config['min_history']:
             return None
+        
+        # NEW: Check for frequency bias first (most reliable pattern)
+        freq_strength = self._detect_frequency_bias(history)
+        if freq_strength > config['frequency_bias']:
+            return self._counter_frequency_bias(history)
         
         # Check for alternating patterns (length 2)
         pattern_strength = self._detect_alternating_pattern(history)
@@ -212,13 +259,82 @@ class MarkovPredictor:
         if single_move_strength > config['single_move']:
             return self._counter_single_move_pattern(history)
         
-        # Check for cycle patterns (length 3)
+        # Check for cycle patterns (length 3+)
         cycle_strength = self._detect_cycle_pattern(history)
         if cycle_strength > config['cycle']:
             return self._counter_cycle_pattern(history)
         
         return None
     
+    def _detect_frequency_bias(self, history: List[str], window_size: int = 12) -> float:
+        """
+        Detect frequency bias patterns more sensitively.
+        
+        Args:
+            history: List of move strings
+            window_size: Size of window to analyze (default 12)
+            
+        Returns:
+            Strength of frequency bias (0-1)
+        """
+        if len(history) < 6:
+            return 0.0
+        
+        # Use shorter window for more responsive detection
+        window = min(window_size, len(history))
+        recent = history[-window:]
+        
+        from collections import Counter
+        move_counts = Counter(recent)
+        total = len(recent)
+        
+        # Calculate the strongest bias
+        max_frequency = max(move_counts.values()) / total
+        
+        # Expected frequency is 1/3, so bias strength is deviation from uniform
+        expected_freq = 1/3
+        bias_strength = max(0, max_frequency - expected_freq) / (1 - expected_freq)
+        
+        return bias_strength
+    
+    def _counter_frequency_bias(self, history: List[str], exploitation_strength: float = 0.8) -> Tuple[np.ndarray, Dict]:
+        """Counter detected frequency bias pattern with difficulty-scaled exploitation."""
+        window_size = min(12, len(history))
+        recent = history[-window_size:]
+        
+        from collections import Counter
+        move_counts = Counter(recent)
+        most_common_move, count = move_counts.most_common(1)[0]
+        frequency = count / len(recent)
+        
+        # Counter the most frequent move with difficulty-scaled aggression
+        counter_move = self._get_counter_move(most_common_move)
+        
+        # Apply exploitation strength (rookie=0.6, challenger=0.8, master=1.0)
+        base_counter_prob = 0.33 + (0.6 * exploitation_strength)  # Range: 0.69-0.93
+        remaining_prob = 1.0 - base_counter_prob
+        other_prob = remaining_prob / 2
+        
+        probs = np.array([other_prob, other_prob, other_prob])
+        counter_idx = MOVES.index(counter_move)
+        probs[counter_idx] = base_counter_prob
+        
+        probs = probs / np.sum(probs)
+        
+        metadata = {
+            'method': 'pattern_counter_frequency_bias',
+            'pattern_detected': 'frequency_bias',
+            'biased_move': most_common_move,
+            'predicted_human_move': most_common_move,
+            'frequency': frequency,
+            'counter_move': counter_move,
+            'exploitation_strength': exploitation_strength,
+            'confidence': min(0.95, frequency * exploitation_strength),
+            'window_size': window_size
+        }
+        
+        return probs, metadata
+
     def _detect_alternating_pattern(self, history: List[str]) -> float:
         """Detect alternating patterns like rock-paper-rock-paper."""
         if len(history) < 4:
@@ -240,8 +356,8 @@ class MarkovPredictor:
         
         return alternations / total_checks if total_checks > 0 else 0.0
     
-    def _counter_alternating_pattern(self, history: List[str]) -> Tuple[np.ndarray, Dict]:
-        """Counter detected alternating pattern."""
+    def _counter_alternating_pattern(self, history: List[str], exploitation_strength: float = 0.8) -> Tuple[np.ndarray, Dict]:
+        """Counter detected alternating pattern with difficulty-scaled exploitation."""
         # Predict what the next move will be based on alternating pattern
         if len(history) >= 4:
             # For true alternating pattern like A-B-A-B, look at the cycle
@@ -266,12 +382,17 @@ class MarkovPredictor:
             # Not enough history, just predict different from last
             predicted_move = history[-1] if history else 'rock'
         
-        # Counter the predicted move strongly
+        # Counter the predicted move with difficulty-scaled strength
         counter_move = self._get_counter_move(predicted_move)
         
-        probs = np.array([0.1, 0.1, 0.1])  # Low base probability
+        # Apply exploitation strength (rookie=0.6, challenger=0.8, master=1.0)
+        base_counter_prob = 0.33 + (0.5 * exploitation_strength)  # Range: 0.63-0.83
+        remaining_prob = 1.0 - base_counter_prob
+        other_prob = remaining_prob / 2
+        
+        probs = np.array([other_prob, other_prob, other_prob])
         counter_idx = MOVES.index(counter_move)
-        probs[counter_idx] = 0.8  # High probability for counter move
+        probs[counter_idx] = base_counter_prob
         
         # Normalize
         probs = probs / np.sum(probs)
@@ -281,7 +402,8 @@ class MarkovPredictor:
             'pattern_detected': 'alternating',
             'predicted_human_move': predicted_move,
             'counter_move': counter_move,
-            'confidence': 0.85
+            'exploitation_strength': exploitation_strength,
+            'confidence': 0.80 * exploitation_strength  # Scale confidence with strength
         }
         
         return probs, metadata
@@ -300,17 +422,22 @@ class MarkovPredictor:
         
         return most_common_count / len(recent)
     
-    def _counter_single_move_pattern(self, history: List[str]) -> Tuple[np.ndarray, Dict]:
-        """Counter detected single move pattern."""
+    def _counter_single_move_pattern(self, history: List[str], exploitation_strength: float = 0.8) -> Tuple[np.ndarray, Dict]:
+        """Counter detected single move pattern with difficulty-scaled exploitation."""
         from collections import Counter
         recent = history[-6:] if len(history) >= 6 else history
         most_common_move = Counter(recent).most_common(1)[0][0]
         
         counter_move = self._get_counter_move(most_common_move)
         
-        probs = np.array([0.05, 0.05, 0.05])
+        # Apply exploitation strength (rookie=0.6, challenger=0.8, master=1.0)
+        base_counter_prob = 0.33 + (0.6 * exploitation_strength)  # Range: 0.69-0.93
+        remaining_prob = 1.0 - base_counter_prob
+        other_prob = remaining_prob / 2
+        
+        probs = np.array([other_prob, other_prob, other_prob])
         counter_idx = MOVES.index(counter_move)
-        probs[counter_idx] = 0.9
+        probs[counter_idx] = base_counter_prob
         
         probs = probs / np.sum(probs)
         
@@ -319,54 +446,111 @@ class MarkovPredictor:
             'pattern_detected': 'single_move_repetition',
             'predicted_human_move': most_common_move,
             'counter_move': counter_move,
-            'confidence': 0.9
+            'exploitation_strength': exploitation_strength,
+            'confidence': 0.85 * exploitation_strength
         }
         
         return probs, metadata
     
     def _detect_cycle_pattern(self, history: List[str]) -> float:
-        """Detect cycle patterns like rock-paper-scissors-rock-paper-scissors."""
+        """
+        Enhanced cycle detection for patterns like rock-paper-scissors-rock-paper-scissors
+        and other repeating sequences.
+        """
         if len(history) < 6:
             return 0.0
         
-        # Check for rock-paper-scissors cycle
-        rps_cycle = ['rock', 'paper', 'scissors']
-        recent = history[-9:] if len(history) >= 9 else history
+        max_strength = 0.0
         
-        # Count matches with RPS cycle pattern
-        matches = 0
-        checks = 0
+        # Check for cycles of different lengths (2-8)
+        for cycle_length in range(2, min(9, len(history) // 2 + 1)):
+            strength = self._detect_cycle_of_length(history, cycle_length)
+            max_strength = max(max_strength, strength)
         
-        for i in range(len(recent)):
-            expected = rps_cycle[i % 3]
-            if recent[i] == expected:
-                matches += 1
-            checks += 1
-        
-        return matches / checks if checks > 0 else 0.0
+        return max_strength
     
-    def _counter_cycle_pattern(self, history: List[str]) -> Tuple[np.ndarray, Dict]:
-        """Counter detected cycle pattern."""
-        rps_cycle = ['rock', 'paper', 'scissors']
+    def _detect_cycle_of_length(self, history: List[str], cycle_length: int) -> float:
+        """Detect cycle of specific length."""
+        if len(history) < cycle_length * 2:
+            return 0.0
         
-        # Predict next move in cycle
-        cycle_position = len(history) % 3
-        predicted_move = rps_cycle[cycle_position]
+        # Look at recent history for cycles
+        max_check_length = min(cycle_length * 4, len(history))
+        recent = history[-max_check_length:]
+        
+        if len(recent) < cycle_length * 2:
+            return 0.0
+        
+        # Extract the potential cycle pattern
+        pattern = recent[:cycle_length]
+        
+        # Count how many times this pattern repeats
+        matches = 0
+        total_checks = 0
+        
+        for i in range(cycle_length, len(recent), cycle_length):
+            if i + cycle_length <= len(recent):
+                segment = recent[i:i + cycle_length]
+                if segment == pattern:
+                    matches += 1
+                total_checks += 1
+        
+        if total_checks == 0:
+            return 0.0
+            
+        return matches / total_checks
+    
+    def _counter_cycle_pattern(self, history: List[str], exploitation_strength: float = 0.8) -> Tuple[np.ndarray, Dict]:
+        """Enhanced counter for detected cycle patterns with difficulty-scaled exploitation."""
+        
+        best_cycle = None
+        best_strength = 0.0
+        best_length = 0
+        
+        # Find the strongest cycle
+        for cycle_length in range(2, min(9, len(history) // 2 + 1)):
+            strength = self._detect_cycle_of_length(history, cycle_length)
+            if strength > best_strength:
+                best_strength = strength
+                best_length = cycle_length
+                # Extract the cycle pattern
+                max_check_length = min(cycle_length * 4, len(history))
+                recent = history[-max_check_length:]
+                best_cycle = recent[:cycle_length]
+        
+        if best_cycle is None:
+            # Fallback to simple RPS cycle
+            rps_cycle = ['rock', 'paper', 'scissors']
+            cycle_position = len(history) % 3
+            predicted_move = rps_cycle[cycle_position]
+        else:
+            # Predict next move in detected cycle
+            position_in_cycle = len(history) % best_length
+            predicted_move = best_cycle[position_in_cycle]
         
         counter_move = self._get_counter_move(predicted_move)
         
-        probs = np.array([0.1, 0.1, 0.1])
+        # Apply exploitation strength (rookie=0.6, challenger=0.8, master=1.0)
+        base_counter_prob = 0.33 + (0.45 * exploitation_strength)  # Range: 0.60-0.78
+        remaining_prob = 1.0 - base_counter_prob
+        other_prob = remaining_prob / 2
+        
+        probs = np.array([other_prob, other_prob, other_prob])
         counter_idx = MOVES.index(counter_move)
-        probs[counter_idx] = 0.8
+        probs[counter_idx] = base_counter_prob
         
         probs = probs / np.sum(probs)
         
         metadata = {
-            'method': 'pattern_counter_cycle',
-            'pattern_detected': 'rps_cycle',
+            'method': 'pattern_counter_cycle_enhanced',
+            'pattern_detected': 'cycle_pattern',
+            'cycle_pattern': best_cycle if best_cycle else ['rock', 'paper', 'scissors'],
+            'cycle_length': best_length if best_cycle else 3,
+            'cycle_strength': best_strength,
             'predicted_human_move': predicted_move,
             'counter_move': counter_move,
-            'confidence': 0.8
+            'exploitation_strength': exploitation_strength,
+            'confidence': min(0.9, (best_strength + 0.2) * exploitation_strength)
         }
         
         return probs, metadata
@@ -486,7 +670,7 @@ class EnsembleMarkovPredictor:
     with adaptive weighting based on confidence.
     """
     
-    def __init__(self, orders: List[int] = [1, 2, 3], smoothing_factor: float = 1.0, ensemble_weights: Optional[Dict[int, float]] = None):
+    def __init__(self, orders: List[int] = [1, 2, 3], smoothing_factor: float = 1.0, ensemble_weights: Optional[Dict[int, float]] = None, pattern_memory_limit: Optional[int] = None, pattern_detection_speed: float = 1.0):
         """
         Initialize ensemble predictor.
         
@@ -494,13 +678,17 @@ class EnsembleMarkovPredictor:
             orders: List of Markov orders to include
             smoothing_factor: Laplace smoothing parameter
             ensemble_weights: Fixed weights for each order {order: weight}. If None, uses adaptive weighting.
+            pattern_memory_limit: Maximum moves to remember (15/25/50 for rookie/challenger/master)
+            pattern_detection_speed: Speed of pattern detection (0.5=slow, 1.0=normal, 2.0=fast)
         """
         self.predictors = {}
         for order in orders:
-            self.predictors[order] = MarkovPredictor(order, smoothing_factor)
+            self.predictors[order] = MarkovPredictor(order, smoothing_factor, pattern_memory_limit, pattern_detection_speed)
             
         self.orders = orders
         self.ensemble_weights = ensemble_weights
+        self.pattern_memory_limit = pattern_memory_limit
+        self.pattern_detection_speed = pattern_detection_speed
         
     def update(self, move: Union[str, int]) -> None:
         """Update all predictors with new move."""
