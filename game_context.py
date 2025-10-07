@@ -30,13 +30,23 @@ class GameContextConfig:
 _current_opponent_params = None
 _ai_system_metadata = {}
 
+_PERSONALITY_ALIAS_MAP = {
+    'aggressive': 'berserker',
+    'defensive': 'guardian',
+    'unpredictable': 'wildcard',
+    'cautious': 'professor',
+    'confident': 'mirror',
+    'chameleon': 'chameleon',
+    # Neutral intentionally omitted
+}
+
 
 def set_opponent_parameters(difficulty: str, strategy: str, personality: str) -> bool:
     """
     Set current opponent parameters for the adaptive opponent engine.
     
     Args:
-        difficulty: 'rookie', 'challenger', or 'master'
+        difficulty: 'rookie', 'challenger', 'master', or 'grandmaster'
         strategy: 'to_win' or 'not_to_lose'
         personality: 'neutral', 'aggressive', 'defensive', etc.
         
@@ -49,17 +59,28 @@ def set_opponent_parameters(difficulty: str, strategy: str, personality: str) ->
         # Import here to avoid circular imports
         from rps_ai_system import get_ai_system
         
-        # Initialize AI system with opponent
         ai_system = get_ai_system()
+
+        # Avoid resetting the opponent if configuration hasn't changed
+        if (
+            _current_opponent_params
+            and _current_opponent_params.get('difficulty') == difficulty
+            and _current_opponent_params.get('strategy') == strategy
+            and _current_opponent_params.get('personality') == personality
+        ):
+            return True
+
         success = ai_system.set_opponent(difficulty, strategy, personality)
         
         if success:
+            opponent_info = ai_system.get_opponent_info()
             _current_opponent_params = {
-                'difficulty': difficulty,
-                'strategy': strategy,
-                'personality': personality,
-                'opponent_info': ai_system.get_opponent_info(),
-                'set_time': time.time()
+                'difficulty': opponent_info.get('difficulty', difficulty),
+                'strategy': opponent_info.get('strategy', strategy),
+                'personality': opponent_info.get('personality', personality),
+                'opponent_info': opponent_info,
+                'set_time': time.time(),
+                'status': 'active',
             }
             
             _ai_system_metadata = {
@@ -67,6 +88,22 @@ def set_opponent_parameters(difficulty: str, strategy: str, personality: str) ->
                 'version': '2.0',
                 'last_reset': time.time()
             }
+
+            # Sync advanced personality engine (if available) with mapped name
+            try:
+                from personality_engine import get_personality_engine
+                personality_engine = get_personality_engine()
+                alias = _PERSONALITY_ALIAS_MAP.get(personality)
+                if alias:
+                    try:
+                        personality_engine.set_personality(alias)
+                    except ValueError as alias_error:
+                        print(f"Warning: personality alias '{alias}' unavailable ({alias_error})")
+                elif personality == 'neutral':
+                    # Reset to a neutral baseline by clearing current personality
+                    personality_engine.current_personality = None
+            except Exception as exc:
+                print(f"Warning: Unable to sync personality engine: {exc}")
             
         return success
         
@@ -265,7 +302,9 @@ class GameContextBuilder:
         score_differential = human_wins - robot_wins
 
         # AI confidence tracking
-        confidence_score_history = confidence_history or []
+        confidence_score_history = list(confidence_history or [])
+        if total_rounds and len(confidence_score_history) > total_rounds:
+            confidence_score_history = confidence_score_history[-total_rounds:]
         
         # Calculate confidence statistics
         if confidence_score_history:
@@ -280,7 +319,9 @@ class GameContextBuilder:
             avg_confidence_score = 33
 
         # Personality-modified confidence tracking
-        personality_modified_confidence_score_history = personality_modified_confidence_history or []
+        personality_modified_confidence_score_history = list(personality_modified_confidence_history or [])
+        if total_rounds and len(personality_modified_confidence_score_history) > total_rounds:
+            personality_modified_confidence_score_history = personality_modified_confidence_score_history[-total_rounds:]
         
         # Calculate personality-modified confidence statistics
         if personality_modified_confidence_score_history:
@@ -627,10 +668,11 @@ class GameContextBuilder:
         # Get personality traits from personality engine
         personality_traits = {}
         personality_name = session.get('personality', 'unknown')
-        if personality_name != 'unknown' and personality_name != 'neutral':
+        if personality_name not in ('unknown', 'neutral'):
             from personality_engine import get_personality_engine
             engine = get_personality_engine()
-            personality_info = engine.get_personality_info(personality_name)
+            alias = _PERSONALITY_ALIAS_MAP.get(personality_name, personality_name)
+            personality_info = engine.get_personality_info(alias)
             if personality_info and 'traits' in personality_info:
                 personality_traits = personality_info['traits']
         
@@ -638,10 +680,14 @@ class GameContextBuilder:
         opponent_info_42 = get_current_opponent_info()
         opponent_details = opponent_info_42.get('opponent_info', {})
         
+        ai_difficulty = opponent_details.get('difficulty', session.get('ai_difficulty', 'unknown'))
+        ai_strategy = opponent_details.get('strategy', session.get('strategy_preference', 'unknown'))
+        ai_personality = opponent_details.get('personality', personality_name)
+
         opponent_info = {
-            'ai_difficulty': session.get('ai_difficulty', 'unknown'),
-            'ai_strategy': session.get('strategy_preference', 'unknown'),
-            'ai_personality': personality_name,
+            'ai_difficulty': ai_difficulty,
+            'ai_strategy': ai_strategy,
+            'ai_personality': ai_personality,
             # Store as integer if possible
             'game_length': game_length_int,
             # Personality traits (7 core traits)

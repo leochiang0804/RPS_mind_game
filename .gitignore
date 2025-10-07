@@ -67,6 +67,7 @@ venv.bak/
 .DS_Store
 .AppleDouble
 .LSOverride
+DEVELOPER_README.md
 
 # Model Training Pipeline - Keep separate from main application
 model_training/

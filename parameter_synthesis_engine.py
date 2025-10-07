@@ -19,7 +19,7 @@ Generates 42 distinct AI opponents using systematic parameter            Difficu
                 'gamma': 0.80,              # Moderate exploitation focus
                 'expected_win_rate': 0.62,  # Increased for better challenge
                 'computational_complexity': 'medium'
-            } Difficulties: Rookie, Challenger, Master
+            } Difficulties: Rookie, Challenger, Master, Grandmaster
 - 2 Strategies: To-Win (α≈0.85), Not-to-Lose (α≈0.15)  
 - 7 Personalities: Neutral, Aggressive, Defensive, Unpredictable, Cautious, Confident, Chameleon
 
@@ -40,6 +40,7 @@ class Difficulty(Enum):
     ROOKIE = "rookie"
     CHALLENGER = "challenger"
     MASTER = "master"
+    GRANDMASTER = "grandmaster"
 
 
 class Strategy(Enum):
@@ -191,6 +192,20 @@ class ParameterSynthesisEngine:
                 'personality_influence': 0.02,  # Minimal personality influence for consistency
                 'expected_win_rate': 0.75,  # Target 70-80% AI win rate
                 'computational_complexity': 'high'
+            },
+            
+            Difficulty.GRANDMASTER: {
+                # GRANDMASTER: pairs adaptive Markovism with Enhanced ML ensemble guidance
+                'markov_order': 14,
+                'smoothing_factor': 0.18,
+                'ensemble_weights': {1: 0.04, 2: 0.1, 3: 0.18, 5: 0.2, 7: 0.16, 10: 0.16, 12: 0.08, 14: 0.08},
+                'pattern_memory_limit': 110,
+                'pattern_detection_speed': 1.35,
+                'epsilon': 0.05,
+                'gamma': 0.97,
+                'personality_influence': 0.01,
+                'expected_win_rate': 0.86,
+                'computational_complexity': 'very_high'
             }
         }
         

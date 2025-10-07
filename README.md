@@ -1,155 +1,99 @@
-# Paper-Scissor-Stone (Adaptive Opponent Edition)
+# Paper, Scissors & Strategy
 
-Paper-Scissor-Stone is an experiment in opponent modelling for the classic
-Rock–Paper–Scissors game. The project now centres on an **adaptive opponent
-engine** that separates difficulty, strategy, and personality so we can generate
-dozens of distinct AI behaviours, stress-test them against scripted human
-simulators, and monitor performance with reproducible reports.
+Welcome to the adaptive Rock–Paper–Scissors arena!  
+This project powers a web-based experience where you can battle a shape-shifting AI opponent that learns from your moves in real time. The focus of this public release is pure gameplay: pick a difficulty, choose a strategy flavour, add a personality twist, and try to outsmart the robot.
 
 ---
 
-## Highlights
+## Play The Game
 
-- **Adaptive AI core** – `rps_ai_system.py` blends an exponential-forgetting
-  human model, strategy-layer payoffs, and personality-specific risk/variance
-  shaping. Difficulties control pattern depth/speed, strategies weight win vs.
-  tie objectives, and personalities modulate how the AI acts on its read.
-- **Human move simulators** – `human_simulators.py` supplies four archetypes:
-  `random`, `realistic`, `strategic`, and `explorer`. Use them to test how the
-  AI responds to everyday, adaptive, or worst-case human play.
-- **Performance tester** – `opponent_performance_tester.py` sweeps every
-  difficulty/strategy/personality combination against each simulator, saves
-  detailed CSVs, produces box plots (with quartile annotations), and emits a
-  stats report (ANOVA + descriptive tables).
-- **Regression guardrails** – `tests/test_adaptive_ai.py` locks in baseline
-  behaviour using the embedded simulator so changes to the AI can be validated
-  quickly.
+| Item | Details |
+|------|---------|
+| **UI** | Single-page web app (Flask backend + rich frontend dashboard) |
+| **Modes** | Human vs AI (single-player) |
+| **Rounds** | 25 by default (configurable) |
+| **Controls** | Click the buttons or press `P` (paper), `R` (rock), `S` (scissors) once the match starts |
+| **Status Board** | Live win/tie counts, confidence gauges, personality banter, streak alerts |
 
----
+### Opponent Settings
 
-## Project Layout
+1. **Difficulty**  
+   - *Rookie* – forgiving, plenty of randomness.  
+   - *Challenger* – balanced learner with mid-tier pattern tracking.  
+   - *Master* – reacts fast to streaks and short patterns.  
+   - *Grandmaster* – uses a blended ML ensemble, punishes repetition, far less exploration.
 
-```
-├── README.md
-├── ARCHITECTURE.md          # Deep dive into the adaptive engine
-├── human_simulators.py      # Human move generators (random/realistic/etc.)
-├── opponent_performance_tester.py
-├── rps_ai_system.py         # Adaptive opponent implementation
-├── game_context.py          # Backend bridge for the Flask app
-├── webapp/                  # Flask UI and assets
-└── tests/                   # Pytest-based regression coverage
-```
+2. **Strategy**  
+   - *To Win* – picks the counter to the most likely human move and takes risks for victory.  
+   - *Not To Lose* – prioritises avoiding losses, aiming for safe wins or ties.
 
-Legacy modules (`parameter_synthesis_engine.py`, `markov_predictor.py`, etc.)
-remain in the tree for reference but are no longer used by the adaptive system.
+3. **Personality**  
+   Each personality re-shapes confidence and move choices. For example:  
+   - *Aggressive* (Berserker) sharpens counterattacks after your streaks.  
+   - *Defensive* (Guardian) prefers ties when you’re on a roll.  
+   - *Unpredictable* (Wildcard) injects volatility to keep you guessing.  
+   - *Cautious* (Professor) hunts deeper patterns methodically.  
+   - *Confident* (Mirror) mirrors your playstyle to beat you at your own game.  
+   - *Chameleon* adapts dynamically whenever performance dips.
+
+Start a new match any time with the **Reset** button. The AI retains no memory between games unless you opt into developer features (disabled in this public release).
 
 ---
 
-## Getting Started
+## Quick Start
 
-1. **Install dependencies**
-
+1. **Setup**
    ```bash
    python -m venv venv
-   source venv/bin/activate
+   source venv/bin/activate       # Windows: venv\Scripts\activate
    pip install -r requirements.txt
    ```
 
-2. **Run the web app**
-
+2. **Launch the web app**
    ```bash
    cd webapp
-   FLASK_APP=app.py flask run
+   flask --app app run
    ```
+   Visit `http://127.0.0.1:5000` in your browser.
 
-   The UI exposes difficulty/strategy/personality controls, live stats, and
-   developer tooling to inspect predictions.
-
-3. **Run the regression suite**
-
-   ```bash
-   pytest tests/test_adaptive_ai.py -q
-   ```
-
-   These tests ensure random play stays balanced, fast-switching humans still
-   beat aggressive opponents, and personality variance remains within expected
-   bounds. Use them whenever tuning difficulty/strategy presets.
+3. **Play**
+   - Choose difficulty, strategy, and personality.
+   - Hit **Start**, then click `Paper`, `Rock`, or `Scissors` or use the keyboard shortcuts.
+   - Watch the dashboard for AI confidence, win rates, streaks, and banter.
 
 ---
 
-## Simulation & Reporting Pipeline
+## What Makes The AI Tick?
 
-### Human simulators
-
-All simulators share a common interface:
-
-```python
-from human_simulators import SIMULATOR_REGISTRY
-sim_cls = SIMULATOR_REGISTRY['strategic']
-simulator = sim_cls(np.random.default_rng(123))
-```
-
-- **random** – uniformly samples moves.
-- **realistic** – emulates common human habits (rock bias, win-stay/lose-shift).
-- **strategic** – uses the AI’s human prediction to choose the least expected
-  move, with a mild win-stay tendency.
-- **explorer** – optimises expected payoff from the AI’s announced move
-  distribution (upper bound / worst case adversary).
-
-### Opponent tester
-
-Use `opponent_performance_tester.py` to sweep the opponent matrix:
-
-```bash
-python opponent_performance_tester.py \
-  --games 30 \
-  --rounds 90 \
-  --seed 20241109
-```
-
-Outputs are written to `simulation_results/adaptive_report_<timestamp>/`:
-
-- `game_results.csv` – per-game round counts and win/tie classification.
-- `summary_results.csv` – aggregated rates by simulator/difficulty/strategy/
-  personality.
-- `*_boxplots.png` – grouped box plots (human/robot/tie game win rates) with
-  Med/Q1/Q3 annotations.
-- `statistical_report.txt` – ANOVA tables (η² effect sizes) and descriptive
-  statistics for each factor.
-- `manifest.json` – paths to every generated artifact.
-
-Tip: the explorer simulator always wins game-level metrics because it receives
-perfect knowledge of the AI distribution each round. Adjust the simulator (or
-mask the AI metadata) if you need a bounded adversary for day-to-day tuning.
+- **Adaptive human model** – Tracks your move frequencies, multi-order patterns, and how recently you’ve switched tactics. Grandmaster blends in an ML ensemble for extra bite.
+- **Strategy layer** – Converts predictions into move scores. *To Win* goes for the jugular; *Not To Lose* hunts for safe results.  
+- **Personality layer** – Adds character. Aggression, risk tolerance, and confidence sensitivity all alter the final move and the tone of the banter.
+- **Anti-repeat guard** – Higher difficulties get stricter when you spam the same move.
+- **Developer-friendly instrumentation** – Simulations, analytics, and deeper docs live in the developer readme (see below).
 
 ---
 
-## Custom Experiments
+## Tips & Tricks
 
-- **Parameter tuning** – edit the difficulty/strategy/personality presets in
-  `rps_ai_system.py`, run `pytest`, then re-run the performance tester to compare
-  before/after reports.
-- **New simulators** – add a subclass in `human_simulators.py`, register it in
-  `SIMULATOR_REGISTRY`, and the tester will include it automatically.
-- **Frontend hooks** – expose `difficulty_notes`, `strategy_notes`, and
-  `personality_notes` (returned by `game_context.get_ai_prediction`) to display
-  richer opponent descriptions in the UI.
+- Try mixing your moves early. Grandmaster penalises streaks quickly once it spots them.  
+- Personalities can work for or against you. Playing against *Wildcard*? Expect chaos. Facing *Guardian*? Exploit its desire to tie.  
+- The dashboard’s “Recent Momentum” card highlights your 10-round bias. If you see “Paper 70 %”, so does the AI.  
+- Want a chill match? Stick with Rookie/Neutral/Not-To-Lose. Looking for pain? Grandmaster/To Win/Aggressive.
 
 ---
 
-## Roadmap Ideas
+## Advanced & Developer Resources
 
-- Introduce a "bounded explorer" that has incomplete information, to create a
-  more realistic yet challenging adversary.
-- Replace the legacy fallback logic in `webapp/app.py` with a lighter-weight
-  sampling policy or remove it entirely once the adaptive engine is stable for
-  deployment.
-- Automate nightly simulation runs and collect historical trends for each
-  opponent configuration.
+- **Developer documentation** lives in `DEVELOPER_README.md` (ignored by default, intended for contributors).  
+- **Simulation output** from the in-house test suite is stored under `simulation_results/`.  
+- **Tests** – Run `python - <<'PY'\nimport pytest\npytest.main(['tests/test_adaptive_ai.py','-q'])\nPY` to validate AI behaviour.
 
 ---
 
-## License
+## License & Contributions
 
-This project currently has no explicit license. Treat it as internal work in
-progress unless a license is added.
+This build is released for gameplay evaluation only. No license has been published yet; treat it as “look, don’t redeploy” until a formal license lands.
+
+Bug reports or gameplay feedback are welcome via GitHub issues once the repository is public. For substantial code changes, please consult the developer readme before opening pull requests.
+
+Have fun, and may your counters land on time! 🪨📄✂️

@@ -20,6 +20,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
+from ml_model_enhanced import EnhancedMLModel
 
 # ---------------------------------------------------------------------------
 # Move utilities
@@ -42,6 +43,7 @@ class Difficulty(Enum):
     ROOKIE = "rookie"
     CHALLENGER = "challenger"
     MASTER = "master"
+    GRANDMASTER = "grandmaster"
 
 
 class Strategy(Enum):
@@ -73,6 +75,8 @@ class DifficultySettings:
     memory_limit: int                # max history retained
     exploration_floor: float         # minimum randomness injected
     description: str
+    ml_weight: float = 0.0           # blending weight for EnhancedMLModel guidance
+    ml_params: Dict[str, Union[int, float]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -153,6 +157,20 @@ DIFFICULTY_CONFIGS: Dict[Difficulty, DifficultySettings] = {
         exploration_floor=0.06,
         description="High-speed adaptation, deep pattern tracking, minimal randomness.",
     ),
+    Difficulty.GRANDMASTER: DifficultySettings(
+        adaptation_rate=0.82,
+        pattern_weight=0.78,
+        pattern_orders=(1, 2, 3, 4, 5),
+        change_windows=(5, 36),
+        change_sensitivity=0.75,
+        memory_limit=128,
+        exploration_floor=0.02,
+        description=(
+            "Integrates deep pattern ensembles with ML guidance for relentless exploitation."
+        ),
+        ml_weight=0.5,
+        ml_params={"order": 4, "recency_weight": 0.88, "max_history": 220},
+    ),
 }
 
 # Strategy tuning: "to_win" pursues expected gain, "not_to_lose" dilutes losses.
@@ -202,11 +220,11 @@ PERSONALITY_CONFIGS: Dict[Personality, PersonalitySettings] = {
         description="Keeps distributions tight, maximises win+tie rate.",
     ),
     Personality.UNPREDICTABLE: PersonalitySettings(
-        temperature=1.55,
-        concentration=0.7,
+        temperature=1.65,
+        concentration=0.4,
         tie_bias=0.0,
         risk_shift=0.05,
-        volatility=0.12,
+        volatility=0.18,
         description="Injects volatility to spike win-rate variance.",
     ),
     Personality.CAUTIOUS: PersonalitySettings(
@@ -214,7 +232,7 @@ PERSONALITY_CONFIGS: Dict[Personality, PersonalitySettings] = {
         concentration=18.0,
         tie_bias=0.18,
         risk_shift=-0.08,
-        volatility=0.015,
+        volatility=0.01,
         description="Prefers low-volatility lines and incremental gains.",
     ),
     Personality.CONFIDENT: PersonalitySettings(
@@ -251,6 +269,18 @@ class AdaptiveHumanModel:
         self.markov_tables: Dict[int, Dict[Tuple[int, ...], np.ndarray]] = {
             order: {} for order in settings.pattern_orders
         }
+        self.enhanced_model: Optional[EnhancedMLModel] = None
+        self.enhanced_history: List[str] = []
+        if self.settings.ml_weight > 0.0:
+            params = dict(self.settings.ml_params)
+            order = int(params.get("order", 3))
+            recency_weight = float(params.get("recency_weight", 0.85))
+            max_history = int(params.get("max_history", 150))
+            self.enhanced_model = EnhancedMLModel(
+                order=order,
+                recency_weight=recency_weight,
+                max_history=max_history,
+            )
 
     def observe(self, human_move: str, ai_move: Optional[str]) -> None:
         """Update internal models with the latest round."""
@@ -280,14 +310,22 @@ class AdaptiveHumanModel:
         if len(self.ai_history) > self.settings.memory_limit:
             self.ai_history.pop(0)
 
+        if self.enhanced_model:
+            self.enhanced_history.append(human_move)
+            if len(self.enhanced_history) > self.enhanced_model.max_history:
+                self.enhanced_history = self.enhanced_history[-self.enhanced_model.max_history :]
+            self.enhanced_model.train(list(self.enhanced_history))
+
     def predict(
         self, history_override: Optional[Sequence[str]] = None
     ) -> Tuple[np.ndarray, Dict]:
         """Return human move probabilities and diagnostics."""
         if history_override is not None:
             idx_history = [MOVE_TO_IDX[m] for m in history_override if m in MOVE_TO_IDX]
+            str_history = [m for m in history_override if m in MOVE_TO_IDX]
         else:
             idx_history = self.history
+            str_history = [IDX_TO_MOVE[idx] for idx in idx_history]
 
         if not idx_history:
             return UNIFORM.copy(), {"basis": "uniform", "confidence": 0.0}
@@ -304,6 +342,27 @@ class AdaptiveHumanModel:
         combined = np.clip(combined, 1e-3, None)
         combined /= np.sum(combined)
 
+        enhanced_meta: Optional[Dict[str, Union[str, float]]] = None
+        if self.enhanced_model and str_history:
+            try:
+                self.enhanced_model.train(str_history)
+                robot_move, enhanced_conf = self.enhanced_model.predict(str_history)
+                predicted_human = BEATS.get(robot_move)
+                if predicted_human is not None:
+                    enhanced_probs = np.full(3, (1.0 - enhanced_conf) / 2.0, dtype=float)
+                    enhanced_probs[MOVE_TO_IDX[predicted_human]] = enhanced_conf
+                    combined = (1 - self.settings.ml_weight) * combined + self.settings.ml_weight * enhanced_probs
+                    combined = np.clip(combined, 1e-4, None)
+                    combined /= np.sum(combined)
+                    enhanced_meta = {
+                        "predicted_human_move": predicted_human,
+                        "robot_counter_move": robot_move,
+                        "confidence": float(enhanced_conf),
+                        "blend_weight": self.settings.ml_weight,
+                    }
+            except Exception as exc:
+                enhanced_meta = {"error": str(exc)}
+
         metadata = {
             "basis": "frequency_pattern_mix",
             "base_probs": base.tolist(),
@@ -313,6 +372,17 @@ class AdaptiveHumanModel:
             "markov_details": markov_meta,
             "confidence": float(np.max(combined)),
         }
+        if enhanced_meta is not None:
+            metadata["enhanced_model"] = enhanced_meta
+        if str_history:
+            streak_move = str_history[-1]
+            streak_len = 1
+            for prev in reversed(str_history[:-1]):
+                if prev == streak_move:
+                    streak_len += 1
+                else:
+                    break
+            metadata["recent_repetition"] = {"move": streak_move, "length": streak_len}
         return combined, metadata
 
     def _markov_prediction(
@@ -418,13 +488,18 @@ def _apply_personality(
     adjusted = _softmax(np.log(np.clip(adjusted, 1e-12, None)) + offset)
 
     # Inject volatility before resampling.
-    if settings.volatility > 0:
-        noise = rng.normal(0.0, settings.volatility, size=3)
+    volatility = settings.volatility
+    if profile.difficulty is Difficulty.GRANDMASTER:
+        volatility *= 0.5
+    if volatility > 0:
+        noise = rng.normal(0.0, volatility, size=3)
         adjusted = np.clip(adjusted + noise, 1e-6, None)
         adjusted /= np.sum(adjusted)
 
     # Dirichlet sampling controls variance of realised policy.
     concentration = max(settings.concentration, 0.3)
+    if profile.difficulty is Difficulty.GRANDMASTER:
+        concentration *= 1.8
     alpha = np.clip(adjusted * concentration, 1e-3, None)
     return rng.dirichlet(alpha)
 
@@ -434,9 +509,14 @@ def _choose_ai_move(
     profile: OpponentProfile,
     rng: np.random.Generator,
     recent_human_edge: float,
+    repetition_info: Optional[Dict[str, Union[str, int]]] = None,
 ) -> Tuple[str, Dict]:
     strategy = profile.strategy_settings
     outcome_probs = _compute_outcome_probs(human_probs)
+
+    top_human_idx = int(np.argmax(human_probs))
+    top_human_move = IDX_TO_MOVE[top_human_idx]
+    counter_to_top = COUNTERS[top_human_move]
 
     scores = np.zeros(3, dtype=float)
     for idx, move in enumerate(MOVES):
@@ -449,24 +529,103 @@ def _choose_ai_move(
             + strategy.risk_floor
         )
 
+    # Strategy-specific prioritisation
+    if profile.strategy is Strategy.TO_WIN:
+        target_idx = MOVE_TO_IDX[counter_to_top]
+        scores += -0.3  # depress others slightly
+        scores[target_idx] += 1.2
+    elif profile.strategy is Strategy.NOT_TO_LOSE:
+        safety_scores = []
+        for move in MOVES:
+            win, tie, _ = outcome_probs[move]
+            safety_scores.append(win + tie)
+        safest_idx = int(np.argmax(safety_scores))
+        scores += -0.15
+        scores[safest_idx] += 0.9
+
     base_dist = _softmax(scores)
     adjusted = _apply_personality(base_dist, outcome_probs, profile, recent_human_edge, rng)
 
-    exploration = max(profile.difficulty_settings.exploration_floor, strategy.exploration)
+    exploration = strategy.exploration
+    if profile.difficulty is Difficulty.GRANDMASTER:
+        exploration *= 0.4
+    exploration = max(profile.difficulty_settings.exploration_floor, exploration)
     adjusted = (1 - exploration) * adjusted + exploration * UNIFORM
     adjusted /= np.sum(adjusted)
+
+    if profile.difficulty_settings.ml_weight > 0:
+        human_best_idx = int(np.argmax(human_probs))
+        human_best_move = IDX_TO_MOVE[human_best_idx]
+        ml_ai_move = COUNTERS[human_best_move]
+        ml_distribution = np.full(3, 1e-6, dtype=float)
+        ml_distribution[MOVE_TO_IDX[ml_ai_move]] = 1.0
+        ml_distribution /= np.sum(ml_distribution)
+        adjusted = (
+            (1 - profile.difficulty_settings.ml_weight) * adjusted
+            + profile.difficulty_settings.ml_weight * ml_distribution
+        )
+        adjusted = np.clip(adjusted, 1e-6, None)
+        adjusted /= np.sum(adjusted)
+
+    if profile.difficulty is Difficulty.GRANDMASTER:
+        human_response = np.zeros(3, dtype=float)
+        for h_idx, human_move in enumerate(MOVES):
+            value = 0.0
+            for ai_idx, ai_move in enumerate(MOVES):
+                prob = adjusted[ai_idx]
+                if human_move == ai_move:
+                    payoff = 0.0
+                elif COUNTERS[human_move] == ai_move:
+                    payoff = -1.0
+                elif COUNTERS[ai_move] == human_move:
+                    payoff = 1.0
+                else:
+                    payoff = 0.0
+                value += prob * payoff
+            human_response[h_idx] = value
+        best_human_idx = int(np.argmax(human_response))
+        counter_move = COUNTERS[MOVES[best_human_idx]]
+        counter_idx = MOVE_TO_IDX[counter_move]
+        counter_weight = 0.35 + 0.4 * profile.difficulty_settings.ml_weight
+        if recent_human_edge > 0:
+            counter_weight = min(0.85, counter_weight + 0.15 * recent_human_edge)
+        # Additional pressure against prolonged streaks of the same human move
+        adjusted = (1 - counter_weight) * adjusted
+        adjusted[counter_idx] += counter_weight
+        adjusted = np.clip(adjusted, 1e-6, None)
+        adjusted /= np.sum(adjusted)
+
+    if repetition_info:
+        streak_move = repetition_info.get("move")
+        streak_len = repetition_info.get("length", 0)
+        if (
+            isinstance(streak_move, str)
+            and isinstance(streak_len, int)
+            and streak_len >= 2
+            and profile.difficulty in (Difficulty.CHALLENGER, Difficulty.MASTER, Difficulty.GRANDMASTER)
+        ):
+            counter_move = COUNTERS[streak_move]
+            counter_idx = MOVE_TO_IDX[counter_move]
+            repetition_boost = min(0.25 + 0.08 * (streak_len - 2), 0.55)
+            adjusted = (1 - repetition_boost) * adjusted
+            adjusted[counter_idx] += repetition_boost
+            adjusted = np.clip(adjusted, 1e-6, None)
+            adjusted /= np.sum(adjusted)
 
     move_idx = rng.choice(len(MOVES), p=adjusted)
     ai_move = IDX_TO_MOVE[move_idx]
 
-    metadata = {
+    move_meta = {
         "scores": scores.tolist(),
         "base_distribution": base_dist.tolist(),
         "adjusted_distribution": adjusted.tolist(),
         "outcome_probs": {m: list(vals) for m, vals in outcome_probs.items()},
         "exploration_floor": exploration,
     }
-    return ai_move, metadata
+    if profile.difficulty is Difficulty.GRANDMASTER:
+        move_meta["adjusted_distribution_public"] = move_meta["adjusted_distribution"]
+        move_meta["adjusted_distribution"] = UNIFORM.tolist()
+    return ai_move, move_meta
 
 
 def _determine_outcome(human_move: str, ai_move: str) -> str:
@@ -554,11 +713,13 @@ class RPSAISystem:
             history = [IDX_TO_MOVE[idx] for idx in self.model.history]
 
         human_probs, human_meta = self.model.predict(history)
+        repetition_meta = human_meta.get("recent_repetition") if isinstance(human_meta, dict) else None
         ai_move, move_meta = _choose_ai_move(
             human_probs,
             self.profile,
             self.rng,
             self._recent_human_edge(),
+            repetition_meta,
         )
 
         confidence = float(max(0.05, human_meta.get("confidence", 0.0)))

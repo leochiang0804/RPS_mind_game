@@ -428,6 +428,7 @@
                                             <option value="rookie">🟢 Rookie (Beginner)</option>
                                             <option value="challenger" selected>🟡 Challenger (Intermediate)</option>
                                             <option value="master">🔴 Master (Advanced)</option>
+                                            <option value="grandmaster">🟣 Grandmaster (Elite)</option>
                                         </select>
                                     </div>
                                     <div class="select-card">
@@ -667,12 +668,25 @@
         initializePerformanceCharts();
     });
     // Only allow keyboard move input after Start is clicked
+    const keyboardMoveMap = {
+        'p': 'paper',
+        'r': 'rock',
+        's': 'scissors'
+    };
     document.addEventListener('keydown', function(e) {
         if (!gameStarted) return;
-        if (e.repeat) return; // Prevent holding key from triggering multiple moves
-        if (e.key === 'p' || e.key === 'P') submitMove('paper');
-        else if (e.key === 'r' || e.key === 'R') submitMove('rock');
-        else if (e.key === 's' || e.key === 'S') submitMove('scissors');
+        if (e.repeat) return;
+        const move = keyboardMoveMap[e.key && e.key.toLowerCase()];
+        if (!move) return;
+        e.preventDefault();
+        e.stopPropagation();
+        submitMove(move);
+        const button = document.getElementById(`move-${move}`);
+        if (button) {
+            button.classList.add('keyboard-activated');
+            button.focus({ preventScroll: true });
+            setTimeout(() => button.classList.remove('keyboard-activated'), 180);
+        }
     });
     // Gate submitMove so it cannot be called before gameStarted
     const originalSubmitMove = window.submitMove;
@@ -822,7 +836,8 @@
             const difficultyToIndex = {
                 'rookie': 0,
                 'challenger': 1,
-                'master': 2
+                'master': 2,
+                'grandmaster': 2
             };
             
             const selectedIndex = difficultyToIndex[currentDifficulty];
@@ -1419,6 +1434,10 @@
                 'master': {
                     background: 'linear-gradient(135deg, #f8d7da, #f5b7b1)',
                     border: '3px solid #dc3545'
+                },
+                'grandmaster': {
+                    background: 'linear-gradient(135deg, #e5d4ff, #c39bd3)',
+                    border: '3px solid #6f42c1'
                 }
             };
             
@@ -1446,9 +1465,10 @@
             // Strategy/Difficulty symbol mapping
             const strategySymbols = {
                 // New difficulty levels
-                'rookie': '�',
-                'challenger': '�', 
+                'rookie': '🟢',
+                'challenger': '🟡', 
                 'master': '🔴',
+                'grandmaster': '🟣',
                 // Strategy types
                 'pattern': '🔄',
                 'balanced': '⚖️',
@@ -1495,6 +1515,7 @@
                 'rookie': 'Basic',
                 'challenger': 'Advanced', 
                 'master': 'Legendary',
+                'grandmaster': 'Mythic',
                 // Legacy support for charts/compatibility
                 'random': 'Basic',
                 'frequency': 'Junior', 
@@ -1507,6 +1528,7 @@
                 'rookie': 'Rookie',
                 'challenger': 'Challenger',
                 'master': 'Master',
+                'grandmaster': 'Grandmaster',
                 // Legacy support for charts/compatibility
                 'random': 'Random',
                 'frequency': 'Frequency Analysis',

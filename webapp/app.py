@@ -1,14 +1,15 @@
 
+from collections import Counter
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 import os
 import sys
 import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from strategy import FrequencyStrategy, MarkovStrategy
 from change_point_detector import ChangePointDetector
 from optimized_strategies import ToWinStrategy, NotToLoseStrategy
 from personality_engine import get_personality_engine
-from move_mapping import normalize_move, get_counter_move, MOVES
+from move_mapping import MOVES
+from ml_model_enhanced import EnhancedMLModel
 
 # Centralized Data Management - All AI coach endpoints use this for consistent data building
 from game_context import build_game_context, set_opponent_parameters, get_ai_prediction, update_ai_with_result, reset_ai_system
@@ -64,9 +65,11 @@ print("🚧 AI Coach under development - Coach View available in frontend")
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here-for-ai-coach-sessions-2024'
 
-# Initialize strategy instances
-frequency_strategy = FrequencyStrategy()
-markov_strategy = MarkovStrategy()
+# Initialize enhanced predictor used for analytics and fallback displays
+def _create_enhanced_predictor() -> EnhancedMLModel:
+    return EnhancedMLModel(order=3, recency_weight=0.82, max_history=220)
+
+enhanced_predictor = _create_enhanced_predictor()
 to_win_strategy = ToWinStrategy()
 not_to_lose_strategy = NotToLoseStrategy()
 
@@ -477,24 +480,24 @@ def play():
         
         # Get predictions from all models
         import random
+        reverse_counter = {'rock': 'scissors', 'paper': 'rock', 'scissors': 'paper'}
         
         # Random prediction
         random_pred = random.choice(MOVES)
         game_state['model_predictions_history']['random'].append(random_pred)
         
-        # Frequency prediction
-        freq_robot_move = frequency_strategy.predict(history)  # This returns robot's move
-        # Convert robot move back to what human move it was expecting
-        reverse_counter = {'rock': 'scissors', 'paper': 'rock', 'scissors': 'paper'}
-        freq_pred = reverse_counter.get(freq_robot_move, random.choice(MOVES))
+        # Frequency-style prediction using direct move counts
+        freq_pred = random_pred
+        if history:
+            counts = Counter(history)
+            most_common_human, _ = counts.most_common(1)[0]
+            freq_pred = most_common_human
         game_state['model_predictions_history']['frequency'].append(freq_pred)
         
-        # Markov prediction
-        markov_strategy.train(history)
-        markov_result = markov_strategy.predict(history)  # This returns (robot_move, confidence)
-        markov_robot_move = markov_result[0] if isinstance(markov_result, tuple) else markov_result
-        # Convert robot move back to what human move it was expecting
-        reverse_counter = {'rock': 'scissors', 'paper': 'rock', 'scissors': 'paper'}
+        # Enhanced (Markov-inspired) prediction using the upgraded ML model
+        enhanced_predictor.train(history)
+        markov_robot_move, markov_raw_confidence = enhanced_predictor.predict(history)
+        markov_raw_confidence = float(markov_raw_confidence or 0.0)
         markov_pred = reverse_counter.get(markov_robot_move, random.choice(MOVES))
         game_state['model_predictions_history']['markov'].append(markov_pred)
         
@@ -509,27 +512,18 @@ def play():
         # Get actual model predictions and apply strategy-specific confidence formulas
         strategy_preference = game_state.get('strategy_preference', 'to_win')
         
-        # Markov model - get its actual probability distribution
-        if len(history) > 0:
-            markov_strategy.train(history)
-            markov_pred, markov_raw_confidence = markov_strategy.predict(history)
-            
-            # Apply strategy-specific confidence formula using model's actual probabilities
-            # Note: markov_raw_confidence comes from the model's internal probability calculation
-            if strategy_preference == 'to_win':
-                # Formula: abs(2*highest_prob-1)
-                markov_confidence = abs(2 * markov_raw_confidence - 1)
-            elif strategy_preference == 'not_to_lose':
-                # For "not to lose", we need to estimate the sum of top two probabilities
-                # Since we only have the highest probability, we estimate the second highest
-                # Assuming uniform distribution for remaining probability mass
-                remaining_prob = 1 - markov_raw_confidence
-                second_highest = remaining_prob / 2  # Rough estimation
-                markov_confidence = abs(2 * (markov_raw_confidence + second_highest) - 1)
-            else:
-                markov_confidence = markov_raw_confidence
+        # Convert enhanced predictor confidence using strategy-specific formulas
+        if markov_raw_confidence <= 0:
+            markov_confidence = 0.33
+        elif strategy_preference == 'to_win':
+            # Formula: abs(2*highest_prob-1)
+            markov_confidence = abs(2 * markov_raw_confidence - 1)
+        elif strategy_preference == 'not_to_lose':
+            remaining_prob = max(0.0, 1 - markov_raw_confidence)
+            second_highest = remaining_prob / 2  # Rough estimation
+            markov_confidence = abs(2 * (markov_raw_confidence + second_highest) - 1)
         else:
-            markov_confidence = 0.33  # Default for no history
+            markov_confidence = markov_raw_confidence
         
         game_state['model_confidence_history']['markov'].append(markov_confidence)
         
@@ -611,7 +605,16 @@ def play():
             game_state['stats']['tie'] += 1
         
         results = [result]
-    
+
+    # Ensure confidence histories do not exceed total rounds
+    total_rounds_logged = len(game_state['result_history'])
+    if total_rounds_logged:
+        history_limit = slice(-total_rounds_logged, None)
+        game_state['confidence_score_history'] = game_state['confidence_score_history'][history_limit]
+        game_state['confidence_score_modified_by_personality_history'] = (
+            game_state['confidence_score_modified_by_personality_history'][history_limit]
+        )
+
     # Calculate model accuracy after each move (only if we have predictions to compare)
     if len(game_state['human_history']) > 1:  # Need at least 2 moves to have a prediction
         current_human_move = game_state['human_history'][-1]  # Just played move
@@ -977,6 +980,8 @@ def reset():
     
     # Reset change detector
     change_detector.reset()
+    global enhanced_predictor
+    enhanced_predictor = _create_enhanced_predictor()
     
     # Reset the adaptive AI system
     if RPS_AI_SYSTEM_AVAILABLE:
@@ -1064,6 +1069,8 @@ def reset_game():
     session['game_recording'] = False
     session['analytics_metrics'] = {}
     session['endgame_metrics'] = {}
+    global enhanced_predictor
+    enhanced_predictor = _create_enhanced_predictor()
 
     return jsonify({'message': 'Game reset successfully'})
 
