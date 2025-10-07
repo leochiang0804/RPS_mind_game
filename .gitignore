@@ -40,7 +40,6 @@ htmlcov/
 nosetests.xml
 coverage.xml
 simulation_results/
-tests/
 *.cover
 *.py,cover
 .hypothesis/
@@ -109,5 +108,4 @@ cookies.txt
 .env.production
 
 simulation_results/
-tests/
 archive/
