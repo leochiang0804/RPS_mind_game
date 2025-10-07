@@ -209,6 +209,6 @@ SIMULATOR_REGISTRY = {
     RandomHumanSimulator.name: RandomHumanSimulator,
     RealisticHumanSimulator.name: RealisticHumanSimulator,
     StrategicHumanSimulator.name: StrategicHumanSimulator,
-    ExplorerHumanSimulator.name: ExplorerHumanSimulator,
+    #ExplorerHumanSimulator.name: ExplorerHumanSimulator,
 }
 

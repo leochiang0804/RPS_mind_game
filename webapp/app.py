@@ -999,7 +999,7 @@ def get_result(robot_move, human_move):
         return 'tie'
     elif (robot_move == 'paper' and human_move == 'rock') or \
          (robot_move == 'rock' and human_move == 'scissors') or \
-         (robot_move == 'scissor' and human_move == 'paper'):
+         (robot_move == 'scissors' and human_move == 'paper'):
         return 'robot'
     else:
         return 'human'

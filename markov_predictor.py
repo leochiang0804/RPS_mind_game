@@ -217,15 +217,15 @@ class MarkovPredictor:
                 'cycle': 0.65,           # Moderate threshold = moderate detection
                 'frequency_bias': 0.55,  # Moderate threshold = moderate detection
                 'min_history': 7,        # Moderate history needed
-                'exploitation_strength': 0.65  # Moderate exploitation
+                'exploitation_strength': 0.0  # Moderate exploitation
             },
             'challenger': {
-                'alternating': 0.45,     # Good detection
-                'single_move': 0.55,     # Good detection
-                'cycle': 0.45,           # Good detection
-                'frequency_bias': 0.40,  # Good detection
-                'min_history': 5,        # Moderate history needed
-                'exploitation_strength': 0.80  # Strong exploitation
+                'alternating': 0,     # Good detection
+                'single_move': 0,     # Good detection
+                'cycle': 0,           # Good detection
+                'frequency_bias': 0,  # Good detection
+                'min_history': 0,        # Moderate history needed
+                'exploitation_strength': 0.0  # Strong exploitation
             },
             'master': {
                 'alternating': 0.35,     # Aggressive detection
@@ -233,7 +233,7 @@ class MarkovPredictor:
                 'cycle': 0.35,           # Aggressive detection  
                 'frequency_bias': 0.30,  # Aggressive detection
                 'min_history': 4,        # Quick detection
-                'exploitation_strength': 0.95  # Very strong exploitation
+                'exploitation_strength': 0.0  # Very strong exploitation
             }
         }
         
