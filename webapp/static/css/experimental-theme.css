@@ -834,6 +834,50 @@ body.experimental-ui {
     font-size: 0.95rem;
     line-height: 1.6;
     color: #f8fafc;
+    max-width: 100%;
+    overflow: hidden; /* Prevent content from expanding beyond container */
+}
+
+/* Coach View layout constraints */
+.coach-panel {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.coach-tips-section, .coach-stats-section {
+    max-width: 100%;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.autopilot-report {
+    max-width: 100%;
+    overflow: hidden;
+    padding: 16px;
+    background: rgba(15, 23, 42, 0.9);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    margin-top: 16px;
+}
+
+.autopilot-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+    max-width: 100%;
+}
+
+.autopilot-chip {
+    flex: 1;
+    min-width: 0; /* Allow flex items to shrink */
+    max-width: calc(33.33% - 8px);
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    text-align: center;
+    box-sizing: border-box;
 }
 
 .insights-panel {
@@ -1482,4 +1526,204 @@ body.experimental-ui {
     outline-offset: 3px;
     transform: translateY(-2px);
     transition: transform 0.18s ease, outline 0.18s ease;
+}
+
+/* Enhanced autopilot log styling with fixed width containers */
+.autopilot-logs {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 16px;
+    min-width: 0; /* Allows flex item to shrink below content size */
+    flex-shrink: 1;
+}
+
+.autopilot-logs h4 {
+    margin: 0 0 8px 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.autopilot-logs ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    background: rgba(6, 15, 32, 0.6);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 8px;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.log-entry {
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin: 2px 0;
+    animation: slideInLog 0.2s ease-out forwards;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    white-space: normal; /* Allow HTML formatting and line breaks */
+    overflow: hidden; /* Hide any overflow */
+    display: block;
+    line-height: 1.5; /* Better spacing for multi-line entries */
+}
+
+.log-entry.live-event {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(34, 211, 238, 0.05));
+    border-left: 2px solid rgba(99, 102, 241, 0.4);
+}
+
+.log-entry.stage-log {
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), rgba(16, 185, 129, 0.05));
+    border-left: 2px solid rgba(52, 211, 153, 0.4);
+}
+
+.log-entry.warning {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.08), rgba(245, 158, 11, 0.05));
+    border-left: 2px solid rgba(251, 191, 36, 0.4);
+}
+
+.log-timestamp {
+    color: rgba(52, 211, 153, 0.9);
+    font-weight: 500;
+    margin-right: 8px;
+    display: inline-block;
+    min-width: 45px;
+}
+
+.log-content {
+    color: var(--text-primary);
+    flex: 1;
+}
+
+/* Style for formatted log entries with better visual hierarchy */
+.log-content br + * {
+    color: rgba(var(--text-primary-rgb), 0.85);
+    font-size: 0.95em;
+}
+
+/* Highlight key-value pairs in logs */
+.log-content strong {
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+@keyframes slideInLog {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin: 0;
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 120px; /* Increased for multi-line entries */
+        padding-top: 4px;
+        padding-bottom: 4px;
+        margin: 2px 0;
+    }
+}
+
+/* Remove old live event styling */
+.live-event-item {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(34, 211, 238, 0.05));
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin: 4px 0;
+    animation: slideInEvent 0.3s ease-out forwards;
+    position: relative;
+    overflow: hidden;
+}
+
+.live-event-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--gradient-info);
+    opacity: 0.8;
+}
+
+.event-time {
+    color: rgba(52, 211, 153, 0.9);
+    font-weight: 500;
+    font-size: 0.8rem;
+    margin-right: 8px;
+}
+
+@keyframes slideInEvent {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin: 0;
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+        max-height: 100px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        margin: 4px 0;
+    }
+}
+
+/* Enhanced autopilot status display */
+.autopilot-status.live-updating {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(34, 211, 238, 0.08));
+    border-left: 3px solid #6366f1;
+    animation: pulseStatus 2s ease-in-out infinite;
+}
+
+@keyframes pulseStatus {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+}
+
+/* Summary actions styling */
+.summary-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.summary-actions .btn.secondary {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(139, 92, 246, 0.1));
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    color: rgba(196, 181, 253, 0.95);
+}
+
+.summary-actions .btn.secondary:hover {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(139, 92, 246, 0.2));
+    border-color: rgba(168, 85, 247, 0.5);
+    transform: translateY(-1px);
+}
+
+.summary-actions .btn.secondary:active {
+    transform: translateY(0);
 }

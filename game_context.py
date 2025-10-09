@@ -166,11 +166,15 @@ def get_ai_prediction(session_data: Dict[str, Any]) -> Dict[str, Any]:
             )
         else:
             probabilities, ai_move, metadata = ai_system.predict_next_move()
+        
+        # Round probabilities to 4 decimals
+        rounded_probabilities = [round(float(p), 4) for p in probabilities.tolist()]
+        rounded_confidence = round(float(metadata.get('confidence', 0.33)), 4)
             
         return {
             'ai_move': ai_move,
-            'human_probabilities': probabilities.tolist(),
-            'confidence': metadata.get('confidence', 0.33),
+            'human_probabilities': rounded_probabilities,
+            'confidence': rounded_confidence,
             'metadata': metadata,
             'system_type': 'adaptive_opponent_engine'
         }
@@ -181,8 +185,8 @@ def get_ai_prediction(session_data: Dict[str, Any]) -> Dict[str, Any]:
         import random
         return {
             'ai_move': random.choice(['rock', 'paper', 'scissors']),
-            'human_probabilities': [0.33, 0.33, 0.33],
-            'confidence': 0.33,
+            'human_probabilities': [0.3333, 0.3333, 0.3334],  # Rounded to 4 decimals, sums to 1
+            'confidence': 0.3333,  # Rounded to 4 decimals
             'metadata': {'error': str(e)},
             'system_type': 'fallback_random'
         }
@@ -254,6 +258,43 @@ class GameContextBuilder:
         self.build_count = 0  # For performance monitoring
     
     @staticmethod
+    def _round_metric(value, decimals=4):
+        """
+        Round metric values to specified decimal places to save memory.
+        
+        Args:
+            value: The numeric value to round
+            decimals: Number of decimal places (default: 4)
+            
+        Returns:
+            Rounded value or original value if not numeric
+        """
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return round(float(value), decimals)
+        return value
+    
+    @staticmethod
+    def _round_metrics_in_dict(data, decimals=4):
+        """
+        Recursively round all numeric values in a dictionary to specified decimal places.
+        
+        Args:
+            data: Dictionary or list to process
+            decimals: Number of decimal places (default: 4)
+            
+        Returns:
+            Data with all metrics rounded
+        """
+        if isinstance(data, dict):
+            return {key: GameContextBuilder._round_metrics_in_dict(value, decimals) 
+                   for key, value in data.items()}
+        elif isinstance(data, list):
+            return [GameContextBuilder._round_metrics_in_dict(item, decimals) 
+                   for item in data]
+        else:
+            return GameContextBuilder._round_metric(data, decimals)
+    
+    @staticmethod
     def calculate_metrics(human_moves, robot_moves, results, confidence_history=None, personality_modified_confidence_history=None):
         """
         Unified metric calculation - single source of truth for all game metrics.
@@ -273,9 +314,9 @@ class GameContextBuilder:
         robot_wins = results.count('robot')
         ties = results.count('tie')
         total_rounds = len(results) if results else 0
-        human_win_rate = human_wins / total_rounds * 100 if total_rounds else 0.0
-        robot_win_rate = robot_wins / total_rounds * 100 if total_rounds else 0.0
-        tie_rate = ties / total_rounds * 100 if total_rounds else 0.0
+        human_win_rate = GameContextBuilder._round_metric(human_wins / total_rounds * 100 if total_rounds else 0.0)
+        robot_win_rate = GameContextBuilder._round_metric(robot_wins / total_rounds * 100 if total_rounds else 0.0)
+        tie_rate = GameContextBuilder._round_metric(ties / total_rounds * 100 if total_rounds else 0.0)
 
         # Longest streaks
         def longest_streak(target):
@@ -296,7 +337,7 @@ class GameContextBuilder:
         # Recent win rate (last 10 rounds)
         recent_results = results[-10:]
         recent_human_wins = recent_results.count('human')
-        recent_win_rate = recent_human_wins / len(recent_results) * 100 if recent_results else 0.0
+        recent_win_rate = GameContextBuilder._round_metric(recent_human_wins / len(recent_results) * 100 if recent_results else 0.0)
 
         # Score differential
         score_differential = human_wins - robot_wins
@@ -305,6 +346,9 @@ class GameContextBuilder:
         confidence_score_history = list(confidence_history or [])
         if total_rounds and len(confidence_score_history) > total_rounds:
             confidence_score_history = confidence_score_history[-total_rounds:]
+        
+        # Round all confidence values to 4 decimals
+        confidence_score_history = [GameContextBuilder._round_metric(c) for c in confidence_score_history]
         
         # Calculate confidence statistics
         if confidence_score_history:
@@ -322,6 +366,9 @@ class GameContextBuilder:
         personality_modified_confidence_score_history = list(personality_modified_confidence_history or [])
         if total_rounds and len(personality_modified_confidence_score_history) > total_rounds:
             personality_modified_confidence_score_history = personality_modified_confidence_score_history[-total_rounds:]
+        
+        # Round all personality-modified confidence values to 4 decimals
+        personality_modified_confidence_score_history = [GameContextBuilder._round_metric(c) for c in personality_modified_confidence_score_history]
         
         # Calculate personality-modified confidence statistics
         if personality_modified_confidence_score_history:
@@ -348,7 +395,7 @@ class GameContextBuilder:
             total = len(move_history)
             expected_freq = total / 3
             variance = sum((count - expected_freq) ** 2 for count in move_counts.values()) / 3
-            return min(100, (variance / expected_freq) * 50)
+            return GameContextBuilder._round_metric(min(100, (variance / expected_freq) * 50))
         predictability_score = calculate_move_variance(human_moves)
 
         # Recent momentum (last 10 moves)
@@ -359,7 +406,7 @@ class GameContextBuilder:
             move_counts = Counter([m for m in recent_moves if m])
             if move_counts:
                 bias_type, bias_count = move_counts.most_common(1)[0]
-                percent = (bias_count / len(recent_moves)) * 100
+                percent = GameContextBuilder._round_metric((bias_count / len(recent_moves)) * 100)
                 recent_bias_type = bias_type
                 recent_bias_percent = percent
 
@@ -368,7 +415,8 @@ class GameContextBuilder:
             human_moves, robot_moves, results, confidence_score_history
         )
 
-        return {
+        # Round all metrics in the final return dictionary
+        return GameContextBuilder._round_metrics_in_dict({
             'full_game_snapshot': {
                 'human_moves': human_moves,
                 'robot_moves': robot_moves,
@@ -404,7 +452,7 @@ class GameContextBuilder:
             'confidence_score_modified_by_personality_history': personality_modified_confidence_score_history,
             # SBC-specific metrics for banter and coaching
             'sbc_metrics': sbc_metrics,
-        }
+        })
     
     @staticmethod
     def _calculate_sbc_metrics(human_moves, robot_moves, results, confidence_history):
@@ -440,7 +488,8 @@ class GameContextBuilder:
             results, confidence_history
         )
         
-        return {
+        # Round all SBC metrics before returning
+        return GameContextBuilder._round_metrics_in_dict({
             'emotional_context': {
                 'frustration_level': frustration_level,  # 0-1 scale
                 'momentum_state': momentum_state,  # 'hot', 'cold', 'neutral'
@@ -456,7 +505,7 @@ class GameContextBuilder:
                 'challenge_readiness': challenge_readiness,  # 0-1 scale
                 'total_rounds': total_rounds,
             }
-        }
+        })
     
     @staticmethod
     def _calculate_frustration_level(results):
@@ -480,7 +529,7 @@ class GameContextBuilder:
         base_frustration = min(1.0, loss_rate * 1.2)
         streak_frustration = min(0.5, consecutive_losses * 0.1)
         
-        return min(1.0, base_frustration + streak_frustration)
+        return GameContextBuilder._round_metric(min(1.0, base_frustration + streak_frustration))
     
     @staticmethod
     def _calculate_momentum_state(results):
@@ -540,7 +589,7 @@ class GameContextBuilder:
         robot_wins = recent_results.count('robot')
         
         # Success rate indicates pattern exploitation effectiveness
-        return robot_wins / len(recent_results)
+        return GameContextBuilder._round_metric(robot_wins / len(recent_results))
     
     @staticmethod
     def _calculate_adaptation_speed(results):
@@ -595,7 +644,7 @@ class GameContextBuilder:
         avg_deviation = sum(deviations) / len(deviations)
         
         # Convert to consistency score (0 = random, 1 = very predictable)
-        return min(1.0, avg_deviation)
+        return GameContextBuilder._round_metric(min(1.0, avg_deviation))
     
     @staticmethod
     def _calculate_performance_tier(results):
@@ -640,7 +689,7 @@ class GameContextBuilder:
             
         # Combine factors
         readiness = (recent_win_rate * 0.4 + stability * 0.3 + confidence_trend * 0.3)
-        return min(1.0, readiness)
+        return GameContextBuilder._round_metric(min(1.0, readiness))
         
     def build_game_context(
         self,
@@ -672,9 +721,10 @@ class GameContextBuilder:
             from personality_engine import get_personality_engine
             engine = get_personality_engine()
             alias = _PERSONALITY_ALIAS_MAP.get(personality_name, personality_name)
-            personality_info = engine.get_personality_info(alias)
-            if personality_info and 'traits' in personality_info:
-                personality_traits = personality_info['traits']
+            if alias:  # Only call if alias is not None
+                personality_info = engine.get_personality_info(alias)
+                if personality_info and 'traits' in personality_info:
+                    personality_traits = personality_info['traits']
         
         # Get current opponent information from adaptive opponent engine
         opponent_info_42 = get_current_opponent_info()
@@ -690,14 +740,14 @@ class GameContextBuilder:
             'ai_personality': ai_personality,
             # Store as integer if possible
             'game_length': game_length_int,
-            # Personality traits (7 core traits)
-            'personality_aggression': personality_traits.get('aggression', 0.0),
-            'personality_defensiveness': personality_traits.get('defensiveness', 0.0),
-            'personality_adaptability': personality_traits.get('adaptability', 0.0),
-            'personality_predictability': personality_traits.get('predictability', 0.0),
-            'personality_risk_tolerance': personality_traits.get('risk_tolerance', 0.0),
-            'personality_memory_span': personality_traits.get('memory_span', 0.0),
-            'personality_confidence_sensitivity': personality_traits.get('confidence_sensitivity', 0.0),
+            # Personality traits (7 core traits) - rounded to 4 decimals
+            'personality_aggression': GameContextBuilder._round_metric(personality_traits.get('aggression', 0.0)),
+            'personality_defensiveness': GameContextBuilder._round_metric(personality_traits.get('defensiveness', 0.0)),
+            'personality_adaptability': GameContextBuilder._round_metric(personality_traits.get('adaptability', 0.0)),
+            'personality_predictability': GameContextBuilder._round_metric(personality_traits.get('predictability', 0.0)),
+            'personality_risk_tolerance': GameContextBuilder._round_metric(personality_traits.get('risk_tolerance', 0.0)),
+            'personality_memory_span': GameContextBuilder._round_metric(personality_traits.get('memory_span', 0.0)),
+            'personality_confidence_sensitivity': GameContextBuilder._round_metric(personality_traits.get('confidence_sensitivity', 0.0)),
             # Adaptive opponent engine information
             'opponent_system': {
                 'type': 'adaptive_opponent_engine',

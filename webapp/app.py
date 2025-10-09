@@ -10,6 +10,7 @@ from optimized_strategies import ToWinStrategy, NotToLoseStrategy
 from personality_engine import get_personality_engine
 from move_mapping import MOVES
 from ml_model_enhanced import EnhancedMLModel
+from agentic_autopilot import AutopilotAgent
 
 # Centralized Data Management - All AI coach endpoints use this for consistent data building
 from game_context import build_game_context, set_opponent_parameters, get_ai_prediction, update_ai_with_result, reset_ai_system
@@ -717,6 +718,178 @@ def play():
         'game_status': game_data.get('game_status', {}),
         'full_game_snapshot': game_data.get('full_game_snapshot', {})
     })
+
+
+def _serialise_autopilot_data(value):
+    if isinstance(value, dict):
+        return {str(k): _serialise_autopilot_data(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_serialise_autopilot_data(v) for v in value]
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    return str(value)
+
+
+def _summarise_context(context: dict[str, any], tail: int = 5) -> dict[str, any]:
+    human_moves = context.get('human_moves', []) or context.get('human_history', [])
+    robot_moves = context.get('robot_moves', []) or context.get('robot_history', [])
+    results = context.get('results', []) or context.get('result_history', [])
+
+    opponent_info = context.get('opponent_info', {})
+    metrics = (context.get('game_status') or {}).get('metrics', {}) or {}
+
+    summary = {
+        'round': context.get('round'),
+        'human_moves_tail': human_moves[-tail:] if human_moves else [],
+        'robot_moves_tail': robot_moves[-tail:] if robot_moves else [],
+        'results_tail': results[-tail:] if results else [],
+        'opponent': {
+            'difficulty': opponent_info.get('ai_difficulty') or opponent_info.get('difficulty'),
+            'strategy': opponent_info.get('ai_strategy') or opponent_info.get('strategy'),
+            'personality': opponent_info.get('ai_personality') or opponent_info.get('personality'),
+        },
+        'metrics': {
+            'human_win_rate': metrics.get('human_win_rate'),
+            'robot_win_rate': metrics.get('robot_win_rate'),
+            'tie_rate': metrics.get('tie_rate'),
+            'recent_win_rate': metrics.get('recent_win_rate'),
+            'predictability_score': metrics.get('predictability_score'),
+            'score_differential': metrics.get('score_differential'),
+        },
+    }
+    return summary
+
+
+@app.route('/autopilot', methods=['POST'])
+def autopilot_move():
+    try:
+        start_time = time.time()
+        context = build_game_context(session, context_type='full')
+        
+        # CRITICAL FIX: Add AI prediction data to context for proper confidence calculation
+        ai_prediction = get_ai_prediction(dict(session))
+        context['ai_prediction'] = ai_prediction
+        
+        # Also add metadata for better prediction analysis
+        if ai_prediction.get('metadata'):
+            context['ai_metadata'] = ai_prediction['metadata']
+        
+        agent = AutopilotAgent()
+        result = agent.run(context)
+        if not result.final_move:
+            return jsonify({
+                'status': 'error',
+                'message': 'Autopilot was unable to determine a confident move.'
+            }), 422
+
+        duration_ms = int((time.time() - start_time) * 1000)
+        payload = {
+            'status': 'ok',
+            'final_move': result.final_move,
+            'predicted_robot_move': result.predicted_robot_move,
+            'log': result.log,
+            'tool_outputs': _serialise_autopilot_data(result.tool_outputs),
+            'round': context.get('round'),
+            'duration_ms': duration_ms,
+            'events': _serialise_autopilot_data(result.events),
+            'context_summary': _serialise_autopilot_data(_summarise_context(context)),
+        }
+        return jsonify(payload)
+    except Exception as exc:
+        print(f"Autopilot error: {exc}")
+        return jsonify({
+            'status': 'error',
+            'message': str(exc)
+        }), 500
+
+
+@app.route('/autopilot_live', methods=['POST'])
+def autopilot_move_live():
+    """Enhanced autopilot endpoint that returns intermediate status updates"""
+    try:
+        start_time = time.time()
+        context = build_game_context(session, context_type='full')
+        
+        # CRITICAL FIX: Add AI prediction data to context for proper confidence calculation
+        ai_prediction = get_ai_prediction(dict(session))
+        context['ai_prediction'] = ai_prediction
+        
+        # Also add metadata for better prediction analysis
+        if ai_prediction.get('metadata'):
+            context['ai_metadata'] = ai_prediction['metadata']
+        
+        # Create agent and track events
+        agent = AutopilotAgent()
+        result = agent.run(context)
+        
+        if not result.final_move:
+            return jsonify({
+                'status': 'error',
+                'message': 'Autopilot was unable to determine a confident move.'
+            }), 422
+
+        duration_ms = int((time.time() - start_time) * 1000)
+        
+        # Process events for live display
+        processed_events = []
+        for event in result.events:
+            stage = event.get('stage', 'unknown')
+            status = event.get('status', 'info')
+            detail = event.get('detail', {})
+            
+            # Create human-readable stage updates
+            stage_message = ""
+            if stage == 'planner' and status == 'completed':
+                next_action = detail.get('next_action', 'unknown')
+                action_name = next_action.replace('call_tool_', '').replace('_', ' ')
+                stage_message = f"Planner: Decided to {action_name}"
+            elif stage == 'tool_predict' and status == 'completed':
+                top_robot = detail.get('top_robot', 'unknown')
+                confidence = detail.get('confidence', 0)
+                stage_message = f"Prediction: Robot likely to play {top_robot.upper()} (confidence {confidence:.1%})"
+            elif stage == 'tool_analytics' and status == 'completed':
+                drift = detail.get('drift', False)
+                label = detail.get('label', 'unknown')
+                stage_message = f"Analytics: {'Pattern shift detected' if drift else 'Patterns stable'} ({label})"
+            elif stage == 'tool_policy' and status == 'completed':
+                candidate = detail.get('candidate', 'unknown')
+                stage_message = f"Policy: Recommending {candidate.upper()}"
+            elif stage == 'tool_wildcard' and status == 'completed':
+                stage_message = f"Wildcard: Applied counter-prediction strategy"
+            elif stage == 'finalize' and status == 'completed':
+                stage_message = f"Decision finalized"
+            
+            if stage_message:
+                processed_events.append({
+                    'stage': stage,
+                    'status': status,
+                    'message': stage_message,
+                    'timestamp': event.get('time_ms', 0),
+                    'detail': detail
+                })
+
+        payload = {
+            'status': 'ok',
+            'final_move': result.final_move,
+            'predicted_robot_move': result.predicted_robot_move,
+            'log': result.log,
+            'tool_outputs': _serialise_autopilot_data(result.tool_outputs),
+            'round': context.get('round'),
+            'duration_ms': duration_ms,
+            'events': _serialise_autopilot_data(result.events),
+            'live_events': processed_events,  # Enhanced events for live display
+            'context_summary': _serialise_autopilot_data(_summarise_context(context)),
+        }
+        return jsonify(payload)
+    except Exception as exc:
+        print(f"Autopilot live error: {exc}")
+        return jsonify({
+            'status': 'error',
+            'message': str(exc)
+        }), 500
+
+
+
 
 @app.route('/coaching', methods=['GET', 'POST'])
 def get_coaching_tips():

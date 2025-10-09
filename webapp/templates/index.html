@@ -212,6 +212,119 @@
             color: #94a3b8;
             padding: 30px;
         }
+
+        .autopilot-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-top: 14px;
+        }
+
+        .autopilot-hint {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .autopilot-report {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 12px;
+            background: rgba(37, 99, 235, 0.12);
+            border: 1px solid rgba(96, 165, 250, 0.35);
+            display: none;
+        }
+
+        .autopilot-report.visible {
+            display: block;
+        }
+
+        .autopilot-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .autopilot-chip {
+            min-width: 120px;
+            border-radius: 10px;
+            background: rgba(30, 64, 175, 0.3);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .autopilot-chip .chip-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(191, 219, 254, 0.75);
+        }
+
+        .autopilot-chip .chip-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #bfdbfe;
+        }
+
+        .autopilot-logs {
+            margin-top: 14px;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.45);
+            border-radius: 10px;
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            max-height: 220px;
+            overflow-y: auto;
+            font-family: 'Fira Code', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
+            font-size: 0.85rem;
+            color: #e2e8f0;
+        }
+
+        .autopilot-logs h4 {
+            margin: 0 0 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #bfdbfe;
+        }
+
+        .autopilot-logs ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .autopilot-logs li {
+            margin-bottom: 6px;
+        }
+
+        .autopilot-details {
+            margin-top: 12px;
+        }
+
+        .autopilot-details summary {
+            cursor: pointer;
+            color: #93c5fd;
+        }
+
+        .autopilot-details pre {
+            max-height: 260px;
+            overflow-y: auto;
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: 8px;
+            padding: 12px;
+            color: #e2e8f0;
+            font-size: 0.8rem;
+        }
+
+        .autopilot-error {
+            color: #f87171;
+        }
+
+        .hidden {
+            display: none !important;
+        }
         
         .stat-item {
             display: flex;
@@ -587,6 +700,52 @@
                                                 </div>
                                             </div>
                                             <button id="refresh-coaching-tips" class="btn primary">🔄 Get New Tips</button>
+                                            <div class="autopilot-controls">
+                                                <button id="autopilot-button" class="btn secondary">🤖 AutoPilot Move</button>
+                                                <button id="autopilot-button-loop" class="btn secondary outline">🤖 AutoPilot Move+</button>
+                                                <span id="autopilot-status-text" class="autopilot-hint">Let the agent plan your next move.</span>
+                                            </div>
+                                            <div id="autopilot-report" class="autopilot-report hidden">
+                                                <div class="autopilot-summary">
+                                                    <div class="autopilot-chip">
+                                                        <span class="chip-label">Suggested Move</span>
+                                                        <span class="chip-value" id="autopilot-human-move">--</span>
+                                                    </div>
+                                                    <div class="autopilot-chip">
+                                                        <span class="chip-label">Predicted Robot</span>
+                                                        <span class="chip-value" id="autopilot-robot-move">--</span>
+                                                    </div>
+                                                    <div class="autopilot-chip">
+                                                        <span class="chip-label">Round</span>
+                                                        <span class="chip-value" id="autopilot-round">--</span>
+                                                    </div>
+                                                </div>
+                                                <div style="margin: 12px 0 16px 0;">
+                                                    <label for="debug-view-select" style="font-weight:600;">Debug View:</label>
+                                                    <select id="debug-view-select" style="margin-left:8px;">
+                                                        <option value="off">Off</option>
+                                                        <option value="on">Show Debug Panel</option>
+                                                    </select>
+                                                </div>
+                                                <div id="autopilot-debug-panel" class="autopilot-debug-panel" style="display:none;">
+                                                    <div class="autopilot-logs">
+                                                        <h4>Stage Log</h4>
+                                                        <ol id="autopilot-log-list"></ol>
+                                                    </div>
+                                                    <div class="autopilot-logs">
+                                                        <h4>Status Timeline</h4>
+                                                        <ol id="autopilot-event-list"></ol>
+                                                    </div>
+                                                    <details class="autopilot-details">
+                                                        <summary>Tool breakdown</summary>
+                                                        <pre id="autopilot-tool-json">No tool output yet.</pre>
+                                                    </details>
+                                                    <details class="autopilot-details">
+                                                        <summary>Context summary</summary>
+                                                        <pre id="autopilot-context-json">No context summary.</pre>
+                                                    </details>
+                                                </div>
+                                            </div>
                                         </div>
                                         
                                         <div class="coach-stats-section">
@@ -635,6 +794,20 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+    // Debug View selector logic
+    document.addEventListener('DOMContentLoaded', function() {
+        var debugSelect = document.getElementById('debug-view-select');
+        var debugPanel = document.getElementById('autopilot-debug-panel');
+        if (debugSelect && debugPanel) {
+            debugSelect.addEventListener('change', function() {
+                if (debugSelect.value === 'on') {
+                    debugPanel.style.display = '';
+                } else {
+                    debugPanel.style.display = 'none';
+                }
+            });
+        }
+    });
     // This is for Debug only
     let gameStarted = false;
     function lockControls() {
@@ -650,6 +823,9 @@
         document.getElementById('move-rock').disabled = false;
         document.getElementById('move-scissors').disabled = false;
         gameStarted = true;
+        if (autopilotLoopActive) {
+            scheduleAutopilotLoop();
+        }
         // Notify backend to start recording
         // Send selected game length to backend
         const gameLengthSelect = document.getElementById('game-length');
@@ -718,23 +894,325 @@
         console.log('Main page script loading...');
         
         // Global variables (will be updated from dropdown values on page load)
-    let currentDifficulty = 'challenger';  // Default to challenger difficulty
-    let currentStrategy = 'balanced';  // Default fallback (mildest)
-    let currentPersonality = 'neutral';  // Default fallback (mildest)
-    let useLLMBanter = false;  // Default to rule-based banter (not LLM)
-        
-        // Chart variables
-        let moveDistributionChart = null;
-        let winRateTrendChart = null;
-        let scoreDifferentialChart = null;
-        let modelPredictionChart = null;
-        let modelAccuracyChart = null;
-        let confidenceTrendChart = null;
+let currentDifficulty = 'challenger';  // Default to challenger difficulty
+let currentStrategy = 'balanced';  // Default fallback (mildest)
+let currentPersonality = 'neutral';  // Default fallback (mildest)
+let useLLMBanter = false;  // Default to rule-based banter (not LLM)
 
-        let currentGameLimit = null; // Will be set from dropdown on page load
-        let isGameFrozen = false;
-        let endgameSummaryShown = false;
-        let defaultResultMessage = '';
+let autopilotBtn = null;
+let autopilotLoopBtn = null;
+let autopilotStatus = null;
+let autopilotReport = null;
+let autopilotMoveEl = null;
+let autopilotRobotEl = null;
+let autopilotRoundEl = null;
+let autopilotLogList = null;
+let autopilotToolJson = null;
+let autopilotEventList = null;
+let autopilotContextJson = null;
+let autopilotLoopActive = false;
+let autopilotLoopPending = false;
+
+// Chart variables
+let moveDistributionChart = null;
+let winRateTrendChart = null;
+let scoreDifferentialChart = null;
+let modelPredictionChart = null;
+let modelAccuracyChart = null;
+let confidenceTrendChart = null;
+
+let currentGameLimit = null; // Will be set from dropdown on page load
+let isGameFrozen = false;
+let endgameSummaryShown = false;
+let defaultResultMessage = '';
+
+function setAutopilotStatus(message, isError = false) {
+    if (!autopilotStatus) return;
+    autopilotStatus.textContent = message;
+    autopilotStatus.classList.toggle('autopilot-error', Boolean(isError));
+}
+
+function renderAutopilotReport(data) {
+    if (!autopilotReport) return;
+    const humanMoveLabel = ((data.final_move || '--') + '').toUpperCase();
+    const robotMoveLabel = ((data.predicted_robot_move || '--') + '').toUpperCase();
+    const roundLabel = typeof data.round === 'number' ? data.round : '--';
+
+    autopilotReport.classList.remove('hidden');
+    autopilotReport.classList.add('visible');
+
+    if (autopilotMoveEl) autopilotMoveEl.textContent = humanMoveLabel;
+    if (autopilotRobotEl) autopilotRobotEl.textContent = robotMoveLabel;
+    if (autopilotRoundEl) autopilotRoundEl.textContent = roundLabel;
+
+    if (autopilotLogList) {
+        autopilotLogList.innerHTML = '';
+        const lines = Array.isArray(data.log) ? data.log : [];
+        if (lines.length === 0) {
+            const li = document.createElement('li');
+            li.textContent = 'No reasoning log available.';
+            autopilotLogList.appendChild(li);
+        } else {
+            lines.forEach((line) => {
+                const li = document.createElement('li');
+                li.textContent = line;
+                autopilotLogList.appendChild(li);
+            });
+        }
+    }
+
+    if (autopilotEventList) {
+        autopilotEventList.innerHTML = '';
+        const events = Array.isArray(data.events) ? data.events : [];
+        if (events.length === 0) {
+            const li = document.createElement('li');
+            li.textContent = 'No status events recorded.';
+            autopilotEventList.appendChild(li);
+        } else {
+            events.forEach((evt) => {
+                const li = document.createElement('li');
+                const timePart = typeof evt.time_ms === 'number' ? `[${evt.time_ms}ms] ` : '';
+                const stage = evt.stage || 'unknown';
+                const status = evt.status || 'info';
+                let detailText = '';
+                if (evt.detail) {
+                    try {
+                        detailText = ' ' + JSON.stringify(evt.detail);
+                    } catch (err) {
+                        detailText = ' detail unavailable';
+                    }
+                }
+                li.textContent = `${timePart}${stage} → ${status}${detailText}`;
+                autopilotEventList.appendChild(li);
+            });
+        }
+    }
+
+    if (autopilotToolJson) {
+        try {
+            autopilotToolJson.textContent = JSON.stringify(data.tool_outputs || {}, null, 2);
+        } catch (err) {
+            autopilotToolJson.textContent = 'Unable to render tool outputs.';
+        }
+    }
+
+    if (autopilotContextJson) {
+        try {
+            autopilotContextJson.textContent = JSON.stringify(data.context_summary || {}, null, 2);
+        } catch (err) {
+            autopilotContextJson.textContent = 'Unable to render context summary.';
+        }
+    }
+}
+
+function renderAutopilotError(message) {
+    setAutopilotStatus(message, true);
+    if (autopilotReport) {
+        autopilotReport.classList.add('hidden');
+        autopilotReport.classList.remove('visible');
+    }
+}
+
+function stopAutopilotLoop(message) {
+    if (!autopilotLoopActive) {
+        if (message) setAutopilotStatus(message);
+        return;
+    }
+    autopilotLoopActive = false;
+    autopilotLoopPending = false;
+    if (autopilotLoopBtn) {
+        autopilotLoopBtn.textContent = '🤖 AutoPilot Move+';
+    }
+    if (autopilotBtn) {
+        autopilotBtn.disabled = false;
+    }
+    if (message) setAutopilotStatus(message);
+}
+
+function toggleAutopilotLoop() {
+    if (!autopilotLoopActive) {
+        autopilotLoopActive = true;
+        autopilotLoopPending = false;
+        if (autopilotLoopBtn) {
+            autopilotLoopBtn.textContent = '🛑 Stop AutoPilot+';
+        }
+        if (autopilotBtn) {
+            autopilotBtn.disabled = true;
+        }
+        setAutopilotStatus('AutoPilot+ engaged. The agent will control the remaining rounds.');
+        if (!gameStarted) {
+            setAutopilotStatus('Start the match so AutoPilot+ can take over.', true);
+        } else {
+            scheduleAutopilotLoop();
+        }
+    } else {
+        stopAutopilotLoop('AutoPilot+ paused.');
+    }
+}
+
+function scheduleAutopilotLoop() {
+    if (!autopilotLoopActive || autopilotLoopPending || !gameStarted || isGameFrozen) return;
+    runAutopilotMove({ fromLoop: true });
+}
+
+async function runAutopilotMove(options = {}) {
+    if (!autopilotBtn) return;
+    const { fromLoop = false } = options;
+    const actingBtn = fromLoop ? autopilotLoopBtn : autopilotBtn;
+    const originalLabel = actingBtn ? actingBtn.textContent : '';
+
+    if (fromLoop) {
+        autopilotLoopPending = true;
+    } else {
+        if (actingBtn) {
+            actingBtn.disabled = true;
+            actingBtn.textContent = 'Planning...';
+        }
+    }
+
+    // Clear previous events and add initial status to logs
+    if (autopilotEventList) {
+        autopilotEventList.innerHTML = '<li class="log-entry">Starting autopilot analysis...</li>';
+    }
+    if (autopilotLogList) {
+        autopilotLogList.innerHTML = '<li class="log-entry">Initializing autopilot agent...</li>';
+    }
+
+    try {
+        const response = await fetch('/autopilot_live', { method: 'POST' });
+        const payload = await response.json();
+
+        if (!response.ok || payload.status !== 'ok') {
+            throw new Error(payload.message || 'Autopilot failed to determine a move.');
+        }
+
+        // Display live events progressively in Status Timeline
+        if (payload.live_events && autopilotEventList) {
+            autopilotEventList.innerHTML = '';
+            
+            for (let i = 0; i < payload.live_events.length; i++) {
+                const event = payload.live_events[i];
+                
+                // Add delay to simulate real-time display
+                setTimeout(() => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span class="log-timestamp">${event.timestamp}ms</span> <span class="log-content">${formatLogEntry(event.message)}</span>`;
+                    li.className = 'log-entry live-event';
+                    autopilotEventList.appendChild(li);
+                    
+                    // Scroll to show latest event
+                    li.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, i * 300); // 300ms delay between each event
+            }
+        }
+
+        // Format log entry text with natural line breaks
+        function formatLogEntry(text) {
+            // Break long log entries at natural points for better readability
+            return text
+                // Add line breaks after stage identifiers
+                .replace(/(\[Stage \w+\]) /g, '$1<br>&nbsp;&nbsp;')
+                // Add line breaks before key-value pairs with specific separators
+                .replace(/ (confidence=|dist=|→)/g, '<br>&nbsp;&nbsp;$1')
+                // Add line breaks after commas in distributions for better formatting
+                .replace(/(dist=\([^)]*), /g, '$1,<br>&nbsp;&nbsp;&nbsp;&nbsp;')
+                // Break very long parameter lists
+                .replace(/ (predicted_robot=|final_move=|drift=|strength=|candidate=|override=)/g, '<br>&nbsp;&nbsp;$1')
+                // Clean up any double breaks
+                .replace(/<br>&nbsp;&nbsp;<br>&nbsp;&nbsp;/g, '<br>&nbsp;&nbsp;');
+        }
+
+        // Display stage log entries progressively
+        if (payload.log && autopilotLogList) {
+            autopilotLogList.innerHTML = '';
+            
+            for (let i = 0; i < payload.log.length; i++) {
+                const logEntry = payload.log[i];
+                
+                setTimeout(() => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span class="log-content">${formatLogEntry(logEntry)}</span>`;
+                    li.className = 'log-entry stage-log';
+                    autopilotLogList.appendChild(li);
+                    
+                    // Scroll to show latest log
+                    li.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, i * 200); // 200ms delay between log entries
+            }
+        }
+
+        // Render the full report after a delay
+        setTimeout(() => {
+            renderAutopilotReport(payload);
+        }, Math.max(
+            payload.live_events ? payload.live_events.length * 300 : 0,
+            payload.log ? payload.log.length * 200 : 0
+        ) + 500);
+
+        if (!gameStarted) {
+            setTimeout(() => {
+                if (autopilotEventList) {
+                    const li = document.createElement('li');
+                    li.innerHTML = '<span class="log-content">Waiting for game to start...</span>';
+                    li.className = 'log-entry warning';
+                    autopilotEventList.appendChild(li);
+                }
+            }, payload.live_events ? payload.live_events.length * 300 + 1000 : 1000);
+            
+            if (fromLoop) {
+                stopAutopilotLoop('AutoPilot+ paused — start the match to resume.');
+                autopilotLoopPending = false;
+            }
+            return;
+        }
+
+        // Check if game is finished before submitting move
+        if (isGameFrozen) {
+            if (fromLoop) {
+                stopAutopilotLoop('Game finished. AutoPilot+ completed successfully.');
+                autopilotLoopPending = false;
+            }
+            return;
+        }
+
+        if (payload.final_move) {
+            // Delay move submission to allow live events to complete
+            setTimeout(() => {
+                window.submitMove(payload.final_move);
+                
+                // For loop mode, schedule next move after a delay
+                if (fromLoop && autopilotLoopActive) {
+                    autopilotLoopPending = false;
+                    // Schedule next iteration with a delay to allow UI updates
+                    setTimeout(() => {
+                        if (autopilotLoopActive && !isGameFrozen) {
+                            scheduleAutopilotLoop();
+                        } else if (isGameFrozen) {
+                            stopAutopilotLoop('Game finished. AutoPilot+ completed successfully.');
+                        }
+                    }, 1000); // 1 second delay between moves
+                }
+            }, Math.max(
+                payload.live_events ? payload.live_events.length * 300 : 0,
+                payload.log ? payload.log.length * 200 : 0
+            ) + 800);
+        }
+    } catch (error) {
+        console.error('Autopilot error:', error);
+        renderAutopilotError(error.message || 'Unexpected autopilot error.');
+        if (fromLoop) {
+            stopAutopilotLoop('AutoPilot+ stopped due to an error: ' + (error.message || 'Unknown error'));
+            autopilotLoopPending = false;
+        }
+    } finally {
+        if (!fromLoop && actingBtn) {
+            actingBtn.disabled = false;
+            actingBtn.textContent = originalLabel || '🤖 AutoPilot Move';
+        } else if (fromLoop) {
+            autopilotLoopPending = false;
+        }
+    }
+}
         
         // Initialize charts when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
@@ -776,6 +1254,25 @@
             const refreshCoachingBtn = document.getElementById('refresh-coaching-tips');
             if (refreshCoachingBtn) {
                 refreshCoachingBtn.addEventListener('click', refreshCoachingTips);
+            }
+
+            autopilotBtn = document.getElementById('autopilot-button');
+            autopilotLoopBtn = document.getElementById('autopilot-button-loop');
+            autopilotStatus = document.getElementById('autopilot-status-text');
+            autopilotReport = document.getElementById('autopilot-report');
+            autopilotMoveEl = document.getElementById('autopilot-human-move');
+            autopilotRobotEl = document.getElementById('autopilot-robot-move');
+            autopilotRoundEl = document.getElementById('autopilot-round');
+            autopilotLogList = document.getElementById('autopilot-log-list');
+            autopilotToolJson = document.getElementById('autopilot-tool-json');
+            autopilotEventList = document.getElementById('autopilot-event-list');
+            autopilotContextJson = document.getElementById('autopilot-context-json');
+
+            if (autopilotBtn) {
+                autopilotBtn.addEventListener('click', () => runAutopilotMove());
+            }
+            if (autopilotLoopBtn) {
+                autopilotLoopBtn.addEventListener('click', toggleAutopilotLoop);
             }
         });
         
@@ -958,6 +1455,9 @@
             if (isGameFrozen) return;
             isGameFrozen = true;
             setMoveButtonsDisabled(true);
+            if (autopilotLoopActive) {
+                stopAutopilotLoop('Game finished. AutoPilot+ disengaged.');
+            }
             renderPostGameSummary(insights);
             presentGameSummaryModal(insights);
         }
@@ -1300,6 +1800,18 @@
                     });
                 }
             }, 800); // Delay to let move display finish
+
+            const reachedLimit = Number.isFinite(currentGameLimit) && data.round >= currentGameLimit;
+            if (autopilotLoopActive) {
+                if (reachedLimit) {
+                    stopAutopilotLoop('Game finished. AutoPilot+ disengaged.');
+                } else {
+                    autopilotLoopPending = false;
+                    setTimeout(() => {
+                        scheduleAutopilotLoop();
+                    }, 400);
+                }
+            }
         }
         
         // Move Display Window Functions
@@ -2119,21 +2631,9 @@
                         <div class="summary-label">Favourite Move</div>
                     </div>
                 </div>
-                <div class="summary-section">
-                    <h3>🎯 Strategy Highlights</h3>
-                    <div class="summary-text">
-                        <p><strong>Predictability:</strong> ${(insights?.moveVariance ?? 50).toFixed(1)}% — ${(insights?.moveVariance ?? 50) > 60 ? 'High (easy to read)' : (insights?.moveVariance ?? 50) > 40 ? 'Moderate balance' : 'Low (unpredictable)'}</p>
-                        <p><strong>AI Difficulty:</strong> ${(gameData?.difficulty || currentDifficulty || 'unknown').toUpperCase()} (${(insights?.aiAccuracy ?? 50).toFixed(1)}% prediction accuracy)</p>
-                    </div>
-                </div>
-                <div class="summary-section">
-                    <h3>💡 Key Insight</h3>
-                    <div class="summary-text">
-                        ${insights?.recommendation || 'Keep exploring varied move sequences to stay ahead of the AI.'}
-                    </div>
-                </div>
                 <div class="summary-actions">
                     <button class="btn primary" data-action="new-game">🔄 New Game</button>
+                    <button class="btn secondary" data-action="new-game-same-settings">⚡ Same Settings</button>
                 </div>
             `;
 
@@ -2162,6 +2662,13 @@
                     startNewGame();
                 });
             }
+
+            const newGameSameSettingsBtn = panel.querySelector('[data-action="new-game-same-settings"]');
+            if (newGameSameSettingsBtn) {
+                newGameSameSettingsBtn.addEventListener('click', () => {
+                    startNewGameSameSettings();
+                });
+            }
         }
 
         function startNewGame() {
@@ -2178,6 +2685,113 @@
             }
             endgameSummaryShown = false;
             resetGame();
+        }
+
+        function startNewGameSameSettings() {
+            // Store current settings before resetting
+            const currentSettings = {
+                difficulty: currentDifficulty,
+                strategy: currentStrategy,
+                personality: currentPersonality,
+                useLLMBanter: useLLMBanter,
+                gameLength: document.getElementById('game-length')?.value || '25'
+            };
+
+            // Reset the game completely
+            isGameFrozen = false;
+            gameStarted = false;  // Ensure game state is reset
+            
+            const panel = document.getElementById('endgame-summary-panel');
+            if (panel) {
+                panel.classList.remove('visible');
+                panel.innerHTML = '';
+            }
+            const calloutElement = document.getElementById('player-performance-callout');
+            if (calloutElement) {
+                calloutElement.classList.remove('visible');
+                calloutElement.textContent = '';
+            }
+            endgameSummaryShown = false;
+            resetGame();
+
+            // Ensure controls are in the proper initial state
+            const startButton = document.getElementById('start-lock-controls');
+            if (startButton) {
+                startButton.disabled = false;
+                startButton.classList.remove('gradient-success');
+                startButton.classList.add('gradient-danger');
+            }
+
+            // Ensure move buttons are initially disabled
+            ['move-paper', 'move-rock', 'move-scissors'].forEach(id => {
+                const button = document.getElementById(id);
+                if (button) button.disabled = true;
+            });
+
+            // Restore the previous settings
+            currentDifficulty = currentSettings.difficulty;
+            currentStrategy = currentSettings.strategy;
+            currentPersonality = currentSettings.personality;
+            useLLMBanter = currentSettings.useLLMBanter;
+
+            // Update UI elements to reflect the restored settings
+            const difficultySelect = document.getElementById('difficulty');
+            const strategySelect = document.getElementById('strategy');
+            const personalitySelect = document.getElementById('personality');
+            const llmToggle = document.getElementById('llm-banter-toggle');
+            const gameLengthSelect = document.getElementById('game-length');
+
+            if (difficultySelect) {
+                difficultySelect.value = currentDifficulty;
+                difficultySelect.disabled = false;  // Ensure it's enabled for setting
+            }
+            if (strategySelect) {
+                strategySelect.value = currentStrategy;
+                strategySelect.disabled = false;
+            }
+            if (personalitySelect) {
+                personalitySelect.value = currentPersonality;
+                personalitySelect.disabled = false;
+            }
+            if (llmToggle) {
+                llmToggle.value = useLLMBanter.toString();
+            }
+            if (gameLengthSelect) {
+                gameLengthSelect.value = currentSettings.gameLength;
+                gameLengthSelect.disabled = false;
+            }
+
+            // Apply the personality theme and update robot character
+            applyPersonalityTheme(currentPersonality);
+            updateRobotCharacter(currentDifficulty, currentStrategy, currentPersonality);
+            setTimeout(() => updateRobotConversation(currentPersonality, 'start'), 200);
+            
+            // Show a brief status message
+            const statusElement = document.getElementById('game-status');
+            if (statusElement) {
+                statusElement.textContent = `⚡ Same settings loaded: ${currentDifficulty} ${currentPersonality} robot`;
+                setTimeout(() => {
+                    statusElement.textContent = `🎮 Game ready to start!`;
+                }, 1500);
+            }
+
+            // ENHANCED: Auto-start the game with better timing and validation
+            setTimeout(() => {
+                // Double-check that the start button is available and enabled
+                const startBtn = document.getElementById('start-lock-controls');
+                if (startBtn && !startBtn.disabled) {
+                    lockControls(); // This enables move buttons and starts the game
+                    
+                    // Provide immediate feedback that the game is ready
+                    setTimeout(() => {
+                        if (statusElement) {
+                            statusElement.textContent = `🎯 Game started! Make your move.`;
+                        }
+                    }, 100);
+                } else {
+                    console.error('Start button not available for auto-start');
+                }
+            }, 800); // Increased delay to ensure all UI updates complete
         }
         
         function updateStatusDisplay() {
