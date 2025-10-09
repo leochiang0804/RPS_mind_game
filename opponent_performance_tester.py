@@ -34,7 +34,7 @@ sns.set_theme(style="whitegrid")
 @dataclass
 class SimulationConfig:
     games_per_opponent: int = 60
-    rounds_per_game: int = 120
+    rounds_per_game: int = 50
     seed: int = 20241105
     output_dir: Path = Path("simulation_results")
 

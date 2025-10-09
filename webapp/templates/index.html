@@ -420,73 +420,73 @@
                             </div>
                         </div>
                         <div class="mode-panel active" data-mode="top-controls">
-                            <div class="control-grid">
-                                <div class="control-row">
-                                    <div class="select-card">
-                                        <label for="difficulty">🎯 AI Difficulty</label>
-                                        <select id="difficulty" onchange="setDifficulty()">
-                                            <option value="rookie">🟢 Rookie (Beginner)</option>
-                                            <option value="challenger" selected>🟡 Challenger (Intermediate)</option>
-                                            <option value="master">🔴 Master (Advanced)</option>
-                                            <option value="grandmaster">🟣 Grandmaster (Elite)</option>
-                                        </select>
-                                    </div>
-                                    <div class="select-card">
-                                        <label for="strategy">⚔️ AI Strategy</label>
-                                        <select id="strategy" onchange="setStrategy()">
-                                            <option value="to_win" selected>🗡️ To Win (Aggressive)</option>
-                                            <option value="not_to_lose">🛡️ Not to Lose (Defensive)</option>
-                                        </select>
-                                    </div>
-                                    <div class="select-card">
-                                        <label for="personality">🤖 AI Personality</label>
-                                        <select id="personality" onchange="setPersonality()">
-                                            <option value="neutral" selected>😐 Neutral (Balanced)</option>
-                                            <option value="aggressive">⚔️ Aggressive (High-risk)</option>
-                                            <option value="defensive">🛡️ Defensive (Risk-averse)</option>
-                                            <option value="unpredictable">🎲 Unpredictable (Erratic)</option>
-                                            <option value="cautious">� Cautious (Methodical)</option>
-                                            <option value="confident">💪 Confident (Bold)</option>
-                                            <option value="chameleon">� Chameleon (Adaptive)</option>
-                                        </select>
-                                    </div>
-                                    <div class="select-card">
-                                        <label for="game-length">⏱️ Game Length</label>
-                                        <select id="game-length" onchange="setGameLength()">
-                                            <option value="25" selected>25 Moves</option>
-                                            <option value="50">50 Moves</option>
-                                            <option value="100">100 Moves</option>
-                                            <option value="250">250 Moves</option>
-                                            <option value="500">500 Moves</option>
-                                            <option value="1000">1000 Moves</option>
-                                            <option value="infinite">Infinite</option>
-                                        </select>
-                                    </div>
-                                    <div class="select-card">
-                                        <label for="llm-banter-toggle">🧠 Banter Mode</label>
-                                        <select id="llm-banter-toggle" onchange="setLLMBanterMode()">
-                                            <option value="false" selected>🔧 Rule-based (Default)</option>
-                                            <option value="true">🤖 AI-Generated (LLM)</option>
-                                        </select>
-                                    </div>
-                                    <!-- This is for Debug only -->
-                                    <div class="select-card">
-                                        <button id="start-lock-controls" class="pill-button gradient-danger" style="display: flex; justify-content: center; align-items: center; width: 100%;" onclick="lockControls()"><span style="margin: 0 auto;">Start</span></button>
+                            <div class="controls-layout">
+                                <!-- Left: Robot Character Display (Larger) -->
+                                <div id="robot-character-display" class="robot-profile-large">
+                                    <div id="robot-avatar" class="robot-avatar-large">
+                                        <img id="robot-personality-img" src="/static/neutral.png" alt="Robot" style="width: 100%; height: 100%; object-fit: contain;">
+                                        <div id="strategy-symbol" class="strategy-icon">⚔️</div>
                                     </div>
                                 </div>
-                            </div>
-                            <!-- Buttons moved to header-actions -->
-                            <div id="robot-character-display" class="robot-profile">
-                                <div id="robot-avatar" class="robot-avatar">
-                                    <span class="avatar-emoji">🤖</span>
-                                    <div id="strategy-symbol" class="strategy-icon">⚔️</div>
-                                </div>
-                                <div class="robot-meta">
-                                    <div class="meta-title"><span id="robot-name">Standard Robot</span></div>
-                                    <div class="meta-tags">
-                                        <span class="tag">Difficulty: <span id="robot-difficulty">Easy</span></span>
-                                        <span class="tag">Strategy: <span id="robot-strategy">Challenger</span></span>
-                                        <span class="tag">Personality: <span id="robot-personality">Balanced</span></span>
+                                
+                                <!-- Right: Control Dropdowns in 2x3 Grid -->
+                                <div class="control-grid-right">
+                                    <div class="control-grid-2x3">
+                                        <!-- First Row -->
+                                        <div class="select-card">
+                                            <label for="difficulty">🎯 AI Difficulty</label>
+                                            <select id="difficulty" onchange="setDifficulty()">
+                                                <option value="rookie">🟢 Rookie (Beginner)</option>
+                                                <option value="challenger" selected>🟡 Challenger (Intermediate)</option>
+                                                <option value="master">🔴 Master (Advanced)</option>
+                                                <option value="grandmaster">🟣 Grandmaster (Elite)</option>
+                                            </select>
+                                        </div>
+                                        <div class="select-card">
+                                            <label for="strategy">⚔️ AI Strategy</label>
+                                            <select id="strategy" onchange="setStrategy()">
+                                                <option value="to_win" selected>🗡️ To Win (Aggressive)</option>
+                                                <option value="not_to_lose">🛡️ Not to Lose (Defensive)</option>
+                                            </select>
+                                        </div>
+                                        <div class="select-card">
+                                            <label for="personality">🤖 AI Personality</label>
+                                            <select id="personality" onchange="setPersonality()">
+                                                <option value="neutral" selected>😐 Neutral (Balanced)</option>
+                                                <option value="aggressive">⚔️ Aggressive (High-risk)</option>
+                                                <option value="defensive">🛡️ Defensive (Risk-averse)</option>
+                                                <option value="unpredictable">🎲 Unpredictable (Erratic)</option>
+                                                <option value="cautious">🔍 Cautious (Methodical)</option>
+                                                <option value="confident">💪 Confident (Bold)</option>
+                                                <option value="chameleon">🦎 Chameleon (Adaptive)</option>
+                                            </select>
+                                        </div>
+                                        <!-- Second Row -->
+                                        <div class="select-card">
+                                            <label for="game-length">⏱️ Game Length</label>
+                                            <select id="game-length" onchange="setGameLength()">
+                                                <option value="25" selected>25 Moves</option>
+                                                <option value="50">50 Moves</option>
+                                                <option value="100">100 Moves</option>
+                                                <option value="250">250 Moves</option>
+                                                <option value="500">500 Moves</option>
+                                                <option value="1000">1000 Moves</option>
+                                                <option value="infinite">Infinite</option>
+                                            </select>
+                                        </div>
+                                        <div class="select-card">
+                                            <label for="llm-banter-toggle">🧠 Banter Mode</label>
+                                            <select id="llm-banter-toggle" onchange="setLLMBanterMode()">
+                                                <option value="false" selected>🔧 Rule-based (Default)</option>
+                                                <option value="true">🤖 AI-Generated (LLM)</option>
+                                            </select>
+                                        </div>
+                                        <div class="select-card start-button-card">
+                                            <label>&nbsp;</label> <!-- Empty label for alignment -->
+                                            <button id="start-lock-controls" class="pill-button gradient-danger start-button" onclick="lockControls()">
+                                                <span>Start Game</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -504,7 +504,9 @@
                                         <span>Live banter from your opponent.</span>
                                     </div>
                                     <div class="conversation-body">
-                                        <div id="conversation-avatar" class="conversation-avatar">🤖</div>
+                                        <div id="conversation-avatar" class="conversation-avatar">
+                                            <img id="conversation-avatar-img" src="/static/neutral.png" alt="Robot Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                                        </div>
                                         <div class="conversation-content">
                                             <div class="speech-bubble">
                                                 <div id="robot-speech">"Ready for battle? Let's see what you've got!"</div>
@@ -538,7 +540,7 @@
                                 </div>
                             </div>
                             <div id="result" class="result-banner">
-                                Press buttons or use A, W, D keys to play!
+                                Press buttons or use P, R, S keys to play!
                             </div>
                             <div id="endgame-summary-panel" class="endgame-summary" aria-live="polite"></div>
                             <div class="move-pad">
@@ -592,14 +594,17 @@
                                             <div id="performance-charts-container">
                                                 <div class="performance-chart-wrapper">
                                                     <h4>Predictability Over Time</h4>
+                                                    <p class="chart-description">Tracks variance in your recent move mix (rolling 10 rounds). Higher means the robot sees consistent habits; lower means you are harder to read.</p>
                                                     <canvas id="predictability-chart" width="400" height="200"></canvas>
                                                 </div>
                                                 <div class="performance-chart-wrapper">
-                                                    <h4 title="Shows how strongly the AI detects repeating patterns in your play. Higher values mean clearer patterns that the AI can exploit.">Pattern Strength Timeline ⓘ</h4>
+                                                    <h4>Pattern Strength Timeline</h4>
+                                                    <p class="chart-description">Derived from the Markov pattern detectors. Higher values show clearer repeating sequences the AI can exploit; lower values indicate noisy or changing play.</p>
                                                     <canvas id="pattern-chart" width="400" height="200"></canvas>
                                                 </div>
                                                 <div class="performance-chart-wrapper">
-                                                    <h4 title="Measures how quickly the AI adapts its strategy to counter your moves. Higher rates mean the AI is learning and adjusting faster.">Adaptation Rate Progress ⓘ</h4>
+                                                    <h4>Adaptation Rate Progress</h4>
+                                                    <p class="chart-description">Combines drift detection and confidence shifts to estimate how fast the AI is learning. Higher rates mean rapid adjustment; lower rates mean the AI is still catching up.</p>
                                                     <canvas id="adaptation-chart" width="400" height="200"></canvas>
                                                 </div>
                                             </div>
@@ -978,7 +983,7 @@
                 `Most common move: ${commonMove} (${commonMovePct}%).`,
                 recommendation
             ];
-            resultElement.innerHTML = '<h3>Match Complete</h3><p>' + summaryLines.join('<br>') + '</p>';
+            //resultElement.innerHTML = '<h3>Match Complete</h3><p>' + summaryLines.join('<br>') + '</p>';
         }
 
         function determineWinner(humanMove, robotMove) {
@@ -1234,13 +1239,6 @@
 
             const insights = deriveGameInsights(data);
 
-            // Update result
-            document.getElementById('result').innerHTML = 
-                '<h3>Round ' + (data.round || 0) + ' Results</h3>' +
-                '<p>You played: <strong>' + lastHumanMove.toUpperCase() + '</strong></p>' +
-                '<p>Computer played: <strong>' + robotMove.toUpperCase() + '</strong></p>' +
-                '<p>Result: <strong>' + result.toUpperCase() + '</strong></p>';
-            
             // Update stats safely
             const stats = data.stats || {};
             document.getElementById('rounds').textContent = data.round || 0;
@@ -1324,14 +1322,25 @@
             const moveText = document.getElementById(player + '-move-text');
             
             if (move && move !== 'unknown') {
-                // Set the correct image
-                const imageMap = {
-                    'rock': '/static/rock.png',    // Note: keeping image filename as stone.png
-                    'paper': '/static/paper.png',
-                    'scissors': '/static/scissors.png' // Note: keeping image filename as scissor.png
-                };
+                // Set the correct image based on player type
+                let imagePath;
+                if (player === 'human') {
+                    const humanImageMap = {
+                        'rock': '/static/human_rock.png',
+                        'paper': '/static/human_paper.png',
+                        'scissors': '/static/human_scissors.png'
+                    };
+                    imagePath = humanImageMap[move.toLowerCase()] || '/static/human_paper.png';
+                } else {
+                    const robotImageMap = {
+                        'rock': '/static/opponent_rock.png',
+                        'paper': '/static/opponent_paper.png',
+                        'scissors': '/static/opponent_scissors.png'
+                    };
+                    imagePath = robotImageMap[move.toLowerCase()] || '/static/opponent_paper.png';
+                }
                 
-                moveImg.src = imageMap[move.toLowerCase()] || '/static/paper.png';
+                moveImg.src = imagePath;
                 moveImg.style.display = 'block';
                 moveText.textContent = move.charAt(0).toUpperCase() + move.slice(1);
             } else {
@@ -1401,24 +1410,24 @@
         }
         
         function updateRobotAvatar(difficulty, personality) {
-            const avatar = document.getElementById('robot-avatar');
-            console.log('updateRobotAvatar - element found:', avatar, 'difficulty:', difficulty, 'personality:', personality);
+            const avatarImg = document.getElementById('robot-personality-img');
+            console.log('updateRobotAvatar - element found:', avatarImg, 'difficulty:', difficulty, 'personality:', personality);
             
-            if (!avatar) {
-                console.error('robot-avatar element not found!');
+            if (!avatarImg) {
+                console.error('robot-personality-img element not found!');
                 return;
             }
             
-            // Personality character mapping
-            const personalityChars = {
-                'neutral': '🤖',
-                'aggressive': '⚔️',
-                'defensive': '🛡️', 
-                'unpredictable': '🎲',
-                'cautious': '🔍',
-                'confident': '💪',
-                'chameleon': '�',
-                'balanced': '🤖'
+            // Personality image mapping
+            const personalityImages = {
+                'neutral': '/static/neutral.png',
+                'aggressive': '/static/aggresive.png',
+                'defensive': '/static/defensive.png', 
+                'unpredictable': '/static/unpredictable.png',
+                'cautious': '/static/cautious.png',
+                'confident': '/static/confident.png',
+                'chameleon': '/static/chameleon.png',
+                'balanced': '/static/neutral.png'
             };
             
             // Difficulty-based background shading
@@ -1441,16 +1450,20 @@
                 }
             };
             
-            // Update character
-            const char = personalityChars[personality] || '🤖';
-            console.log('Setting avatar char:', char);
-            avatar.textContent = char;
+            // Update image
+            const imageSrc = personalityImages[personality] || '/static/neutral.png';
+            console.log('Setting avatar image:', imageSrc);
+            avatarImg.src = imageSrc;
+            avatarImg.alt = personality.charAt(0).toUpperCase() + personality.slice(1) + ' Robot';
             
-            // Update styling
-            const style = difficultyStyles[difficulty] || difficultyStyles['rookie'];
-            console.log('Setting avatar style:', style);
-            avatar.style.background = style.background;
-            avatar.style.border = style.border;
+            // Update styling on parent container
+            const avatar = avatarImg.closest('.robot-avatar-large') || avatarImg.closest('.robot-avatar');
+            if (avatar) {
+                const style = difficultyStyles[difficulty] || difficultyStyles['rookie'];
+                console.log('Setting avatar style:', style);
+                avatar.style.background = style.background;
+                avatar.style.border = style.border;
+            }
         }
         
         function updateStrategySymbol(strategy) {
@@ -1586,8 +1599,25 @@
         function updateRobotConversation(personality, eventType, data = {}) {
             const speechElement = document.getElementById('robot-speech');
             const moodElement = document.getElementById('robot-mood');
-            const avatarElement = document.getElementById('conversation-avatar');
+            const avatarImgElement = document.getElementById('conversation-avatar-img');
             const calloutElement = document.getElementById('player-performance-callout');
+
+            // Update avatar image based on personality
+            const personalityImages = {
+                'neutral': '/static/neutral.png',
+                'aggressive': '/static/aggresive.png',
+                'defensive': '/static/defensive.png', 
+                'unpredictable': '/static/unpredictable.png',
+                'cautious': '/static/cautious.png',
+                'confident': '/static/confident.png',
+                'chameleon': '/static/chameleon.png',
+                'balanced': '/static/neutral.png'
+            };
+            
+            if (avatarImgElement) {
+                avatarImgElement.src = personalityImages[personality] || '/static/neutral.png';
+                avatarImgElement.alt = personality.charAt(0).toUpperCase() + personality.slice(1) + ' Robot';
+            }
 
             // Check if user wants LLM-generated banter or rule-based
             if (useLLMBanter) {
@@ -1596,23 +1626,20 @@
                     // Update speech by printing text directly
                     speechElement.textContent = dialogue.message;
 
-                    // Update mood and avatar
+                    // Update mood (no need to update avatar as it's now an image)
                     moodElement.textContent = dialogue.mood;
-                    avatarElement.textContent = dialogue.avatar;
                 }).catch(error => {
                     console.warn('SBC Backend unavailable, using fallback dialogue:', error);
                     // Fallback to rule-based dialogue when LLM fails
                     const dialogue = generatePersonalityDialogue(personality, eventType, data);
                     speechElement.textContent = dialogue.message;
                     moodElement.textContent = dialogue.mood;
-                    avatarElement.textContent = dialogue.avatar;
                 });
             } else {
                 // Use rule-based personality dialogue (default)
                 const dialogue = generatePersonalityDialogue(personality, eventType, data);
                 speechElement.textContent = dialogue.message;
                 moodElement.textContent = dialogue.mood;
-                avatarElement.textContent = dialogue.avatar;
             }
 
             if (calloutElement) {
@@ -2106,8 +2133,6 @@
                     </div>
                 </div>
                 <div class="summary-actions">
-                    <button class="btn outline" data-action="analytics">📊 Review Analytics</button>
-                    <button class="btn outline" data-action="coach">🤖 Ask AI Coach</button>
                     <button class="btn primary" data-action="new-game">🔄 New Game</button>
                 </div>
             `;
@@ -3187,9 +3212,9 @@
             
             if (!gameData || round < 5) {
                 // Not enough data for meaningful stats
-                document.getElementById('current-predictability').textContent = 'Insufficient Data';
-                document.getElementById('current-pattern').textContent = 'Insufficient Data';
-                document.getElementById('current-adaptation').textContent = 'Insufficient Data';
+                document.getElementById('current-predictability').textContent = '—';
+                document.getElementById('current-pattern').textContent = '—';
+                document.getElementById('current-adaptation').textContent = '—';
                 return;
             }
             
